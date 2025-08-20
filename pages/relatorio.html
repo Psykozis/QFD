@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório PDF - Sistema QFD</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-file-pdf"></i> Relatório PDF</h1>
+            <p>Gere um relatório completo da análise QFD em formato PDF</p>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="../index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="requisitos-cliente.html"><i class="fas fa-users"></i> Requisitos Cliente</a></li>
+                <li><a href="comparacao-cliente.html"><i class="fas fa-balance-scale"></i> Comparação Cliente</a></li>
+                <li><a href="requisitos-projeto.html"><i class="fas fa-project-diagram"></i> Requisitos Projeto</a></li>
+                <li><a href="correlacao-projeto.html"><i class="fas fa-network-wired"></i> Correlação Projeto</a></li>
+                <li><a href="matriz-qfd.html"><i class="fas fa-table"></i> Matriz QFD</a></li>
+                <li><a href="relatorio.html" class="active"><i class="fas fa-file-pdf"></i> Relatório PDF</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h2>Geração de Relatório PDF</h2>
+                <p>Compile todos os dados da análise QFD em um relatório profissional para apresentação e documentação.</p>
+            </div>
+
+            <!-- Status do relatório -->
+            <div class="card status-card">
+                <div class="status-info">
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="total-req-cliente">0</h4>
+                            <p>Requisitos Cliente</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="total-req-projeto">0</h4>
+                            <p>Requisitos Projeto</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="completude-sistema">0%</h4>
+                            <p>Completude</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="status-relatorio">Pendente</h4>
+                            <p>Status</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aviso se dados insuficientes -->
+            <div id="insufficient-data" class="card alert-card" style="display: none;">
+                <div class="alert-content">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="alert-text">
+                        <h3>Dados Insuficientes para Relatório</h3>
+                        <p>Para gerar um relatório completo, você precisa ter:</p>
+                        <ul>
+                            <li>Pelo menos 1 requisito de cliente cadastrado</li>
+                            <li>Pelo menos 1 requisito de projeto cadastrado</li>
+                            <li>Algumas relações definidas na matriz QFD</li>
+                        </ul>
+                        <div class="alert-actions">
+                            <a href="requisitos-cliente.html" class="btn btn-primary">
+                                <i class="fas fa-users"></i> Completar Dados
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configurações do relatório -->
+            <div id="report-config" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cog"></i> Configurações do Relatório
+                    </h3>
+                </div>
+                
+                <div class="config-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="project-title">Título do Projeto</label>
+                            <input type="text" id="project-title" class="form-control" 
+                                   placeholder="Ex: Desenvolvimento de Produto XYZ" 
+                                   value="Análise QFD - Casa da Qualidade">
+                        </div>
+                        <div class="form-group">
+                            <label for="company-name">Empresa/Organização</label>
+                            <input type="text" id="company-name" class="form-control" 
+                                   placeholder="Nome da empresa ou organização">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="author-name">Responsável pela Análise</label>
+                            <input type="text" id="author-name" class="form-control" 
+                                   placeholder="Nome do engenheiro ou equipe responsável">
+                        </div>
+                        <div class="form-group">
+                            <label for="report-date">Data do Relatório</label>
+                            <input type="date" id="report-date" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project-description">Descrição do Projeto</label>
+                        <textarea id="project-description" class="form-control" rows="3" 
+                                  placeholder="Breve descrição do projeto e objetivos da análise QFD"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seções do relatório -->
+            <div id="report-sections" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-list-check"></i> Conteúdo do Relatório
+                        <span class="section-count" id="section-count">0 seções selecionadas</span>
+                    </h3>
+                </div>
+                
+                <div class="sections-grid">
+                    <div class="section-item">
+                        <div class="section-checkbox">
+                            <input type="checkbox" id="section-summary" checked>
+                            <label for="section-summary">
+                                <i class="fas fa-chart-pie"></i>
+                                <span class="section-title">Resumo Executivo</span>
+                                <span class="section-description">Visão geral dos resultados e principais insights</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="section-item">
+                        <div class="section-checkbox">
+                            <input type="checkbox" id="section-client-req" checked>
+                            <label for="section-client-req">
+                                <i class="fas fa-users"></i>
+                                <span class="section-title">Requisitos de Cliente</span>
+                                <span class="section-description">Lista completa com importâncias e pesos</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="section-item">
+                        <div class="section-checkbox">
+                            <input type="checkbox" id="section-project-req" checked>
+                            <label for="section-project-req">
+                                <i class="fas fa-project-diagram"></i>
+                                <span class="section-title">Requisitos de Projeto</span>
+                                <span class="section-description">Especificações técnicas com sentidos e dificuldades</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="section-item">
+                        <div class="section-checkbox">
+                            <input type="checkbox" id="section-correlations" checked>
+                            <label for="section-correlations">
+                                <i class="fas fa-network-wired"></i>
+                                <span class="section-title">Correlações (Telhado)</span>
+                                <span class="section-description">Análise de sinergias e conflitos entre requisitos</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="section-item">
+                        <div class="section-checkbox">
+                            <input type="checkbox" id="section-qfd-matrix" checked>
+                            <label for="section-qfd-matrix">
+                                <i class="fas fa-table"></i>
+                                <span class="section-title">Matriz QFD Completa</span>
+                                <span class="section-description">Casa da qualidade com todos os relacionamentos</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="section-item">
+                        <div class="section-checkbox">
+                            <input type="checkbox" id="section-ranking" checked>
+                            <label for="section-ranking">
+                                <i class="fas fa-trophy"></i>
+                                <span class="section-title">Ranking de Prioridades</span>
+                                <span class="section-description">Requisitos ordenados por importância</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="section-item">
+                        <div class="section-checkbox">
+                            <input type="checkbox" id="section-analysis" checked>
+                            <label for="section-analysis">
+                                <i class="fas fa-chart-line"></i>
+                                <span class="section-title">Análises e Insights</span>
+                                <span class="section-description">Interpretações e recomendações</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="section-item">
+                        <div class="section-checkbox">
+                            <input type="checkbox" id="section-appendix">
+                            <label for="section-appendix">
+                                <i class="fas fa-paperclip"></i>
+                                <span class="section-title">Anexos Técnicos</span>
+                                <span class="section-description">Dados detalhados e metodologia</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview do relatório -->
+            <div id="report-preview" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-eye"></i> Preview do Relatório
+                        <div class="preview-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="refreshPreview()">
+                                <i class="fas fa-sync"></i> Atualizar
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="generatePDF()">
+                                <i class="fas fa-download"></i> Gerar PDF
+                            </button>
+                        </div>
+                    </h3>
+                </div>
+                
+                <div class="preview-container">
+                    <div id="report-content" class="report-preview-content">
+                        <!-- Preview será gerado dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Histórico de relatórios -->
+            <div id="report-history" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-history"></i> Histórico de Relatórios
+                        <button class="btn btn-sm btn-secondary" onclick="clearHistory()">
+                            <i class="fas fa-trash"></i> Limpar Histórico
+                        </button>
+                    </h3>
+                </div>
+                
+                <div id="history-list" class="history-list">
+                    <!-- Histórico será gerado dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Dicas para relatórios -->
+            <div class="card info-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-lightbulb"></i> Dicas para Relatórios Eficazes</h3>
+                </div>
+                <div class="tips-grid">
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-target"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Foque no Essencial</h4>
+                            <p>Inclua apenas as seções mais relevantes para sua audiência e objetivos.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Use Dados Visuais</h4>
+                            <p>Gráficos e tabelas facilitam a compreensão dos resultados da análise.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Considere a Audiência</h4>
+                            <p>Adapte o nível de detalhe técnico conforme o público-alvo do relatório.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Inclua Recomendações</h4>
+                            <p>Transforme os insights em ações concretas para o desenvolvimento do produto.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegação -->
+            <div class="page-navigation">
+                <a href="matriz-qfd.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar: Matriz QFD
+                </a>
+                <a href="../index.html" class="btn btn-primary">
+                    Finalizar: Dashboard <i class="fas fa-home"></i>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+        </div>
+    </footer>
+
+    <!-- Bibliotecas para geração de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <script src="../js/database.js"></script>
+    <script src="../js/relatorio.js"></script>
+</body>
+</html>
+

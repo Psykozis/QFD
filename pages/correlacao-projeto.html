@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correlação de Requisitos - Sistema QFD</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-network-wired"></i> Correlação de Requisitos</h1>
+            <p>Analise as relações entre requisitos de projeto - Telhado da Casa QFD</p>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="../index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="requisitos-cliente.html"><i class="fas fa-users"></i> Requisitos Cliente</a></li>
+                <li><a href="comparacao-cliente.html"><i class="fas fa-balance-scale"></i> Comparação Cliente</a></li>
+                <li><a href="requisitos-projeto.html"><i class="fas fa-project-diagram"></i> Requisitos Projeto</a></li>
+                <li><a href="correlacao-projeto.html" class="active"><i class="fas fa-network-wired"></i> Correlação Projeto</a></li>
+                <li><a href="matriz-qfd.html"><i class="fas fa-table"></i> Matriz QFD</a></li>
+                <li><a href="relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h2>Correlação entre Requisitos de Projeto</h2>
+                <p>Analise como os requisitos técnicos se relacionam entre si. Esta análise forma o "telhado" da casa QFD e ajuda a identificar sinergias e conflitos entre os requisitos.</p>
+            </div>
+
+            <!-- Status da correlação -->
+            <div class="card status-card">
+                <div class="status-info">
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="total-requisitos">0 Requisitos</h4>
+                            <p>Requisitos de projeto</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-link"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="correlacoes-feitas">0 / 0</h4>
+                            <p>Correlações analisadas</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="progresso-percentual">0%</h4>
+                            <p>Progresso</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Aviso se não há requisitos suficientes -->
+            <div id="insufficient-requirements" class="card alert-card" style="display: none;">
+                <div class="alert-content">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="alert-text">
+                        <h3>Requisitos Insuficientes</h3>
+                        <p>É necessário ter pelo menos 2 requisitos de projeto cadastrados para realizar a análise de correlação.</p>
+                        <a href="requisitos-projeto.html" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Adicionar Requisitos de Projeto
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legenda das correlações -->
+            <div id="correlation-legend" class="card info-card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-info-circle"></i> Tipos de Correlação</h3>
+                </div>
+                <div class="correlation-types">
+                    <div class="correlation-type">
+                        <div class="correlation-symbol strong-positive">++</div>
+                        <div class="correlation-info">
+                            <h4>Correlação Positiva Muito Forte</h4>
+                            <p>Os requisitos se reforçam mutuamente. Melhorar um ajuda significativamente o outro.</p>
+                        </div>
+                    </div>
+                    <div class="correlation-type">
+                        <div class="correlation-symbol positive">+</div>
+                        <div class="correlation-info">
+                            <h4>Correlação Positiva</h4>
+                            <p>Os requisitos se complementam. Melhorar um pode ajudar o outro.</p>
+                        </div>
+                    </div>
+                    <div class="correlation-type">
+                        <div class="correlation-symbol neutral">0</div>
+                        <div class="correlation-info">
+                            <h4>Sem Correlação</h4>
+                            <p>Os requisitos são independentes. Um não afeta o outro.</p>
+                        </div>
+                    </div>
+                    <div class="correlation-type">
+                        <div class="correlation-symbol negative">-</div>
+                        <div class="correlation-info">
+                            <h4>Correlação Negativa</h4>
+                            <p>Os requisitos competem entre si. Melhorar um pode prejudicar o outro.</p>
+                        </div>
+                    </div>
+                    <div class="correlation-type">
+                        <div class="correlation-symbol strong-negative">--</div>
+                        <div class="correlation-info">
+                            <h4>Correlação Negativa Muito Forte</h4>
+                            <p>Os requisitos são conflitantes. Melhorar um prejudica significativamente o outro.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matriz de correlação (telhado) -->
+            <div id="correlation-section" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-home"></i> Telhado da Casa QFD - Matriz de Correlação
+                        <button class="btn btn-sm btn-secondary" onclick="resetCorrelations()" style="margin-left: 1rem;">
+                            <i class="fas fa-undo"></i> Resetar Correlações
+                        </button>
+                    </h3>
+                </div>
+                
+                <div class="correlation-instructions">
+                    <h4><i class="fas fa-question-circle"></i> Como Analisar:</h4>
+                    <p><strong>Para cada par de requisitos, considere:</strong></p>
+                    <ul>
+                        <li>Se melhorar um requisito ajuda ou prejudica o outro</li>
+                        <li>Se existe sinergia ou conflito entre eles</li>
+                        <li>Se são independentes ou relacionados</li>
+                    </ul>
+                    <p><strong>Clique em cada célula</strong> para definir o tipo de correlação entre os requisitos.</p>
+                </div>
+
+                <div class="roof-container">
+                    <div class="roof-matrix" id="roof-matrix">
+                        <!-- Matriz triangular será gerada dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análise das correlações -->
+            <div id="analysis-section" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Análise das Correlações
+                        <button class="btn btn-sm btn-secondary" onclick="exportAnalysis()" style="margin-left: 1rem;">
+                            <i class="fas fa-download"></i> Exportar Análise
+                        </button>
+                    </h3>
+                </div>
+                
+                <div class="analysis-content">
+                    <div class="correlation-summary" id="correlation-summary">
+                        <!-- Resumo será gerado dinamicamente -->
+                    </div>
+                    
+                    <div class="conflict-analysis" id="conflict-analysis">
+                        <!-- Análise de conflitos será gerada dinamicamente -->
+                    </div>
+                    
+                    <div class="synergy-analysis" id="synergy-analysis">
+                        <!-- Análise de sinergias será gerada dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dicas e orientações -->
+            <div class="card info-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-lightbulb"></i> Dicas para Análise de Correlação</h3>
+                </div>
+                <div class="tips-grid">
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Pense em Trade-offs</h4>
+                            <p>Considere se melhorar um requisito pode prejudicar outro (ex: velocidade vs. precisão).</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Identifique Sinergias</h4>
+                            <p>Procure requisitos que se beneficiam mutuamente quando melhorados.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Seja Realista</h4>
+                            <p>Base sua análise em conhecimento técnico e experiência prática.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Foque nos Conflitos</h4>
+                            <p>Correlações negativas são especialmente importantes para o design do produto.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegação -->
+            <div class="page-navigation">
+                <a href="requisitos-projeto.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar: Requisitos Projeto
+                </a>
+                <a href="matriz-qfd.html" class="btn btn-primary" id="btn-proximo">
+                    Próximo: Matriz QFD <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+        </div>
+    </footer>
+
+    <script src="../js/database.js"></script>
+    <script src="../js/correlacao-projeto.js"></script>
+</body>
+</html>
+

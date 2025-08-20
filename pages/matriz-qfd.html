@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matriz QFD - Sistema QFD</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-table"></i> Matriz QFD</h1>
+            <p>Casa da Qualidade - Relacione requisitos de cliente com requisitos de projeto</p>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="../index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="requisitos-cliente.html"><i class="fas fa-users"></i> Requisitos Cliente</a></li>
+                <li><a href="comparacao-cliente.html"><i class="fas fa-balance-scale"></i> Comparação Cliente</a></li>
+                <li><a href="requisitos-projeto.html"><i class="fas fa-project-diagram"></i> Requisitos Projeto</a></li>
+                <li><a href="correlacao-projeto.html"><i class="fas fa-network-wired"></i> Correlação Projeto</a></li>
+                <li><a href="matriz-qfd.html" class="active"><i class="fas fa-table"></i> Matriz QFD</a></li>
+                <li><a href="relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h2>Matriz QFD - Casa da Qualidade</h2>
+                <p>Relacione cada requisito de cliente com os requisitos de projeto, definindo o nível de influência. O sistema calculará automaticamente a importância absoluta, relativa e os pesos normalizados.</p>
+            </div>
+
+            <!-- Status da matriz -->
+            <div class="card status-card">
+                <div class="status-info">
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="total-req-cliente">0</h4>
+                            <p>Requisitos Cliente</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="total-req-projeto">0</h4>
+                            <p>Requisitos Projeto</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-link"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="relacoes-feitas">0 / 0</h4>
+                            <p>Relações definidas</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="status-content">
+                            <h4 id="progresso-percentual">0%</h4>
+                            <p>Completude</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Aviso se não há dados suficientes -->
+            <div id="insufficient-data" class="card alert-card" style="display: none;">
+                <div class="alert-content">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="alert-text">
+                        <h3>Dados Insuficientes</h3>
+                        <p>Para criar a matriz QFD, você precisa ter:</p>
+                        <ul>
+                            <li>Pelo menos 1 requisito de cliente cadastrado</li>
+                            <li>Pelo menos 1 requisito de projeto cadastrado</li>
+                        </ul>
+                        <div class="alert-actions">
+                            <a href="requisitos-cliente.html" class="btn btn-primary">
+                                <i class="fas fa-users"></i> Requisitos Cliente
+                            </a>
+                            <a href="requisitos-projeto.html" class="btn btn-secondary">
+                                <i class="fas fa-project-diagram"></i> Requisitos Projeto
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legenda de influência -->
+            <div id="influence-legend" class="card info-card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-info-circle"></i> Níveis de Influência</h3>
+                </div>
+                <div class="influence-levels">
+                    <div class="influence-level">
+                        <div class="influence-symbol level-1">1</div>
+                        <div class="influence-info">
+                            <h4>Influência Fraca</h4>
+                            <p>O requisito de projeto tem pouca influência no atendimento do requisito de cliente.</p>
+                        </div>
+                    </div>
+                    <div class="influence-level">
+                        <div class="influence-symbol level-3">3</div>
+                        <div class="influence-info">
+                            <h4>Influência Moderada</h4>
+                            <p>O requisito de projeto tem influência moderada no atendimento do requisito de cliente.</p>
+                        </div>
+                    </div>
+                    <div class="influence-level">
+                        <div class="influence-symbol level-5">5</div>
+                        <div class="influence-info">
+                            <h4>Influência Forte</h4>
+                            <p>O requisito de projeto tem forte influência no atendimento do requisito de cliente.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matriz QFD principal -->
+            <div id="qfd-section" class="card qfd-card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-home"></i> Casa da Qualidade
+                        <div class="qfd-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="resetMatrix()" title="Resetar todas as relações">
+                                <i class="fas fa-undo"></i> Resetar
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="autoFillSuggestions()" title="Sugestões automáticas baseadas em palavras-chave">
+                                <i class="fas fa-magic"></i> Sugestões
+                            </button>
+                            <button class="btn btn-sm btn-success" onclick="exportMatrix()" title="Exportar matriz completa">
+                                <i class="fas fa-download"></i> Exportar
+                            </button>
+                        </div>
+                    </h3>
+                </div>
+                
+                <div class="qfd-instructions">
+                    <h4><i class="fas fa-question-circle"></i> Como Preencher:</h4>
+                    <p><strong>Para cada célula da matriz:</strong> Clique para definir o nível de influência (1, 3 ou 5) que o requisito de projeto (coluna) tem sobre o requisito de cliente (linha). Deixe em branco se não houver influência significativa.</p>
+                </div>
+
+                <div class="qfd-container">
+                    <div class="qfd-matrix-wrapper">
+                        <div id="qfd-matrix" class="qfd-matrix">
+                            <!-- Matriz será gerada dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultados e análises -->
+            <div id="results-section" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Resultados da Análise QFD
+                    </h3>
+                </div>
+                
+                <div class="results-tabs">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="showTab('ranking')">
+                            <i class="fas fa-trophy"></i> Ranking
+                        </button>
+                        <button class="tab-btn" onclick="showTab('metrics')">
+                            <i class="fas fa-calculator"></i> Métricas
+                        </button>
+                        <button class="tab-btn" onclick="showTab('analysis')">
+                            <i class="fas fa-chart-line"></i> Análise
+                        </button>
+                    </div>
+                    
+                    <div class="tab-content">
+                        <div id="tab-ranking" class="tab-panel active">
+                            <div id="ranking-content">
+                                <!-- Ranking será gerado dinamicamente -->
+                            </div>
+                        </div>
+                        
+                        <div id="tab-metrics" class="tab-panel">
+                            <div id="metrics-content">
+                                <!-- Métricas serão geradas dinamicamente -->
+                            </div>
+                        </div>
+                        
+                        <div id="tab-analysis" class="tab-panel">
+                            <div id="analysis-content">
+                                <!-- Análise será gerada dinamicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dicas e orientações -->
+            <div class="card info-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-lightbulb"></i> Dicas para a Matriz QFD</h3>
+                </div>
+                <div class="tips-grid">
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-crosshairs"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Foque nas Relações Fortes</h4>
+                            <p>Nem toda célula precisa ser preenchida. Concentre-se nas relações mais significativas.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Seja Consistente</h4>
+                            <p>Use os mesmos critérios para avaliar todas as relações na matriz.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Perspectiva do Cliente</h4>
+                            <p>Avalie sempre do ponto de vista do cliente: "Este requisito técnico atende esta necessidade?"</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Use os Resultados</h4>
+                            <p>Os rankings calculados ajudam a priorizar esforços de desenvolvimento.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegação -->
+            <div class="page-navigation">
+                <a href="correlacao-projeto.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar: Correlação Projeto
+                </a>
+                <a href="relatorio.html" class="btn btn-primary" id="btn-proximo">
+                    Próximo: Relatório PDF <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+        </div>
+    </footer>
+
+    <script src="../js/database.js"></script>
+    <script src="../js/matriz-qfd.js"></script>
+</body>
+</html>
+

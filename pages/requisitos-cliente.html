@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requisitos de Cliente - Sistema QFD</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-users"></i> Requisitos de Cliente</h1>
+            <p>Defina o que o cliente deseja do produto</p>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="../index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="requisitos-cliente.html" class="active"><i class="fas fa-users"></i> Requisitos Cliente</a></li>
+                <li><a href="comparacao-cliente.html"><i class="fas fa-balance-scale"></i> Comparação Cliente</a></li>
+                <li><a href="requisitos-projeto.html"><i class="fas fa-project-diagram"></i> Requisitos Projeto</a></li>
+                <li><a href="correlacao-projeto.html"><i class="fas fa-network-wired"></i> Correlação Projeto</a></li>
+                <li><a href="matriz-qfd.html"><i class="fas fa-table"></i> Matriz QFD</a></li>
+                <li><a href="relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h2>Gerenciar Requisitos de Cliente</h2>
+                <p>Os requisitos de cliente representam as necessidades e desejos dos usuários finais. Eles devem ser descritos de forma clara e objetiva, focando no que o cliente espera do produto.</p>
+            </div>
+
+            <!-- Formulário para adicionar requisito -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-plus"></i> Adicionar Novo Requisito</h3>
+                </div>
+                <form id="form-requisito" class="requisito-form">
+                    <div class="form-group">
+                        <label for="descricao-requisito">Descrição do Requisito</label>
+                        <textarea 
+                            id="descricao-requisito" 
+                            class="form-control" 
+                            rows="3" 
+                            placeholder="Ex: O produto deve ser fácil de usar para pessoas idosas"
+                            required
+                        ></textarea>
+                        <small class="form-text">Descreva o requisito de forma clara e específica, focando na necessidade do cliente.</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Requisito
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                            <i class="fas fa-eraser"></i> Limpar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Lista de requisitos existentes -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-list"></i> Requisitos Cadastrados 
+                        <span class="badge" id="count-requisitos">0</span>
+                    </h3>
+                    <div class="card-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="exportRequisitos()">
+                            <i class="fas fa-download"></i> Exportar
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="clearAllRequisitos()">
+                            <i class="fas fa-trash"></i> Limpar Todos
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="lista-requisitos" class="requisitos-list">
+                    <!-- Requisitos serão carregados aqui via JavaScript -->
+                </div>
+                
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <div class="empty-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Nenhum requisito cadastrado</h3>
+                    <p>Comece adicionando o primeiro requisito de cliente usando o formulário acima.</p>
+                </div>
+            </div>
+
+            <!-- Dicas e orientações -->
+            <div class="card info-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-lightbulb"></i> Dicas para Requisitos de Cliente</h3>
+                </div>
+                <div class="tips-grid">
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-target"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Seja Específico</h4>
+                            <p>Evite termos vagos como "bom" ou "fácil". Use descrições mensuráveis quando possível.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Foque no Cliente</h4>
+                            <p>Descreva o que o cliente quer, não como o produto deve ser construído.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Priorize Depois</h4>
+                            <p>Adicione todos os requisitos primeiro. A priorização será feita na próxima etapa.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Use a Voz do Cliente</h4>
+                            <p>Quando possível, use as palavras exatas que o cliente utilizaria.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegação -->
+            <div class="page-navigation">
+                <a href="../index.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                </a>
+                <a href="comparacao-cliente.html" class="btn btn-primary" id="btn-proximo">
+                    Próximo: Comparação <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+        </div>
+    </footer>
+
+    <script src="../js/database.js"></script>
+    <script src="../js/requisitos-cliente.js"></script>
+</body>
+</html>
+

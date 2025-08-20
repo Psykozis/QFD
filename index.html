@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema QFD - Quality Function Deployment</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-cogs"></i> Sistema QFD</h1>
+            <p>Quality Function Deployment - Ferramenta para Engenheiros de Produto</p>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="pages/requisitos-cliente.html"><i class="fas fa-users"></i> Requisitos Cliente</a></li>
+                <li><a href="pages/comparacao-cliente.html"><i class="fas fa-balance-scale"></i> Comparação Cliente</a></li>
+                <li><a href="pages/requisitos-projeto.html"><i class="fas fa-project-diagram"></i> Requisitos Projeto</a></li>
+                <li><a href="pages/correlacao-projeto.html"><i class="fas fa-network-wired"></i> Correlação Projeto</a></li>
+                <li><a href="pages/matriz-qfd.html"><i class="fas fa-table"></i> Matriz QFD</a></li>
+                <li><a href="pages/relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="dashboard">
+                <h2>Dashboard do Projeto QFD</h2>
+                
+                <div class="progress-section">
+                    <h3>Progresso do Projeto</h3>
+                    <div class="progress-cards">
+                        <div class="progress-card" id="progress-cliente">
+                            <div class="card-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4>Requisitos de Cliente</h4>
+                                <p class="status" id="status-cliente">Não iniciado</p>
+                                <span class="count" id="count-cliente">0 requisitos</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-card" id="progress-comparacao">
+                            <div class="card-icon">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4>Comparação Cliente</h4>
+                                <p class="status" id="status-comparacao">Não iniciado</p>
+                                <span class="count" id="count-comparacao">0% completo</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-card" id="progress-projeto">
+                            <div class="card-icon">
+                                <i class="fas fa-project-diagram"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4>Requisitos de Projeto</h4>
+                                <p class="status" id="status-projeto">Não iniciado</p>
+                                <span class="count" id="count-projeto">0 requisitos</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-card" id="progress-correlacao">
+                            <div class="card-icon">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4>Correlação Projeto</h4>
+                                <p class="status" id="status-correlacao">Não iniciado</p>
+                                <span class="count" id="count-correlacao">0% completo</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-card" id="progress-qfd">
+                            <div class="card-icon">
+                                <i class="fas fa-table"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4>Matriz QFD</h4>
+                                <p class="status" id="status-qfd">Não iniciado</p>
+                                <span class="count" id="count-qfd">0% completo</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-card" id="progress-relatorio">
+                            <div class="card-icon">
+                                <i class="fas fa-file-pdf"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4>Relatório PDF</h4>
+                                <p class="status" id="status-relatorio">Não disponível</p>
+                                <span class="count" id="count-relatorio">Aguardando dados</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <h3>Ações Rápidas</h3>
+                    <div class="action-buttons">
+                        <a href="pages/requisitos-cliente.html" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Adicionar Requisitos de Cliente
+                        </a>
+                        <a href="pages/requisitos-projeto.html" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Adicionar Requisitos de Projeto
+                        </a>
+                        <button class="btn btn-danger" onclick="resetAllData()">
+                            <i class="fas fa-trash"></i> Limpar Todos os Dados
+                        </button>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3>Sobre o QFD</h3>
+                    <p>O Quality Function Deployment (QFD) é uma metodologia de desenvolvimento de produtos que traduz as necessidades dos clientes em características técnicas específicas. Este sistema guia você através de todas as etapas necessárias para criar uma matriz QFD completa.</p>
+                    
+                    <div class="steps-overview">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Requisitos de Cliente</h4>
+                                <p>Defina o que o cliente deseja do produto</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Comparação Par a Par</h4>
+                                <p>Hierarquize a importância dos requisitos</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Requisitos de Projeto</h4>
+                                <p>Defina as características técnicas</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>Correlação</h4>
+                                <p>Analise as relações entre requisitos técnicos</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">5</div>
+                            <div class="step-content">
+                                <h4>Matriz QFD</h4>
+                                <p>Relacione requisitos de cliente com projeto</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">6</div>
+                            <div class="step-content">
+                                <h4>Relatório</h4>
+                                <p>Gere o documento final em PDF</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+        </div>
+    </footer>
+
+    <script src="js/database.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
+

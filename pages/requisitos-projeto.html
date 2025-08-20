@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requisitos de Projeto - Sistema QFD</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-project-diagram"></i> Requisitos de Projeto</h1>
+            <p>Defina as características técnicas e mensuráveis do produto</p>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="../index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="requisitos-cliente.html"><i class="fas fa-users"></i> Requisitos Cliente</a></li>
+                <li><a href="comparacao-cliente.html"><i class="fas fa-balance-scale"></i> Comparação Cliente</a></li>
+                <li><a href="requisitos-projeto.html" class="active"><i class="fas fa-project-diagram"></i> Requisitos Projeto</a></li>
+                <li><a href="correlacao-projeto.html"><i class="fas fa-network-wired"></i> Correlação Projeto</a></li>
+                <li><a href="matriz-qfd.html"><i class="fas fa-table"></i> Matriz QFD</a></li>
+                <li><a href="relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h2>Gerenciar Requisitos de Projeto</h2>
+                <p>Os requisitos de projeto são características técnicas mensuráveis que definem como o produto será construído para atender às necessidades dos clientes. Cada requisito deve ter um sentido de melhoria claramente definido.</p>
+            </div>
+
+            <!-- Formulário para adicionar requisito -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-plus"></i> Adicionar Novo Requisito de Projeto</h3>
+                </div>
+                <form id="form-requisito-projeto" class="requisito-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="descricao-requisito">Descrição do Requisito Técnico</label>
+                            <textarea 
+                                id="descricao-requisito" 
+                                class="form-control" 
+                                rows="3" 
+                                placeholder="Ex: Tempo de resposta do sistema"
+                                required
+                            ></textarea>
+                            <small class="form-text">Descreva uma característica técnica mensurável do produto.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sentido-melhoria">Sentido da Melhoria</label>
+                            <select id="sentido-melhoria" class="form-control" required>
+                                <option value="">Selecione o sentido da melhoria</option>
+                                <option value="up">↑ Crescente (maior é melhor)</option>
+                                <option value="down">↓ Decrescente (menor é melhor)</option>
+                                <option value="none">* Nominal (valor específico é melhor)</option>
+                            </select>
+                            <small class="form-text">Indique se valores maiores, menores ou um valor específico representam melhoria.</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dificuldade-tecnica">Dificuldade Técnica</label>
+                            <select id="dificuldade-tecnica" class="form-control" required>
+                                <option value="">Selecione a dificuldade</option>
+                                <option value="1">1 - Muito Fácil</option>
+                                <option value="2">2 - Fácil</option>
+                                <option value="3">3 - Moderada</option>
+                                <option value="4">4 - Difícil</option>
+                                <option value="5">5 - Muito Difícil</option>
+                            </select>
+                            <small class="form-text">Avalie a dificuldade de implementação ou melhoria deste requisito.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Requisito
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                            <i class="fas fa-eraser"></i> Limpar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Lista de requisitos existentes -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-list"></i> Requisitos de Projeto Cadastrados 
+                        <span class="badge" id="count-requisitos">0</span>
+                    </h3>
+                    <div class="card-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="exportRequisitos()">
+                            <i class="fas fa-download"></i> Exportar
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="clearAllRequisitos()">
+                            <i class="fas fa-trash"></i> Limpar Todos
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="lista-requisitos" class="requisitos-list">
+                    <!-- Requisitos serão carregados aqui via JavaScript -->
+                </div>
+                
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <div class="empty-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h3>Nenhum requisito de projeto cadastrado</h3>
+                    <p>Comece adicionando o primeiro requisito técnico usando o formulário acima.</p>
+                </div>
+            </div>
+
+            <!-- Legenda dos sentidos de melhoria -->
+            <div class="card info-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-info-circle"></i> Sentidos de Melhoria</h3>
+                </div>
+                <div class="legend-grid">
+                    <div class="legend-item">
+                        <div class="legend-symbol up">↑</div>
+                        <div class="legend-content">
+                            <h4>Crescente</h4>
+                            <p>Valores maiores representam melhoria</p>
+                            <small>Ex: Velocidade, Capacidade, Eficiência</small>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol down">↓</div>
+                        <div class="legend-content">
+                            <h4>Decrescente</h4>
+                            <p>Valores menores representam melhoria</p>
+                            <small>Ex: Tempo de resposta, Peso, Custo</small>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol nominal">*</div>
+                        <div class="legend-content">
+                            <h4>Nominal</h4>
+                            <p>Um valor específico é o ideal</p>
+                            <small>Ex: Temperatura, pH, Dimensões</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dicas e orientações -->
+            <div class="card info-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-lightbulb"></i> Dicas para Requisitos de Projeto</h3>
+                </div>
+                <div class="tips-grid">
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-ruler"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Seja Mensurável</h4>
+                            <p>Use características que podem ser medidas objetivamente com unidades específicas.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Foque na Técnica</h4>
+                            <p>Descreva como o produto funciona, não o que o cliente quer.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-arrows-alt-v"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Defina a Direção</h4>
+                            <p>Sempre especifique se maior, menor ou um valor específico é melhor.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Considere a Implementação</h4>
+                            <p>Avalie realisticamente a dificuldade técnica de cada requisito.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegação -->
+            <div class="page-navigation">
+                <a href="comparacao-cliente.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar: Comparação Cliente
+                </a>
+                <a href="correlacao-projeto.html" class="btn btn-primary" id="btn-proximo">
+                    Próximo: Correlação <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+        </div>
+    </footer>
+
+    <script src="../js/database.js"></script>
+    <script src="../js/requisitos-projeto.js"></script>
+</body>
+</html>
+
