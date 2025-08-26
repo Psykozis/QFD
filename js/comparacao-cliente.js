@@ -51,6 +51,34 @@ function generateComparisonMatrix() {
     const matrixContainer = document.getElementById('comparison-matrix');
     if (!matrixContainer) return;
     
+    // Calcula os somatórios
+    const comparacoes = qfdDB.getComparacoesCliente();
+    const scores = {};
+    requisitos.forEach(req => {
+        scores[req.id] = { vence: 0, cessa: 0 };
+    });
+
+    comparacoes.forEach(comp => {
+        if (comp.valor > 0) {
+            scores[comp.requisito1].vence += comp.valor;
+            scores[comp.requisito2].cessa += comp.valor;
+        }
+    });
+
+    // Calcula os totais e ordena para o ranking
+    const ranking = Object.keys(scores).map(reqId => {
+        const total = scores[reqId].vence + scores[reqId].cessa;
+        return {
+            id: reqId,
+            total: total
+        };
+    }).sort((a, b) => b.total - a.total);
+
+    const rankMap = {};
+    ranking.forEach((item, index) => {
+        rankMap[item.id] = index + 1;
+    });
+
     let matrixHTML = '<div class="matrix-table">';
     
     // Cabeçalho da matriz
@@ -62,6 +90,11 @@ function generateComparisonMatrix() {
             <span class="req-number">${i + 1}</span>
         </div>`;
     }
+    // Células de somatório do cabeçalho
+    matrixHTML += '<div class="matrix-cell matrix-header-cell matrix-score-header">Vence</div>';
+    matrixHTML += '<div class="matrix-cell matrix-header-cell matrix-score-header">Cessa</div>';
+    matrixHTML += '<div class="matrix-cell matrix-header-cell matrix-score-header">Total</div>';
+    matrixHTML += '<div class="matrix-cell matrix-header-cell matrix-score-header">Rank</div>';
     matrixHTML += '</div>';
     
     // Linhas da matriz
@@ -97,6 +130,13 @@ function generateComparisonMatrix() {
             }
         }
         
+        // Células de somatório da linha
+        const reqId = requisitos[i].id;
+        matrixHTML += `<div class="matrix-cell matrix-score-cell">${scores[reqId].vence}</div>`;
+        matrixHTML += `<div class="matrix-cell matrix-score-cell">${scores[reqId].cessa}</div>`;
+        matrixHTML += `<div class="matrix-cell matrix-score-cell">${scores[reqId].vence + scores[reqId].cessa}</div>`;
+        matrixHTML += `<div class="matrix-cell matrix-score-cell rank-cell">${rankMap[reqId]}</div>`;
+        
         matrixHTML += '</div>';
     }
     
@@ -119,14 +159,8 @@ function generateComparisonMatrix() {
     matrixContainer.innerHTML = matrixHTML;
     
     // Adiciona event listeners para as células de comparação
-    const comparisonCells = matrixContainer.querySelectorAll('.matrix-comparison:not(.completed)');
+    const comparisonCells = matrixContainer.querySelectorAll('.matrix-comparison');
     comparisonCells.forEach(cell => {
-        cell.addEventListener('click', () => openComparisonModal(cell));
-    });
-    
-    // Event listeners para células já preenchidas (para editar)
-    const completedCells = matrixContainer.querySelectorAll('.matrix-comparison.completed');
-    completedCells.forEach(cell => {
         cell.addEventListener('click', () => openComparisonModal(cell));
     });
 }
@@ -134,7 +168,6 @@ function generateComparisonMatrix() {
 function getComparisonDisplay(comparison, i, j) {
     if (comparison === 0) return '<span class="comparison-placeholder">?</span>';
     
-    // Determina qual requisito "ganhou" e com que intensidade
     const req1Id = requisitos[i].id;
     const req2Id = requisitos[j].id;
     const storedComparison = qfdDB.getComparacoesCliente().find(
@@ -142,7 +175,7 @@ function getComparisonDisplay(comparison, i, j) {
              (c.requisito1 === req2Id && c.requisito2 === req1Id)
     );
     
-    if (!storedComparison) return '<span class="comparison-placeholder">?</span>';
+    if (!storedComparison || storedComparison.valor === 0) return '<span class="comparison-placeholder">?</span>';
     
     let winnerIndex, value;
     if (storedComparison.requisito1 === req1Id) {
@@ -150,6 +183,7 @@ function getComparisonDisplay(comparison, i, j) {
         value = storedComparison.valor;
     } else {
         winnerIndex = j;
+        // Inverte o valor para o espelhamento da matriz
         value = storedComparison.valor === 1 ? 5 : storedComparison.valor === 5 ? 1 : storedComparison.valor;
     }
     
@@ -168,7 +202,9 @@ function openComparisonModal(cell) {
     const req1 = requisitos[i];
     const req2 = requisitos[j];
     
-    const currentComparison = qfdDB.getComparacaoCliente(req1Id, req2Id);
+    const currentComparison = qfdDB.getComparacoesCliente().find(
+        c => (c.requisito1 === req1Id && c.requisito2 === req2Id) || (c.requisito1 === req2Id && c.requisito2 === req1Id)
+    );
     
     // Cria modal
     const modal = document.createElement('div');
@@ -229,11 +265,11 @@ function openComparisonModal(cell) {
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Cancelar (Esc)</button>
                 <button class="btn btn-primary" id="save-comparison" onclick="saveComparison()" disabled>
-                    Salvar Comparação
+                    Salvar Comparação (Enter)
                 </button>
-                ${currentComparison > 0 ? '<button class="btn btn-danger" onclick="removeComparison()">Remover</button>' : ''}
+                ${currentComparison && currentComparison.valor > 0 ? '<button class="btn btn-danger" onclick="removeComparison()">Remover</button>' : ''}
             </div>
         </div>
     `;
@@ -252,23 +288,16 @@ function setupModalEventListeners(req1Id, req2Id, i, j, currentComparison) {
     let selectedValue = null;
     
     // Se já existe comparação, pré-seleciona
-    if (currentComparison > 0) {
-        const storedComparison = qfdDB.getComparacoesCliente().find(
-            c => (c.requisito1 === req1Id && c.requisito2 === req2Id) ||
-                 (c.requisito1 === req2Id && c.requisito2 === req1Id)
-        );
-        
-        if (storedComparison) {
-            if (storedComparison.requisito1 === req1Id) {
-                selectedReq = req1Id;
-                selectedValue = storedComparison.valor;
-            } else {
-                selectedReq = req2Id;
-                selectedValue = storedComparison.valor === 1 ? 5 : storedComparison.valor === 5 ? 1 : storedComparison.valor;
-            }
-            
-            updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j);
+    if (currentComparison && currentComparison.valor > 0) {
+        if (currentComparison.requisito1 === req1Id) {
+            selectedReq = req1Id;
+            selectedValue = currentComparison.valor;
+        } else {
+            selectedReq = req2Id;
+            selectedValue = currentComparison.valor === 1 ? 5 : currentComparison.valor === 5 ? 1 : currentComparison.valor;
         }
+        updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j);
+        document.getElementById('save-comparison').disabled = false;
     }
     
     // Event listeners para seleção de requisito
@@ -281,11 +310,11 @@ function setupModalEventListeners(req1Id, req2Id, i, j, currentComparison) {
             
             document.getElementById('importance-levels').style.display = 'block';
             
-            // Remove seleção anterior de nível
-            document.querySelectorAll('.level-btn').forEach(btn => btn.classList.remove('selected'));
-            selectedValue = null;
-            document.getElementById('save-comparison').disabled = true;
-            document.getElementById('current-selection').style.display = 'none';
+            // Re-avalia o botão de salvar
+            if (selectedReq && selectedValue) {
+                document.getElementById('save-comparison').disabled = false;
+                updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j);
+            }
         });
     });
     
@@ -297,14 +326,55 @@ function setupModalEventListeners(req1Id, req2Id, i, j, currentComparison) {
             btn.classList.add('selected');
             selectedValue = parseInt(btn.dataset.value);
             
-            updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j);
-            document.getElementById('save-comparison').disabled = false;
+            if (selectedReq && selectedValue) {
+                document.getElementById('save-comparison').disabled = false;
+                updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j);
+            }
         });
     });
+
+    // Atalhos de teclado
+    document.addEventListener('keydown', handleKeyShortcuts);
+    function handleKeyShortcuts(e) {
+        if (!document.querySelector('.modal-overlay')) {
+            document.removeEventListener('keydown', handleKeyShortcuts);
+            return;
+        }
+        
+        switch (e.key) {
+            case 'a':
+            case 'A':
+                reqOptions[0].click();
+                break;
+            case 'b':
+            case 'B':
+                reqOptions[1].click();
+                break;
+            case '1':
+                levelBtns[0].click();
+                break;
+            case '3':
+                levelBtns[1].click();
+                break;
+            case '5':
+                levelBtns[2].click();
+                break;
+            case 'Enter':
+                if (!document.getElementById('save-comparison').disabled) {
+                    e.preventDefault();
+                    saveComparison();
+                }
+                break;
+            case 'Escape':
+                e.preventDefault();
+                closeModal();
+                break;
+        }
+    }
     
     // Salva referências globais para uso nas funções de callback
     window.currentComparisonData = {
-        req1Id, req2Id, selectedReq, selectedValue
+        req1Id, req2Id, selectedReq, selectedValue, i, j
     };
 }
 
@@ -344,7 +414,7 @@ function updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j) 
     
     // Atualiza dados globais
     window.currentComparisonData = {
-        req1Id, req2Id, selectedReq, selectedValue
+        req1Id, req2Id, selectedReq, selectedValue, i, j
     };
 }
 
@@ -353,7 +423,6 @@ function saveComparison() {
     if (!data || !data.selectedReq || !data.selectedValue) return;
     
     try {
-        // Determina qual requisito é o "vencedor" e salva a comparação
         if (data.selectedReq === data.req1Id) {
             qfdDB.setComparacaoCliente(data.req1Id, data.req2Id, data.selectedValue);
         } else {
@@ -1030,6 +1099,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 border: 1px solid #dee2e6;
                 border-radius: 8px;
                 margin-bottom: 1.5rem;
+                display: flex;
+                flex-direction: column;
             }
             
             .matrix-row {
@@ -1047,6 +1118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 justify-content: center;
                 text-align: center;
                 font-size: 0.9rem;
+                flex-shrink: 0;
             }
             
             .matrix-corner {
@@ -1058,6 +1130,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 background: #667eea;
                 color: white;
                 font-weight: bold;
+            }
+
+            .matrix-score-header {
+                font-size: 0.8rem;
+                min-width: 45px;
             }
             
             .matrix-row-header {
@@ -1143,6 +1220,17 @@ document.addEventListener('DOMContentLoaded', function() {
             .value-indicator {
                 font-weight: bold;
                 font-size: 0.8rem;
+            }
+            
+            .matrix-score-cell {
+                background: #f1f3f5;
+                font-weight: bold;
+                min-width: 45px;
+            }
+
+            .rank-cell {
+                background: #e8f5e8;
+                border-color: #28a745;
             }
             
             .matrix-legend {
@@ -1316,4 +1404,3 @@ document.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(styles);
     }
 });
-
