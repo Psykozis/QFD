@@ -1,6 +1,6 @@
 /**
- * JavaScript para Página de Comparação de Requisitos de Cliente
- * Implementa o Diagrama de Mudge para hierarquização
+ * JavaScript para Página de Comparação de Requisitos de Cliente - Versão Modificada
+ * Implementa o Diagrama de Mudge para hierarquização com melhorias
  */
 
 let requisitos = [];
@@ -11,7 +11,27 @@ document.addEventListener('DOMContentLoaded', function() {
     loadRequisitos();
     setupComparison();
     updateStatus();
+    setupDropdownMenu();
 });
+
+function setupDropdownMenu() {
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+    const dropdownMenu = document.querySelector('.dropdown-menu');
+    
+    if (dropdownToggle && dropdownMenu) {
+        dropdownToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            dropdownMenu.classList.toggle('show');
+        });
+        
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.nav-dropdown')) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+    }
+}
 
 function loadRequisitos() {
     requisitos = qfdDB.getRequisitosCliente();
@@ -51,60 +71,51 @@ function generateComparisonMatrix() {
     const matrixContainer = document.getElementById('comparison-matrix');
     if (!matrixContainer) return;
     
-    // Calcula os somatórios
-    const comparacoes = qfdDB.getComparacoesCliente();
-    const scores = {};
-    requisitos.forEach(req => {
-        scores[req.id] = { vence: 0, cessa: 0 };
-    });
-
-    comparacoes.forEach(comp => {
-        if (comp.valor > 0) {
-            scores[comp.requisito1].vence += comp.valor;
-            scores[comp.requisito2].cessa += comp.valor;
-        }
-    });
-
-    // Calcula os totais e ordena para o ranking
-    const ranking = Object.keys(scores).map(reqId => {
-        const total = scores[reqId].vence + scores[reqId].cessa;
-        return {
-            id: reqId,
-            total: total
-        };
-    }).sort((a, b) => b.total - a.total);
-
-    const rankMap = {};
-    ranking.forEach((item, index) => {
-        rankMap[item.id] = index + 1;
-    });
-
-    let matrixHTML = '<div class="matrix-table">';
+    // Calcula somatórios para cada requisito
+    const somatorios = calculateSummaries();
     
-    // Cabeçalho da matriz
+    let matrixHTML = '<div class="matrix-table-wrapper">';
+    matrixHTML += '<div class="matrix-table">';
+    
+    // Cabeçalho da matriz com somatórios
     matrixHTML += '<div class="matrix-row matrix-header">';
-    matrixHTML += '<div class="matrix-cell matrix-corner"></div>';
+    matrixHTML += '<div class="matrix-cell matrix-corner">Req.</div>';
     
     for (let i = 0; i < requisitos.length; i++) {
-        matrixHTML += `<div class="matrix-cell matrix-header-cell" title="${escapeHtml(requisitos[i].descricao)}">
-            <span class="req-number">${i + 1}</span>
+        const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}`;
+        matrixHTML += `<div class="matrix-cell matrix-header-cell" 
+            title="${tooltipText}"
+            data-tooltip="${tooltipText}">
+            <div class="header-content">
+                <span class="req-number">${i + 1}</span>
+                <span class="req-summary">${somatorios.colunas[i] || 0}</span>
+            </div>
         </div>`;
     }
-    // Células de somatório do cabeçalho
-    matrixHTML += '<div class="matrix-cell matrix-header-cell matrix-score-header">Vence</div>';
-    matrixHTML += '<div class="matrix-cell matrix-header-cell matrix-score-header">Cessa</div>';
-    matrixHTML += '<div class="matrix-cell matrix-header-cell matrix-score-header">Total</div>';
-    matrixHTML += '<div class="matrix-cell matrix-header-cell matrix-score-header">Rank</div>';
+    
+    // Célula de somatório total no canto superior direito
+    matrixHTML += `<div class="matrix-cell matrix-total-header">
+        <div class="total-content">
+            <span class="total-label">Total</span>
+            <span class="total-value">${somatorios.total}</span>
+        </div>
+    </div>`;
+    
     matrixHTML += '</div>';
     
-    // Linhas da matriz
+    // Linhas da matriz com somatórios
     for (let i = 0; i < requisitos.length; i++) {
         matrixHTML += '<div class="matrix-row">';
         
-        // Cabeçalho da linha
-        matrixHTML += `<div class="matrix-cell matrix-row-header" title="${escapeHtml(requisitos[i].descricao)}">
-            <span class="req-number">${i + 1}</span>
-            <span class="req-text">${truncateText(requisitos[i].descricao, 30)}</span>
+        // Cabeçalho da linha com tooltip
+        const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}`;
+        matrixHTML += `<div class="matrix-cell matrix-row-header" 
+            title="${tooltipText}"
+            data-tooltip="${tooltipText}">
+            <div class="row-header-content">
+                <span class="req-number">${i + 1}</span>
+                <span class="req-text">${truncateText(requisitos[i].descricao, 25)}</span>
+            </div>
         </div>`;
         
         // Células de comparação
@@ -117,11 +128,19 @@ function generateComparisonMatrix() {
                 const comparison = qfdDB.getComparacaoCliente(requisitos[i].id, requisitos[j].id);
                 const isCompleted = comparison > 0;
                 
+                const req1 = requisitos[i];
+                const req2 = requisitos[j];
+                const cellTooltip = `Comparação entre:<br>
+                    <strong>Req ${i + 1}:</strong> ${escapeHtml(req1.descricao.substring(0, 50))}${req1.descricao.length > 50 ? '...' : ''}<br>
+                    <strong>Req ${j + 1}:</strong> ${escapeHtml(req2.descricao.substring(0, 50))}${req2.descricao.length > 50 ? '...' : ''}<br>
+                    <em>Clique para comparar</em>`;
+                
                 matrixHTML += `<div class="matrix-cell matrix-comparison ${isCompleted ? 'completed' : ''}" 
                     data-req1="${requisitos[i].id}" 
                     data-req2="${requisitos[j].id}"
                     data-i="${i}" 
-                    data-j="${j}">
+                    data-j="${j}"
+                    data-tooltip="${cellTooltip}">
                     ${isCompleted ? getComparisonDisplay(comparison, i, j) : '<span class="comparison-placeholder">?</span>'}
                 </div>`;
             } else {
@@ -130,17 +149,34 @@ function generateComparisonMatrix() {
             }
         }
         
-        // Células de somatório da linha
-        const reqId = requisitos[i].id;
-        matrixHTML += `<div class="matrix-cell matrix-score-cell">${scores[reqId].vence}</div>`;
-        matrixHTML += `<div class="matrix-cell matrix-score-cell">${scores[reqId].cessa}</div>`;
-        matrixHTML += `<div class="matrix-cell matrix-score-cell">${scores[reqId].vence + scores[reqId].cessa}</div>`;
-        matrixHTML += `<div class="matrix-cell matrix-score-cell rank-cell">${rankMap[reqId]}</div>`;
+        // Célula de somatório da linha
+        matrixHTML += `<div class="matrix-cell matrix-row-total">
+            <div class="row-total-content">
+                <span class="total-value">${somatorios.linhas[i] || 0}</span>
+            </div>
+        </div>`;
         
         matrixHTML += '</div>';
     }
     
+    // Linha de somatórios das colunas
+    matrixHTML += '<div class="matrix-row matrix-column-totals">';
+    matrixHTML += '<div class="matrix-cell matrix-total-label">Total</div>';
+    
+    for (let j = 0; j < requisitos.length; j++) {
+        matrixHTML += `<div class="matrix-cell matrix-column-total">
+            <span class="total-value">${somatorios.colunas[j] || 0}</span>
+        </div>`;
+    }
+    
+    // Célula de somatório geral
+    matrixHTML += `<div class="matrix-cell matrix-grand-total">
+        <span class="grand-total-value">${somatorios.total}</span>
+    </div>`;
+    
     matrixHTML += '</div>';
+    matrixHTML += '</div>'; // Fecha matrix-table
+    matrixHTML += '</div>'; // Fecha matrix-table-wrapper
     
     // Legenda dos requisitos
     matrixHTML += '<div class="matrix-legend">';
@@ -151,6 +187,7 @@ function generateComparisonMatrix() {
         matrixHTML += `<div class="legend-item">
             <span class="legend-number">${i + 1}</span>
             <span class="legend-text">${escapeHtml(requisitos[i].descricao)}</span>
+            <span class="legend-score">Vitórias: ${somatorios.linhas[i] || 0}</span>
         </div>`;
     }
     
@@ -162,12 +199,85 @@ function generateComparisonMatrix() {
     const comparisonCells = matrixContainer.querySelectorAll('.matrix-comparison');
     comparisonCells.forEach(cell => {
         cell.addEventListener('click', () => openComparisonModal(cell));
+        
+        // Adiciona hover tooltip
+        cell.addEventListener('mouseenter', showTooltip);
+        cell.addEventListener('mouseleave', hideTooltip);
     });
+    
+    // Adiciona tooltips para cabeçalhos
+    const headerCells = matrixContainer.querySelectorAll('.matrix-header-cell, .matrix-row-header');
+    headerCells.forEach(cell => {
+        cell.addEventListener('mouseenter', showTooltip);
+        cell.addEventListener('mouseleave', hideTooltip);
+    });
+}
+
+function calculateSummaries() {
+    const linhas = new Array(requisitos.length).fill(0);
+    const colunas = new Array(requisitos.length).fill(0);
+    let total = 0;
+    
+    const comparacoes = qfdDB.getComparacoesCliente();
+    
+    comparacoes.forEach(comp => {
+        if (comp.valor > 0) {
+            // Encontra os índices dos requisitos
+            const req1Index = requisitos.findIndex(r => r.id === comp.requisito1);
+            const req2Index = requisitos.findIndex(r => r.id === comp.requisito2);
+            
+            if (req1Index !== -1 && req2Index !== -1) {
+                // O requisito1 sempre "vence" na estrutura de dados
+                linhas[req1Index] += comp.valor;
+                colunas[req2Index] += comp.valor;
+                total += comp.valor;
+            }
+        }
+    });
+    
+    return { linhas, colunas, total };
+}
+
+function showTooltip(e) {
+    const tooltipText = e.target.closest('[data-tooltip]').getAttribute('data-tooltip');
+    if (!tooltipText) return;
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'custom-tooltip';
+    tooltip.innerHTML = tooltipText;
+    document.body.appendChild(tooltip);
+    
+    const rect = e.target.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    let top = rect.top - tooltipRect.height - 10;
+    
+    // Ajusta posição se sair da tela
+    if (left < 10) left = 10;
+    if (left + tooltipRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - tooltipRect.width - 10;
+    }
+    if (top < 10) {
+        top = rect.bottom + 10;
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    tooltip.style.opacity = '1';
+}
+
+function hideTooltip() {
+    const tooltip = document.querySelector('.custom-tooltip');
+    if (tooltip) {
+        tooltip.remove();
+    }
 }
 
 function getComparisonDisplay(comparison, i, j) {
     if (comparison === 0) return '<span class="comparison-placeholder">?</span>';
     
+    // Determina qual requisito "ganhou" e com que intensidade
     const req1Id = requisitos[i].id;
     const req2Id = requisitos[j].id;
     const storedComparison = qfdDB.getComparacoesCliente().find(
@@ -175,7 +285,7 @@ function getComparisonDisplay(comparison, i, j) {
              (c.requisito1 === req2Id && c.requisito2 === req1Id)
     );
     
-    if (!storedComparison || storedComparison.valor === 0) return '<span class="comparison-placeholder">?</span>';
+    if (!storedComparison) return '<span class="comparison-placeholder">?</span>';
     
     let winnerIndex, value;
     if (storedComparison.requisito1 === req1Id) {
@@ -183,8 +293,8 @@ function getComparisonDisplay(comparison, i, j) {
         value = storedComparison.valor;
     } else {
         winnerIndex = j;
-        // Inverte o valor para o espelhamento da matriz
-        value = storedComparison.valor === 1 ? 5 : storedComparison.valor === 5 ? 1 : storedComparison.valor;
+        // Inverte o valor para mostrar corretamente na matriz triangular superior
+        value = storedComparison.valor;
     }
     
     return `<div class="comparison-result">
@@ -202,9 +312,7 @@ function openComparisonModal(cell) {
     const req1 = requisitos[i];
     const req2 = requisitos[j];
     
-    const currentComparison = qfdDB.getComparacoesCliente().find(
-        c => (c.requisito1 === req1Id && c.requisito2 === req2Id) || (c.requisito1 === req2Id && c.requisito2 === req1Id)
-    );
+    const currentComparison = qfdDB.getComparacaoCliente(req1Id, req2Id);
     
     // Cria modal
     const modal = document.createElement('div');
@@ -265,11 +373,11 @@ function openComparisonModal(cell) {
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal()">Cancelar (Esc)</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
                 <button class="btn btn-primary" id="save-comparison" onclick="saveComparison()" disabled>
-                    Salvar Comparação (Enter)
+                    Salvar Comparação
                 </button>
-                ${currentComparison && currentComparison.valor > 0 ? '<button class="btn btn-danger" onclick="removeComparison()">Remover</button>' : ''}
+                ${currentComparison > 0 ? '<button class="btn btn-danger" onclick="removeComparison()">Remover</button>' : ''}
             </div>
         </div>
     `;
@@ -288,16 +396,19 @@ function setupModalEventListeners(req1Id, req2Id, i, j, currentComparison) {
     let selectedValue = null;
     
     // Se já existe comparação, pré-seleciona
-    if (currentComparison && currentComparison.valor > 0) {
-        if (currentComparison.requisito1 === req1Id) {
-            selectedReq = req1Id;
-            selectedValue = currentComparison.valor;
-        } else {
-            selectedReq = req2Id;
-            selectedValue = currentComparison.valor === 1 ? 5 : currentComparison.valor === 5 ? 1 : currentComparison.valor;
+    if (currentComparison > 0) {
+        const storedComparison = qfdDB.getComparacoesCliente().find(
+            c => (c.requisito1 === req1Id && c.requisito2 === req2Id) ||
+                 (c.requisito1 === req2Id && c.requisito2 === req1Id)
+        );
+        
+        if (storedComparison) {
+            // Corrige a lógica de pré-seleção
+            selectedReq = storedComparison.requisito1;
+            selectedValue = storedComparison.valor;
+            
+            updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j);
         }
-        updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j);
-        document.getElementById('save-comparison').disabled = false;
     }
     
     // Event listeners para seleção de requisito
@@ -310,11 +421,11 @@ function setupModalEventListeners(req1Id, req2Id, i, j, currentComparison) {
             
             document.getElementById('importance-levels').style.display = 'block';
             
-            // Re-avalia o botão de salvar
-            if (selectedReq && selectedValue) {
-                document.getElementById('save-comparison').disabled = false;
-                updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j);
-            }
+            // Remove seleção anterior de nível
+            document.querySelectorAll('.level-btn').forEach(btn => btn.classList.remove('selected'));
+            selectedValue = null;
+            document.getElementById('save-comparison').disabled = true;
+            document.getElementById('current-selection').style.display = 'none';
         });
     });
     
@@ -326,55 +437,14 @@ function setupModalEventListeners(req1Id, req2Id, i, j, currentComparison) {
             btn.classList.add('selected');
             selectedValue = parseInt(btn.dataset.value);
             
-            if (selectedReq && selectedValue) {
-                document.getElementById('save-comparison').disabled = false;
-                updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j);
-            }
+            updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j);
+            document.getElementById('save-comparison').disabled = false;
         });
     });
-
-    // Atalhos de teclado
-    document.addEventListener('keydown', handleKeyShortcuts);
-    function handleKeyShortcuts(e) {
-        if (!document.querySelector('.modal-overlay')) {
-            document.removeEventListener('keydown', handleKeyShortcuts);
-            return;
-        }
-        
-        switch (e.key) {
-            case 'a':
-            case 'A':
-                reqOptions[0].click();
-                break;
-            case 'b':
-            case 'B':
-                reqOptions[1].click();
-                break;
-            case '1':
-                levelBtns[0].click();
-                break;
-            case '3':
-                levelBtns[1].click();
-                break;
-            case '5':
-                levelBtns[2].click();
-                break;
-            case 'Enter':
-                if (!document.getElementById('save-comparison').disabled) {
-                    e.preventDefault();
-                    saveComparison();
-                }
-                break;
-            case 'Escape':
-                e.preventDefault();
-                closeModal();
-                break;
-        }
-    }
     
     // Salva referências globais para uso nas funções de callback
     window.currentComparisonData = {
-        req1Id, req2Id, selectedReq, selectedValue, i, j
+        req1Id, req2Id, selectedReq, selectedValue
     };
 }
 
@@ -414,7 +484,7 @@ function updateModalSelection(selectedReq, selectedValue, req1Id, req2Id, i, j) 
     
     // Atualiza dados globais
     window.currentComparisonData = {
-        req1Id, req2Id, selectedReq, selectedValue, i, j
+        req1Id, req2Id, selectedReq, selectedValue
     };
 }
 
@@ -423,11 +493,10 @@ function saveComparison() {
     if (!data || !data.selectedReq || !data.selectedValue) return;
     
     try {
-        if (data.selectedReq === data.req1Id) {
-            qfdDB.setComparacaoCliente(data.req1Id, data.req2Id, data.selectedValue);
-        } else {
-            qfdDB.setComparacaoCliente(data.req2Id, data.req1Id, data.selectedValue);
-        }
+        // Sempre salva com o requisito selecionado como "vencedor" (requisito1)
+        qfdDB.setComparacaoCliente(data.selectedReq, 
+            data.selectedReq === data.req1Id ? data.req2Id : data.req1Id, 
+            data.selectedValue);
         
         closeModal();
         loadRequisitos();
@@ -510,62 +579,69 @@ function showResults() {
     
     resultsSection.style.display = 'block';
     
-    // Carrega requisitos atualizados com importância calculada
-    const requisitosAtualizados = qfdDB.getRequisitosCliente();
-    
-    // Ordena por importância (decrescente)
-    const requisitosOrdenados = [...requisitosAtualizados].sort((a, b) => b.importancia - a.importancia);
-    
-    generateRankingList(requisitosOrdenados);
-    generateImportanceChart(requisitosOrdenados);
+    generateRanking();
+    generateChart();
 }
 
-function generateRankingList(requisitosOrdenados) {
-    const rankingList = document.getElementById('ranking-list');
-    if (!rankingList) return;
+function generateRanking() {
+    const rankingContainer = document.getElementById('ranking-list');
+    if (!rankingContainer) return;
     
-    const rankingHTML = requisitosOrdenados.map((req, index) => `
-        <div class="ranking-item">
-            <div class="ranking-position">
-                <span class="position-number">${index + 1}</span>
-                ${index === 0 ? '<i class="fas fa-crown crown-icon"></i>' : ''}
-            </div>
-            <div class="ranking-content">
-                <div class="ranking-description">${escapeHtml(req.descricao)}</div>
-                <div class="ranking-metrics">
-                    <span class="metric">
-                        <i class="fas fa-star"></i>
-                        Pontuação: <strong>${req.importancia.toFixed(1)}</strong>
-                    </span>
-                    <span class="metric">
-                        <i class="fas fa-percentage"></i>
-                        Peso: <strong>${(req.peso * 100).toFixed(1)}%</strong>
-                    </span>
+    const requisitosOrdenados = qfdDB.getRequisitosCliente()
+        .sort((a, b) => b.importancia - a.importancia);
+    
+    let rankingHTML = '<div class="ranking-items">';
+    
+    requisitosOrdenados.forEach((req, index) => {
+        const posicao = index + 1;
+        const medalClass = posicao <= 3 ? `medal-${posicao}` : '';
+        
+        rankingHTML += `
+            <div class="ranking-item ${medalClass}">
+                <div class="ranking-position">
+                    <span class="position-number">${posicao}</span>
+                    ${posicao <= 3 ? `<i class="fas fa-medal"></i>` : ''}
+                </div>
+                <div class="ranking-content">
+                    <div class="req-description">${escapeHtml(req.descricao)}</div>
+                    <div class="req-metrics">
+                        <span class="metric">
+                            <i class="fas fa-trophy"></i>
+                            Pontuação: <strong>${req.importancia.toFixed(1)}</strong>
+                        </span>
+                        <span class="metric">
+                            <i class="fas fa-percentage"></i>
+                            Peso: <strong>${(req.peso * 100).toFixed(1)}%</strong>
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    });
     
-    rankingList.innerHTML = rankingHTML;
+    rankingHTML += '</div>';
+    rankingContainer.innerHTML = rankingHTML;
 }
 
-function generateImportanceChart(requisitosOrdenados) {
+function generateChart() {
     const canvas = document.getElementById('importance-chart');
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-    
-    // Limpa canvas
-    ctx.clearRect(0, 0, width, height);
+    const requisitosOrdenados = qfdDB.getRequisitosCliente()
+        .sort((a, b) => b.importancia - a.importancia);
     
     if (requisitosOrdenados.length === 0) return;
     
-    // Configurações do gráfico
+    // Limpa o canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const width = canvas.width;
+    const height = canvas.height;
     const margin = 40;
     const chartWidth = width - 2 * margin;
-    const chartHeight = height - 2 * margin;
+    const chartHeight = height - 2 * margin - 40; // Espaço extra para labels
+    
     const barWidth = chartWidth / requisitosOrdenados.length;
     const maxImportancia = Math.max(...requisitosOrdenados.map(r => r.importancia));
     
@@ -725,6 +801,310 @@ function addModalStyles() {
     const styles = document.createElement('style');
     styles.id = 'comparison-modal-styles';
     styles.textContent = `
+        /* Dropdown Menu Styles */
+        .nav-dropdown {
+            position: relative;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .dropdown-menu li {
+            list-style: none;
+        }
+        
+        .dropdown-menu a {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #555;
+            text-decoration: none;
+            border-bottom: none;
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown-menu a:hover,
+        .dropdown-menu a.active {
+            background: #f8f9ff;
+            color: #667eea;
+        }
+        
+        .dropdown-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .dropdown-toggle .fa-chevron-down {
+            transition: transform 0.3s ease;
+        }
+        
+        .dropdown-menu.show + .dropdown-toggle .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+        
+        /* Custom Tooltip */
+        .custom-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            max-width: 300px;
+            z-index: 3000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .custom-tooltip::before {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+        }
+        
+        /* Matrix Styles with Fixed Header */
+        .comparison-matrix-container {
+            overflow: auto;
+            max-height: 70vh;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+        
+        .matrix-table-wrapper {
+            position: relative;
+            min-width: max-content;
+        }
+        
+        .matrix-table {
+            display: table;
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+        
+        .matrix-row {
+            display: table-row;
+        }
+        
+        .matrix-cell {
+            display: table-cell;
+            border: 1px solid #e9ecef;
+            padding: 0.5rem;
+            text-align: center;
+            vertical-align: middle;
+            min-width: 60px;
+            height: 60px;
+            position: relative;
+        }
+        
+        .matrix-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #f8f9fa;
+        }
+        
+        .matrix-corner,
+        .matrix-total-header {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 11;
+        }
+        
+        .matrix-header-cell {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            cursor: help;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .matrix-row-header {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            cursor: help;
+            position: sticky;
+            left: 0;
+            z-index: 9;
+            min-width: 120px;
+            max-width: 120px;
+        }
+        
+        .header-content,
+        .row-header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .req-number {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .req-summary,
+        .req-text {
+            font-size: 0.7rem;
+            opacity: 0.9;
+        }
+        
+        .matrix-diagonal {
+            background: #f8f9fa;
+            color: #6c757d;
+            font-weight: bold;
+        }
+        
+        .matrix-comparison {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .matrix-comparison:hover {
+            background: #f8f9ff;
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .matrix-comparison.completed {
+            background: #e8f5e8;
+            border-color: #28a745;
+        }
+        
+        .comparison-result {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .winner-indicator {
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        .value-indicator {
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        
+        .value-indicator.value-1 {
+            color: #28a745;
+        }
+        
+        .value-indicator.value-3 {
+            color: #ffc107;
+        }
+        
+        .value-indicator.value-5 {
+            color: #dc3545;
+        }
+        
+        .comparison-placeholder {
+            color: #6c757d;
+            font-size: 1.2rem;
+        }
+        
+        .matrix-mirror {
+            background: #f8f9fa;
+        }
+        
+        .matrix-row-total,
+        .matrix-column-total {
+            background: #e3f2fd;
+            font-weight: bold;
+            color: #1976d2;
+        }
+        
+        .matrix-total-label {
+            background: #1976d2;
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            left: 0;
+            z-index: 9;
+        }
+        
+        .matrix-grand-total {
+            background: #1976d2;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .matrix-column-totals {
+            position: sticky;
+            bottom: 0;
+            z-index: 8;
+        }
+        
+        .total-content,
+        .row-total-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .total-label {
+            font-size: 0.7rem;
+            opacity: 0.9;
+        }
+        
+        .total-value,
+        .grand-total-value {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        
+        /* Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -827,7 +1207,7 @@ function addModalStyles() {
             margin-bottom: 0.5rem;
         }
         
-        .req-number {
+        .requirement-option .req-number {
             background: #667eea;
             color: white;
             width: 24px;
@@ -934,6 +1314,63 @@ function addModalStyles() {
             border-top: 1px solid #e9ecef;
         }
         
+        /* Legend Styles */
+        .matrix-legend {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .matrix-legend h4 {
+            margin: 0 0 1rem 0;
+            color: #333;
+        }
+        
+        .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 0.5rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .legend-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .legend-text {
+            flex: 1;
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+        
+        .legend-score {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
         @media (max-width: 768px) {
             .requirements-comparison {
                 flex-direction: column;
@@ -949,6 +1386,29 @@ function addModalStyles() {
             
             .level-btn {
                 max-width: none;
+            }
+            
+            .dropdown-menu {
+                position: fixed;
+                top: auto;
+                left: 10px;
+                right: 10px;
+                width: auto;
+            }
+            
+            .matrix-cell {
+                min-width: 50px;
+                height: 50px;
+                padding: 0.25rem;
+            }
+            
+            .matrix-row-header {
+                min-width: 100px;
+                max-width: 100px;
+            }
+            
+            .legend-items {
+                grid-template-columns: 1fr;
             }
         }
     `;
@@ -1094,194 +1554,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 background: #dc3545;
             }
             
-            .matrix-table {
-                overflow-x: auto;
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-                margin-bottom: 1.5rem;
-                display: flex;
-                flex-direction: column;
-            }
-            
-            .matrix-row {
-                display: flex;
-                min-width: fit-content;
-            }
-            
-            .matrix-cell {
-                border: 1px solid #dee2e6;
-                padding: 0.5rem;
-                min-width: 60px;
-                min-height: 60px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                font-size: 0.9rem;
-                flex-shrink: 0;
-            }
-            
-            .matrix-corner {
-                background: #f8f9fa;
-                font-weight: bold;
-            }
-            
-            .matrix-header-cell {
-                background: #667eea;
-                color: white;
-                font-weight: bold;
-            }
-
-            .matrix-score-header {
-                font-size: 0.8rem;
-                min-width: 45px;
-            }
-            
-            .matrix-row-header {
-                background: #f8f9fa;
-                font-weight: bold;
-                min-width: 200px;
-                text-align: left;
-                padding: 0.5rem;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-            }
-            
-            .matrix-row-header .req-number {
-                background: #667eea;
-                color: white;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.8rem;
-                flex-shrink: 0;
-            }
-            
-            .matrix-row-header .req-text {
-                font-size: 0.8rem;
-                line-height: 1.2;
-            }
-            
-            .matrix-diagonal {
-                background: #e9ecef;
-                color: #6c757d;
-                font-weight: bold;
-            }
-            
-            .matrix-comparison {
-                cursor: pointer;
-                transition: all 0.3s ease;
-                background: #fff;
-            }
-            
-            .matrix-comparison:hover {
-                background: #f8f9ff;
-                border-color: #667eea;
-            }
-            
-            .matrix-comparison.completed {
-                background: #e8f5e8;
-                border-color: #28a745;
-            }
-            
-            .matrix-mirror {
-                background: #f8f9fa;
-            }
-            
-            .comparison-placeholder {
-                color: #6c757d;
-                font-size: 1.2rem;
-            }
-            
-            .comparison-result {
-                display: flex;
-                flex-direction: column;
-                gap: 0.25rem;
-            }
-            
-            .winner-indicator {
-                background: #667eea;
-                color: white;
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.7rem;
-                font-weight: bold;
-                margin: 0 auto;
-            }
-            
-            .value-indicator {
-                font-weight: bold;
-                font-size: 0.8rem;
-            }
-            
-            .matrix-score-cell {
-                background: #f1f3f5;
-                font-weight: bold;
-                min-width: 45px;
-            }
-
-            .rank-cell {
-                background: #e8f5e8;
-                border-color: #28a745;
-            }
-            
-            .matrix-legend {
-                background: #f8f9fa;
-                border-radius: 8px;
-                padding: 1rem;
-            }
-            
-            .matrix-legend h4 {
-                margin: 0 0 1rem 0;
-                color: #333;
-            }
-            
-            .legend-items {
+            /* Results Styles */
+            .ranking-items {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 0.5rem;
-            }
-            
-            .legend-item {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                padding: 0.5rem;
-                background: white;
-                border-radius: 4px;
-            }
-            
-            .legend-number {
-                background: #667eea;
-                color: white;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.8rem;
-                font-weight: bold;
-                flex-shrink: 0;
-            }
-            
-            .legend-text {
-                font-size: 0.9rem;
-                line-height: 1.3;
-            }
-            
-            .results-content {
-                display: grid;
-                grid-template-columns: 1fr 400px;
-                gap: 2rem;
+                gap: 1rem;
+                margin-bottom: 2rem;
             }
             
             .ranking-item {
@@ -1292,7 +1569,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 background: white;
                 border: 1px solid #e9ecef;
                 border-radius: 8px;
-                margin-bottom: 1rem;
                 transition: all 0.3s ease;
             }
             
@@ -1300,52 +1576,85 @@ document.addEventListener('DOMContentLoaded', function() {
                 box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             }
             
+            .ranking-item.medal-1 {
+                border-left: 4px solid #ffd700;
+                background: linear-gradient(135deg, #fff9e6, #ffffff);
+            }
+            
+            .ranking-item.medal-2 {
+                border-left: 4px solid #c0c0c0;
+                background: linear-gradient(135deg, #f5f5f5, #ffffff);
+            }
+            
+            .ranking-item.medal-3 {
+                border-left: 4px solid #cd7f32;
+                background: linear-gradient(135deg, #fdf6f0, #ffffff);
+            }
+            
             .ranking-position {
-                position: relative;
-                background: linear-gradient(135deg, #667eea, #764ba2);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.25rem;
+                min-width: 60px;
+            }
+            
+            .position-number {
+                background: #667eea;
                 color: white;
-                width: 50px;
-                height: 50px;
+                width: 40px;
+                height: 40px;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 font-weight: bold;
-                font-size: 1.2rem;
-                flex-shrink: 0;
+                font-size: 1.1rem;
             }
             
-            .crown-icon {
-                position: absolute;
-                top: -10px;
-                right: -5px;
+            .ranking-item.medal-1 .position-number {
+                background: #ffd700;
+                color: #333;
+            }
+            
+            .ranking-item.medal-2 .position-number {
+                background: #c0c0c0;
+                color: #333;
+            }
+            
+            .ranking-item.medal-3 .position-number {
+                background: #cd7f32;
+                color: white;
+            }
+            
+            .fa-medal {
                 color: #ffd700;
-                font-size: 1rem;
+                font-size: 0.8rem;
             }
             
             .ranking-content {
                 flex: 1;
             }
             
-            .ranking-description {
-                font-weight: 600;
+            .req-description {
+                font-size: 1rem;
                 color: #333;
                 margin-bottom: 0.5rem;
                 line-height: 1.4;
             }
             
-            .ranking-metrics {
+            .req-metrics {
                 display: flex;
                 gap: 1rem;
                 flex-wrap: wrap;
             }
             
             .metric {
-                color: #666;
-                font-size: 0.9rem;
                 display: flex;
                 align-items: center;
                 gap: 0.25rem;
+                font-size: 0.9rem;
+                color: #666;
             }
             
             .metric i {
@@ -1353,7 +1662,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             .results-chart {
-                background: #f8f9fa;
+                background: white;
+                border: 1px solid #e9ecef;
                 border-radius: 8px;
                 padding: 1rem;
             }
@@ -1370,33 +1680,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             @media (max-width: 768px) {
-                .status-info {
-                    grid-template-columns: 1fr;
-                }
-                
                 .instruction-grid {
                     flex-direction: column;
                 }
                 
-                .matrix-table {
-                    font-size: 0.8rem;
-                }
-                
-                .matrix-cell {
-                    min-width: 50px;
-                    min-height: 50px;
-                }
-                
-                .matrix-row-header {
-                    min-width: 150px;
-                }
-                
-                .results-content {
-                    grid-template-columns: 1fr;
-                }
-                
-                .legend-items {
-                    grid-template-columns: 1fr;
+                .req-metrics {
+                    flex-direction: column;
+                    gap: 0.5rem;
                 }
             }
         `;
@@ -1404,3 +1694,4 @@ document.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(styles);
     }
 });
+

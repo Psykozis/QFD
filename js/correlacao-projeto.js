@@ -1,6 +1,6 @@
 /**
- * JavaScript para Página de Correlação de Requisitos de Projeto
- * Implementa o telhado da casa QFD
+ * JavaScript para Página de Correlação de Requisitos de Projeto - Versão Modificada
+ * Implementa o telhado da casa QFD com pop-ups e hovers melhorados
  */
 
 let requisitos = [];
@@ -11,7 +11,27 @@ document.addEventListener('DOMContentLoaded', function() {
     loadRequisitos();
     setupCorrelation();
     updateStatus();
+    setupDropdownMenu();
 });
+
+function setupDropdownMenu() {
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+    const dropdownMenu = document.querySelector('.dropdown-menu');
+    
+    if (dropdownToggle && dropdownMenu) {
+        dropdownToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            dropdownMenu.classList.toggle('show');
+        });
+        
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.nav-dropdown')) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+    }
+}
 
 function loadRequisitos() {
     requisitos = qfdDB.getRequisitosProjeto();
@@ -56,11 +76,15 @@ function generateRoofMatrix() {
     
     let roofHTML = '<div class="roof-table">';
     
-    // Cabeçalho com números dos requisitos
+    // Cabeçalho com números dos requisitos e sentido de melhoria
     roofHTML += '<div class="roof-header">';
     for (let i = 0; i < requisitos.length; i++) {
-        roofHTML += `<div class="roof-header-cell" title="${escapeHtml(requisitos[i].descricao)}">
+        const req = requisitos[i];
+        roofHTML += `<div class="roof-header-cell" 
+            title="Requisito ${i + 1}: ${escapeHtml(req.descricao)} | Sentido: ${getSentidoLabel(req.sentidoMelhoria)} ${getSentidoSymbol(req.sentidoMelhoria)}"
+            data-tooltip="Requisito ${i + 1}: ${escapeHtml(req.descricao)}<br>Sentido: ${getSentidoLabel(req.sentidoMelhoria)} ${getSentidoSymbol(req.sentidoMelhoria)}<br>Dificuldade: ${req.dificuldadeTecnica}">
             <span class="req-number">${i + 1}</span>
+            <span class="req-direction">${getSentidoSymbol(req.sentidoMelhoria)}</span>
         </div>`;
     }
     roofHTML += '</div>';
@@ -79,11 +103,20 @@ function generateRoofMatrix() {
             const correlation = qfdDB.getCorrelacaoProjeto(requisitos[i].id, requisitos[j].id);
             const isCompleted = correlation !== '0';
             
+            const req1 = requisitos[i];
+            const req2 = requisitos[j];
+            
+            const tooltipText = `Correlação entre:<br>
+                <strong>Req ${i + 1}:</strong> ${escapeHtml(req1.descricao.substring(0, 50))}${req1.descricao.length > 50 ? '...' : ''}<br>
+                <strong>Req ${j + 1}:</strong> ${escapeHtml(req2.descricao.substring(0, 50))}${req2.descricao.length > 50 ? '...' : ''}<br>
+                <em>Clique para definir correlação</em>`;
+            
             roofHTML += `<div class="roof-cell ${isCompleted ? 'completed' : ''}" 
                 data-req1="${requisitos[i].id}" 
                 data-req2="${requisitos[j].id}"
                 data-i="${i}" 
-                data-j="${j}">
+                data-j="${j}"
+                data-tooltip="${tooltipText}">
                 ${getCorrelationDisplay(correlation)}
             </div>`;
         }
@@ -93,7 +126,7 @@ function generateRoofMatrix() {
     
     roofHTML += '</div>';
     
-    // Legenda dos requisitos
+    // Legenda dos requisitos com sentido de melhoria
     roofHTML += '<div class="roof-legend">';
     roofHTML += '<h4>Requisitos de Projeto:</h4>';
     roofHTML += '<div class="legend-items">';
@@ -123,8 +156,55 @@ function generateRoofMatrix() {
     // Adiciona event listeners para as células
     const roofCells = roofContainer.querySelectorAll('.roof-cell');
     roofCells.forEach(cell => {
-        cell.addEventListener('click', () => openCorrelationModal(cell));
+        cell.addEventListener('click', () => openCorrelationPopup(cell));
+        
+        // Adiciona hover tooltip
+        cell.addEventListener('mouseenter', showTooltip);
+        cell.addEventListener('mouseleave', hideTooltip);
     });
+    
+    // Adiciona tooltips para cabeçalhos
+    const headerCells = roofContainer.querySelectorAll('.roof-header-cell');
+    headerCells.forEach(cell => {
+        cell.addEventListener('mouseenter', showTooltip);
+        cell.addEventListener('mouseleave', hideTooltip);
+    });
+}
+
+function showTooltip(e) {
+    const tooltipText = e.target.closest('[data-tooltip]').getAttribute('data-tooltip');
+    if (!tooltipText) return;
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'custom-tooltip';
+    tooltip.innerHTML = tooltipText;
+    document.body.appendChild(tooltip);
+    
+    const rect = e.target.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    let top = rect.top - tooltipRect.height - 10;
+    
+    // Ajusta posição se sair da tela
+    if (left < 10) left = 10;
+    if (left + tooltipRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - tooltipRect.width - 10;
+    }
+    if (top < 10) {
+        top = rect.bottom + 10;
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    tooltip.style.opacity = '1';
+}
+
+function hideTooltip() {
+    const tooltip = document.querySelector('.custom-tooltip');
+    if (tooltip) {
+        tooltip.remove();
+    }
 }
 
 function getSentidoSymbol(sentido) {
@@ -149,7 +229,7 @@ function getCorrelationDisplay(correlation) {
     return symbols[correlation] || '<span class="corr-placeholder">?</span>';
 }
 
-function openCorrelationModal(cell) {
+function openCorrelationPopup(cell) {
     const req1Id = cell.dataset.req1;
     const req2Id = cell.dataset.req2;
     const i = parseInt(cell.dataset.i);
@@ -160,141 +240,145 @@ function openCorrelationModal(cell) {
     
     const currentCorrelation = qfdDB.getCorrelacaoProjeto(req1Id, req2Id);
     
-    // Cria modal
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
-        <div class="modal-content correlation-modal">
-            <div class="modal-header">
-                <h3>Analisar Correlação</h3>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+    // Cria popup modal compacto
+    const popup = document.createElement('div');
+    popup.className = 'correlation-popup-overlay';
+    popup.innerHTML = `
+        <div class="correlation-popup">
+            <div class="popup-header">
+                <h4>Correlação: Req ${i + 1} ↔ Req ${j + 1}</h4>
+                <button class="popup-close" onclick="closeCorrelationPopup()">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="correlation-question">
-                    <h4>Como estes requisitos se relacionam?</h4>
-                </div>
-                
-                <div class="requirements-display">
-                    <div class="requirement-display">
-                        <div class="req-header">
-                            <span class="req-number">${i + 1}</span>
-                            <span class="req-label">Requisito A</span>
-                        </div>
-                        <div class="req-description">${escapeHtml(req1.descricao)}</div>
-                        <div class="req-attributes">
-                            <span class="sentido-badge ${req1.sentidoMelhoria}">
-                                ${getSentidoSymbol(req1.sentidoMelhoria)} ${getSentidoLabel(req1.sentidoMelhoria)}
-                            </span>
-                            <span class="dificuldade-badge level-${req1.dificuldadeTecnica}">
-                                Dificuldade: ${req1.dificuldadeTecnica}
+            <div class="popup-body">
+                <div class="requirements-compact">
+                    <div class="req-compact">
+                        <div class="req-info">
+                            <span class="req-num">${i + 1}</span>
+                            <span class="req-desc">${escapeHtml(req1.descricao.substring(0, 60))}${req1.descricao.length > 60 ? '...' : ''}</span>
+                            <span class="req-direction-badge ${req1.sentidoMelhoria}">
+                                ${getSentidoSymbol(req1.sentidoMelhoria)}
                             </span>
                         </div>
                     </div>
-                    
-                    <div class="correlation-arrow">
-                        <i class="fas fa-exchange-alt"></i>
-                    </div>
-                    
-                    <div class="requirement-display">
-                        <div class="req-header">
-                            <span class="req-number">${j + 1}</span>
-                            <span class="req-label">Requisito B</span>
-                        </div>
-                        <div class="req-description">${escapeHtml(req2.descricao)}</div>
-                        <div class="req-attributes">
-                            <span class="sentido-badge ${req2.sentidoMelhoria}">
-                                ${getSentidoSymbol(req2.sentidoMelhoria)} ${getSentidoLabel(req2.sentidoMelhoria)}
-                            </span>
-                            <span class="dificuldade-badge level-${req2.dificuldadeTecnica}">
-                                Dificuldade: ${req2.dificuldadeTecnica}
+                    <div class="correlation-vs">↔</div>
+                    <div class="req-compact">
+                        <div class="req-info">
+                            <span class="req-num">${j + 1}</span>
+                            <span class="req-desc">${escapeHtml(req2.descricao.substring(0, 60))}${req2.descricao.length > 60 ? '...' : ''}</span>
+                            <span class="req-direction-badge ${req2.sentidoMelhoria}">
+                                ${getSentidoSymbol(req2.sentidoMelhoria)}
                             </span>
                         </div>
                     </div>
                 </div>
                 
-                <div class="correlation-options">
-                    <h4>Selecione o tipo de correlação:</h4>
-                    <div class="correlation-buttons">
-                        <button class="correlation-btn ${currentCorrelation === '++' ? 'selected' : ''}" data-value="++">
-                            <span class="corr-symbol strong-positive">++</span>
-                            <span class="corr-label">Positiva Muito Forte</span>
-                            <small>Se reforçam significativamente</small>
-                        </button>
-                        <button class="correlation-btn ${currentCorrelation === '+' ? 'selected' : ''}" data-value="+">
-                            <span class="corr-symbol positive">+</span>
-                            <span class="corr-label">Positiva</span>
-                            <small>Se complementam</small>
-                        </button>
-                        <button class="correlation-btn ${currentCorrelation === '0' ? 'selected' : ''}" data-value="0">
-                            <span class="corr-symbol neutral">0</span>
-                            <span class="corr-label">Sem Correlação</span>
-                            <small>São independentes</small>
-                        </button>
-                        <button class="correlation-btn ${currentCorrelation === '-' ? 'selected' : ''}" data-value="-">
-                            <span class="corr-symbol negative">-</span>
-                            <span class="corr-label">Negativa</span>
-                            <small>Competem entre si</small>
-                        </button>
-                        <button class="correlation-btn ${currentCorrelation === '--' ? 'selected' : ''}" data-value="--">
-                            <span class="corr-symbol strong-negative">--</span>
-                            <span class="corr-label">Negativa Muito Forte</span>
-                            <small>São conflitantes</small>
-                        </button>
-                    </div>
+                <div class="correlation-quick-select">
+                    <button class="corr-quick-btn ${currentCorrelation === '++' ? 'selected' : ''}" data-value="++">
+                        <span class="corr-symbol strong-positive">++</span>
+                    </button>
+                    <button class="corr-quick-btn ${currentCorrelation === '+' ? 'selected' : ''}" data-value="+">
+                        <span class="corr-symbol positive">+</span>
+                    </button>
+                    <button class="corr-quick-btn ${currentCorrelation === '0' ? 'selected' : ''}" data-value="0">
+                        <span class="corr-symbol neutral">0</span>
+                    </button>
+                    <button class="corr-quick-btn ${currentCorrelation === '-' ? 'selected' : ''}" data-value="-">
+                        <span class="corr-symbol negative">-</span>
+                    </button>
+                    <button class="corr-quick-btn ${currentCorrelation === '--' ? 'selected' : ''}" data-value="--">
+                        <span class="corr-symbol strong-negative">--</span>
+                    </button>
+                </div>
+                
+                <div class="correlation-description" id="correlation-description">
+                    ${getCorrelationDescription(currentCorrelation)}
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-                <button class="btn btn-primary" id="save-correlation" onclick="saveCorrelation()" disabled>
-                    Salvar Correlação
+            <div class="popup-footer">
+                <button class="btn btn-sm btn-secondary" onclick="closeCorrelationPopup()">Cancelar</button>
+                <button class="btn btn-sm btn-primary" id="save-correlation-popup" onclick="saveCorrelationFromPopup()">
+                    Salvar
                 </button>
             </div>
         </div>
     `;
     
-    document.body.appendChild(modal);
+    document.body.appendChild(popup);
     
-    // Adiciona estilos do modal se não existirem
-    addModalStyles();
+    // Adiciona estilos do popup se não existirem
+    addPopupStyles();
     
     // Configura event listeners
-    setupModalEventListeners(req1Id, req2Id, currentCorrelation);
+    setupPopupEventListeners(req1Id, req2Id, currentCorrelation);
+    
+    // Posiciona o popup próximo à célula clicada
+    positionPopup(popup, cell);
 }
 
-function setupModalEventListeners(req1Id, req2Id, currentCorrelation) {
+function positionPopup(popup, cell) {
+    const popupContent = popup.querySelector('.correlation-popup');
+    const cellRect = cell.getBoundingClientRect();
+    const popupRect = popupContent.getBoundingClientRect();
+    
+    let left = cellRect.left + (cellRect.width / 2) - (popupRect.width / 2);
+    let top = cellRect.bottom + 10;
+    
+    // Ajusta posição se sair da tela
+    if (left < 10) left = 10;
+    if (left + popupRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - popupRect.width - 10;
+    }
+    if (top + popupRect.height > window.innerHeight - 10) {
+        top = cellRect.top - popupRect.height - 10;
+    }
+    
+    popupContent.style.left = left + 'px';
+    popupContent.style.top = top + 'px';
+}
+
+function setupPopupEventListeners(req1Id, req2Id, currentCorrelation) {
     let selectedCorrelation = currentCorrelation;
     
     // Event listeners para botões de correlação
-    const correlationBtns = document.querySelectorAll('.correlation-btn');
+    const correlationBtns = document.querySelectorAll('.corr-quick-btn');
     correlationBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             correlationBtns.forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
             selectedCorrelation = btn.dataset.value;
             
-            document.getElementById('save-correlation').disabled = false;
+            // Atualiza descrição
+            const descriptionDiv = document.getElementById('correlation-description');
+            descriptionDiv.innerHTML = getCorrelationDescription(selectedCorrelation);
         });
     });
     
-    // Se já tem correlação, habilita o botão salvar
-    if (currentCorrelation !== '0') {
-        document.getElementById('save-correlation').disabled = false;
-    }
-    
     // Salva referências globais
-    window.currentCorrelationData = {
+    window.currentPopupCorrelationData = {
         req1Id, req2Id, selectedCorrelation
     };
 }
 
-function saveCorrelation() {
-    const data = window.currentCorrelationData;
+function getCorrelationDescription(correlation) {
+    const descriptions = {
+        '++': '<i class="fas fa-arrow-up text-success"></i> <strong>Positiva Muito Forte:</strong> Os requisitos se reforçam significativamente',
+        '+': '<i class="fas fa-plus text-success"></i> <strong>Positiva:</strong> Os requisitos se complementam',
+        '0': '<i class="fas fa-circle text-muted"></i> <strong>Neutra:</strong> Os requisitos são independentes',
+        '-': '<i class="fas fa-minus text-warning"></i> <strong>Negativa:</strong> Os requisitos competem entre si',
+        '--': '<i class="fas fa-arrow-down text-danger"></i> <strong>Negativa Muito Forte:</strong> Os requisitos são conflitantes'
+    };
+    
+    return descriptions[correlation] || '<i class="fas fa-question text-muted"></i> <strong>Indefinida:</strong> Selecione uma correlação';
+}
+
+function saveCorrelationFromPopup() {
+    const data = window.currentPopupCorrelationData;
     if (!data) return;
     
     try {
         qfdDB.setCorrelacaoProjeto(data.req1Id, data.req2Id, data.selectedCorrelation);
         
-        closeModal();
+        closeCorrelationPopup();
         loadRequisitos();
         generateRoofMatrix();
         updateStatus();
@@ -307,12 +391,12 @@ function saveCorrelation() {
     }
 }
 
-function closeModal() {
-    const modal = document.querySelector('.modal-overlay');
-    if (modal) {
-        modal.remove();
+function closeCorrelationPopup() {
+    const popup = document.querySelector('.correlation-popup-overlay');
+    if (popup) {
+        popup.remove();
     }
-    delete window.currentCorrelationData;
+    delete window.currentPopupCorrelationData;
 }
 
 function updateStatus() {
@@ -426,7 +510,8 @@ function generateConflictAnalysis() {
         conflictHTML += `
             <div class="no-conflicts">
                 <i class="fas fa-check-circle"></i>
-                <p>Nenhum conflito significativo identificado entre os requisitos de projeto.</p>
+                <p>Nenhum conflito identificado entre os requisitos!</p>
+                <small>Isso indica que os requisitos são bem alinhados ou independentes.</small>
             </div>
         `;
     } else {
@@ -459,11 +544,11 @@ function generateConflictAnalysis() {
                             </div>
                         </div>
                         <div class="conflict-impact">
-                            <i class="fas fa-lightbulb"></i>
+                            <i class="fas fa-exclamation-triangle"></i>
                             <span>
                                 ${conflict.correlacao === '--' ? 
-                                    'Conflito crítico: melhorar um prejudica significativamente o outro.' :
-                                    'Conflito moderado: existe competição entre estes requisitos.'
+                                    'Conflito forte: melhorar um prejudica significativamente o outro.' :
+                                    'Conflito moderado: estes requisitos competem por recursos ou prioridades.'
                                 }
                             </span>
                         </div>
@@ -491,7 +576,8 @@ function generateSynergyAnalysis() {
         synergyHTML += `
             <div class="no-synergies">
                 <i class="fas fa-info-circle"></i>
-                <p>Nenhuma sinergia significativa identificada entre os requisitos de projeto.</p>
+                <p>Nenhuma sinergia identificada entre os requisitos.</p>
+                <small>Considere revisar se alguns requisitos podem se beneficiar mutuamente.</small>
             </div>
         `;
     } else {
@@ -583,7 +669,7 @@ function exportAnalysis() {
 }
 
 function generateAnalysisCSV(correlacoes) {
-    const headers = ['Requisito 1', 'Requisito 2', 'Correlação', 'Tipo', 'Descrição 1', 'Descrição 2'];
+    const headers = ['Requisito 1', 'Requisito 2', 'Correlação', 'Tipo', 'Descrição 1', 'Descrição 2', 'Sentido 1', 'Sentido 2'];
     const rows = correlacoes.map(corr => {
         const req1 = requisitos.find(r => r.id === corr.requisito1);
         const req2 = requisitos.find(r => r.id === corr.requisito2);
@@ -602,7 +688,9 @@ function generateAnalysisCSV(correlacoes) {
             corr.correlacao,
             correlationTypes[corr.correlacao] || 'Indefinida',
             req1 ? `"${req1.descricao.replace(/"/g, '""')}"` : 'N/A',
-            req2 ? `"${req2.descricao.replace(/"/g, '""')}"` : 'N/A'
+            req2 ? `"${req2.descricao.replace(/"/g, '""')}"` : 'N/A',
+            req1 ? getSentidoLabel(req1.sentidoMelhoria) : 'N/A',
+            req2 ? getSentidoLabel(req2.sentidoMelhoria) : 'N/A'
         ];
     });
     
@@ -668,107 +756,354 @@ function getAlertIcon(type) {
     return icons[type] || 'info-circle';
 }
 
-function addModalStyles() {
-    if (document.getElementById('correlation-modal-styles')) return;
+function addPopupStyles() {
+    if (document.getElementById('correlation-popup-styles')) return;
     
     const styles = document.createElement('style');
-    styles.id = 'correlation-modal-styles';
+    styles.id = 'correlation-popup-styles';
     styles.textContent = `
-        .correlation-modal {
-            max-width: 800px;
-            width: 95%;
+        /* Dropdown Menu Styles */
+        .nav-dropdown {
+            position: relative;
         }
         
-        .requirements-display {
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .dropdown-menu li {
+            list-style: none;
+        }
+        
+        .dropdown-menu a {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #555;
+            text-decoration: none;
+            border-bottom: none;
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown-menu a:hover,
+        .dropdown-menu a.active {
+            background: #f8f9ff;
+            color: #667eea;
+        }
+        
+        .dropdown-toggle {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .requirement-display {
-            flex: 1;
-            padding: 1rem;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            background: #f8f9fa;
-        }
-        
-        .correlation-arrow {
-            color: #667eea;
-            font-size: 1.5rem;
-        }
-        
-        .req-attributes {
-            display: flex;
             gap: 0.5rem;
-            margin-top: 0.5rem;
-            flex-wrap: wrap;
         }
         
-        .correlation-options h4 {
-            text-align: center;
-            margin-bottom: 1rem;
+        .dropdown-toggle .fa-chevron-down {
+            transition: transform 0.3s ease;
+        }
+        
+        .dropdown-menu.show + .dropdown-toggle .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+        
+        /* Popup Styles */
+        .correlation-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .correlation-popup {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+            background: linear-gradient(135deg, #f8f9ff, #e3f2fd);
+        }
+        
+        .popup-header h4 {
+            margin: 0;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        .popup-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .popup-close:hover {
+            background: rgba(0, 0, 0, 0.1);
             color: #333;
         }
         
-        .correlation-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 0.5rem;
+        .popup-body {
+            padding: 1.5rem;
         }
         
-        .correlation-btn {
-            background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
+        .requirements-compact {
             display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
         }
         
-        .correlation-btn:hover {
-            border-color: #667eea;
-            background: #f8f9ff;
+        .req-compact {
+            flex: 1;
         }
         
-        .correlation-btn.selected {
-            border-color: #667eea;
-            background: linear-gradient(135deg, #f8f9ff, #e3f2fd);
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        .req-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
         
-        .correlation-btn .corr-symbol {
-            font-size: 1.5rem;
+        .req-num {
+            background: #667eea;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .req-desc {
+            font-size: 0.9rem;
+            color: #333;
+            line-height: 1.3;
+        }
+        
+        .req-direction-badge {
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .req-direction-badge.up {
+            background: #28a745;
+        }
+        
+        .req-direction-badge.down {
+            background: #dc3545;
+        }
+        
+        .req-direction-badge.none {
+            background: #6c757d;
+        }
+        
+        .correlation-vs {
+            font-size: 1.2rem;
+            color: #667eea;
             font-weight: bold;
         }
         
-        .correlation-btn .corr-label {
-            font-weight: 600;
+        .correlation-quick-select {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            justify-content: center;
+        }
+        
+        .corr-quick-btn {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 50px;
+            height: 50px;
+        }
+        
+        .corr-quick-btn:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: scale(1.05);
+        }
+        
+        .corr-quick-btn.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9ff, #e3f2fd);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .corr-quick-btn .corr-symbol {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .correlation-description {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 1rem;
             font-size: 0.9rem;
         }
         
-        .correlation-btn small {
+        .popup-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+        
+        .text-success { color: #28a745 !important; }
+        .text-warning { color: #ffc107 !important; }
+        .text-danger { color: #dc3545 !important; }
+        .text-muted { color: #6c757d !important; }
+        
+        /* Custom Tooltip */
+        .custom-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.75rem;
+            border-radius: 6px;
             font-size: 0.8rem;
-            color: #666;
-            line-height: 1.2;
+            line-height: 1.4;
+            max-width: 300px;
+            z-index: 3000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .custom-tooltip::before {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+        }
+        
+        /* Enhanced Matrix Styles */
+        .roof-header-cell {
+            position: relative;
+            cursor: help;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+        
+        .req-direction {
+            font-size: 0.7rem;
+            opacity: 0.9;
+        }
+        
+        .roof-cell {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .roof-cell::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(102, 126, 234, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .roof-cell:hover::after {
+            opacity: 1;
         }
         
         @media (max-width: 768px) {
-            .requirements-display {
-                flex-direction: column;
+            .correlation-popup {
+                width: 95%;
+                max-width: none;
             }
             
-            .correlation-arrow {
+            .requirements-compact {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .correlation-vs {
                 transform: rotate(90deg);
             }
             
-            .correlation-buttons {
-                grid-template-columns: 1fr;
+            .correlation-quick-select {
+                flex-wrap: wrap;
+            }
+            
+            .dropdown-menu {
+                position: fixed;
+                top: auto;
+                left: 10px;
+                right: 10px;
+                width: auto;
             }
         }
     `;
