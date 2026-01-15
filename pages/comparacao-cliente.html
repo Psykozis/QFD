@@ -19,9 +19,9 @@
         <div class="container">
             <ul class="nav-menu">
                 <li><a href="../index.html"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li>
-                    <a href="#"><i class="fas fa-list"></i> Menu <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
-                    <div class="dropdown-content">
+                <li class="nav-dropdown">
+                    <a href="#" class="dropdown-toggle"><i class="fas fa-list"></i> Menu <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
+                    <div class="dropdown-menu">
                         <a href="requisitos-cliente.html"><i class="fas fa-users"></i> Requisitos Cliente</a>
                         <a href="comparacao-cliente.html"><i class="fas fa-balance-scale"></i> Comparação Cliente</a>
                         <a href="requisitos-projeto.html"><i class="fas fa-project-diagram"></i> Requisitos Projeto</a>
@@ -30,11 +30,14 @@
                         <a href="relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a>
                     </div>
                 </li>
-                <li>
-                    <a href="#"><i class="fas fa-database"></i> Backup & Export <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
-                    <div class="dropdown-content">
+                <li class="nav-dropdown">
+                    <a href="#" class="dropdown-toggle"><i class="fas fa-database"></i> Backup & Export <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
+                    <div class="dropdown-menu">
                         <a href="#" onclick="exportProjectData()"><i class="fas fa-download"></i> Exportar Backup (JSON)</a>
                         <a href="#" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Importar Backup (JSON)</a>
+                        <hr>
+                        <a href="#" onclick="exportComparacoesCSV()"><i class="fas fa-file-csv"></i> Exportar Comparações (CSV)</a>
+                        <a href="#" onclick="document.getElementById('import-csv-comparacao').click()"><i class="fas fa-file-csv"></i> Importar Comparações (CSV)</a>
                         <hr>
                         <a href="#" onclick="document.getElementById('import-csv-cliente').click()"><i class="fas fa-file-csv"></i> Importar Req. Cliente (CSV)</a>
                         <a href="#" onclick="document.getElementById('import-csv-projeto').click()"><i class="fas fa-file-csv"></i> Importar Req. Projeto (CSV)</a>
@@ -48,8 +51,7 @@
             <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
             <input type="file" id="import-csv-cliente" style="display: none;" onchange="importCSV(event, 'cliente')" accept=".csv">
             <input type="file" id="import-csv-projeto" style="display: none;" onchange="importCSV(event, 'projeto')" accept=".csv">
-                </li>
-            </ul>
+            <input type="file" id="import-csv-comparacao" style="display: none;" onchange="importComparacoesCSV(event)" accept=".csv">
         </div>
     </nav>
 
@@ -112,19 +114,12 @@
                 </div>
             </div>
 
-            <!-- Matriz de comparação -->
-            <div id="comparison-section" class="card" style="display: none;">
+            <!-- Instruções de comparação -->
+            <div id="instructions-section" class="card" style="display: none;">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-table"></i> Matriz de Comparação
-                        <button class="btn btn-sm btn-secondary" onclick="resetComparisons()" style="margin-left: 1rem;">
-                            <i class="fas fa-undo"></i> Resetar Comparações
-                        </button>
-                    </h3>
+                    <h3 class="card-title"><i class="fas fa-info-circle"></i> Como Comparar</h3>
                 </div>
-                
                 <div class="comparison-instructions">
-                    <h4><i class="fas fa-info-circle"></i> Como Comparar:</h4>
                     <div class="instruction-grid">
                         <div class="instruction-item">
                             <span class="value-badge value-1">1</span>
@@ -141,11 +136,32 @@
                     </div>
                     <p><strong>Instruções:</strong> Para cada par, clique no requisito que considera mais importante e selecione o nível de importância.</p>
                 </div>
+            </div>
 
+            <!-- Matriz de comparação -->
+            <div id="comparison-section" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-table"></i> Matriz de Comparação
+                        <button class="btn btn-sm btn-secondary" onclick="resetComparisons()" style="margin-left: 1rem;">
+                            <i class="fas fa-undo"></i> Resetar Comparações
+                        </button>
+                    </h3>
+                </div>
                 <div class="comparison-matrix-container">
                     <div class="comparison-matrix" id="comparison-matrix">
                         <!-- Matriz será gerada dinamicamente -->
                     </div>
+                </div>
+            </div>
+
+            <!-- Legenda dos requisitos -->
+            <div id="legend-section" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-list-ol"></i> Legenda dos Requisitos</h3>
+                </div>
+                <div id="matrix-legend-container">
+                    <!-- Legenda será gerada dinamicamente -->
                 </div>
             </div>
 
