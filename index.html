@@ -19,9 +19,9 @@
         <div class="container">
             <ul class="nav-menu">
                 <li><a href="index.html" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li>
-                    <a href="#"><i class="fas fa-list"></i> Menu <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
-                    <div class="dropdown-content">
+                <li class="nav-dropdown">
+                    <a href="#" class="dropdown-toggle"><i class="fas fa-list"></i> Menu <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
+                    <div class="dropdown-menu">
                         <a href="pages/requisitos-cliente.html"><i class="fas fa-users"></i> Requisitos Cliente</a>
                         <a href="pages/comparacao-cliente.html"><i class="fas fa-balance-scale"></i> Comparação Cliente</a>
                         <a href="pages/requisitos-projeto.html"><i class="fas fa-project-diagram"></i> Requisitos Projeto</a>
@@ -30,9 +30,9 @@
                         <a href="pages/relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a>
                     </div>
                 </li>
-                <li>
-                    <a href="#"><i class="fas fa-database"></i> Backup & Export <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
-                    <div class="dropdown-content">
+                <li class="nav-dropdown">
+                    <a href="#" class="dropdown-toggle"><i class="fas fa-database"></i> Backup & Export <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
+                    <div class="dropdown-menu">
                         <a href="#" onclick="exportProjectData()"><i class="fas fa-download"></i> Exportar Backup (JSON)</a>
                         <a href="#" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Importar Backup (JSON)</a>
                         <hr>
