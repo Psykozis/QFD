@@ -120,32 +120,31 @@ function generateComparisonMatrix() {
         
         // Células de comparação
         for (let j = 0; j < requisitos.length; j++) {
+            const req1 = requisitos[i];
+            const req2 = requisitos[j];
+            const cellTooltip = `Comparação entre:<br>
+                <strong>Req ${i + 1}:</strong> ${escapeHtml(req1.descricao.substring(0, 50))}${req1.descricao.length > 50 ? '...' : ''}<br>
+                <strong>Req ${j + 1}:</strong> ${escapeHtml(req2.descricao.substring(0, 50))}${req2.descricao.length > 50 ? '...' : ''}`;
+
             if (i === j) {
                 // Diagonal principal
-                matrixHTML += '<div class="matrix-cell matrix-diagonal">-</div>';
+                matrixHTML += `<div class="matrix-cell matrix-diagonal" data-tooltip="${cellTooltip}">-</div>`;
             } else if (i < j) {
                 // Parte superior da matriz (comparações ativas)
                 const comparison = qfdDB.getComparacaoCliente(requisitos[i].id, requisitos[j].id);
                 const isCompleted = comparison > 0;
-                
-                const req1 = requisitos[i];
-                const req2 = requisitos[j];
-                const cellTooltip = `Comparação entre:<br>
-                    <strong>Req ${i + 1}:</strong> ${escapeHtml(req1.descricao.substring(0, 50))}${req1.descricao.length > 50 ? '...' : ''}<br>
-                    <strong>Req ${j + 1}:</strong> ${escapeHtml(req2.descricao.substring(0, 50))}${req2.descricao.length > 50 ? '...' : ''}<br>
-                    <em>Clique para comparar</em>`;
                 
                 matrixHTML += `<div class="matrix-cell matrix-comparison ${isCompleted ? 'completed' : ''}" 
                     data-req1="${requisitos[i].id}" 
                     data-req2="${requisitos[j].id}"
                     data-i="${i}" 
                     data-j="${j}"
-                    data-tooltip="${cellTooltip}">
+                    data-tooltip="${cellTooltip}<br><em>Clique para comparar</em>">
                     ${isCompleted ? getComparisonDisplay(comparison, i, j) : '<span class="comparison-placeholder">?</span>'}
                 </div>`;
             } else {
                 // Parte inferior da matriz (espelhada)
-                matrixHTML += '<div class="matrix-cell matrix-mirror"></div>';
+                matrixHTML += `<div class="matrix-cell matrix-mirror" data-tooltip="${cellTooltip}"></div>`;
             }
         }
         
