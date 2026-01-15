@@ -160,6 +160,16 @@ body {
     box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
+.progress-card.clickable {
+    cursor: pointer;
+}
+
+.dropdown-content hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 5px 0;
+}
+
 .progress-card {
     display: flex;
     align-items: center;
