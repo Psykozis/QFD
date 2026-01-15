@@ -47,18 +47,24 @@ function calculateTotalComparisons(count) {
 
 function setupComparison() {
     const insufficientDiv = document.getElementById('insufficient-requirements');
+    const instructionsSection = document.getElementById('instructions-section');
     const comparisonSection = document.getElementById('comparison-section');
+    const legendSection = document.getElementById('legend-section');
     const resultsSection = document.getElementById('results-section');
     
     if (requisitos.length < 2) {
         insufficientDiv.style.display = 'block';
+        if (instructionsSection) instructionsSection.style.display = 'none';
         comparisonSection.style.display = 'none';
+        if (legendSection) legendSection.style.display = 'none';
         resultsSection.style.display = 'none';
         return;
     }
     
     insufficientDiv.style.display = 'none';
+    if (instructionsSection) instructionsSection.style.display = 'block';
     comparisonSection.style.display = 'block';
+    if (legendSection) legendSection.style.display = 'block';
     
     generateComparisonMatrix();
     
@@ -177,22 +183,23 @@ function generateComparisonMatrix() {
     matrixHTML += '</div>'; // Fecha matrix-table
     matrixHTML += '</div>'; // Fecha matrix-table-wrapper
     
-    // Legenda dos requisitos
-    matrixHTML += '<div class="matrix-legend">';
-    matrixHTML += '<h4>Legenda dos Requisitos:</h4>';
-    matrixHTML += '<div class="legend-items">';
-    
-    for (let i = 0; i < requisitos.length; i++) {
-        matrixHTML += `<div class="legend-item">
-            <span class="legend-number">${i + 1}</span>
-            <span class="legend-text">${escapeHtml(requisitos[i].descricao)}</span>
-            <span class="legend-score">Vitórias: ${somatorios.linhas[i] || 0}</span>
-        </div>`;
-    }
-    
-    matrixHTML += '</div></div>';
-    
     matrixContainer.innerHTML = matrixHTML;
+
+    // Gerar legenda em div separada
+    const legendContainer = document.getElementById('matrix-legend-container');
+    if (legendContainer) {
+        let legendHTML = '<div class="matrix-legend">';
+        legendHTML += '<div class="legend-items">';
+        for (let i = 0; i < requisitos.length; i++) {
+            legendHTML += `<div class="legend-item" title="${escapeHtml(requisitos[i].descricao)}">
+                <span class="legend-number">${i + 1}</span>
+                <span class="legend-text">${escapeHtml(requisitos[i].descricao)}</span>
+                <span class="legend-score">Pontos: ${somatorios.linhas[i] || 0}</span>
+            </div>`;
+        }
+        legendHTML += '</div></div>';
+        legendContainer.innerHTML = legendHTML;
+    }
     
     // Adiciona event listeners para as células de comparação
     const comparisonCells = matrixContainer.querySelectorAll('.matrix-comparison');
@@ -217,24 +224,87 @@ function calculateSummaries() {
     const colunas = new Array(requisitos.length).fill(0);
     let total = 0;
     
-    const comparacoes = qfdDB.getComparacoesCliente();
-    
-    comparacoes.forEach(comp => {
-        if (comp.valor > 0) {
-            // Encontra os índices dos requisitos
-            const req1Index = requisitos.findIndex(r => r.id === comp.requisito1);
-            const req2Index = requisitos.findIndex(r => r.id === comp.requisito2);
-            
-            if (req1Index !== -1 && req2Index !== -1) {
-                // O requisito1 sempre "vence" na estrutura de dados
-                linhas[req1Index] += comp.valor;
-                colunas[req2Index] += comp.valor;
-                total += comp.valor;
+    requisitos.forEach((req1, i) => {
+        requisitos.forEach((req2, j) => {
+            if (i < j) {
+                const valor = qfdDB.getComparacaoCliente(req1.id, req2.id);
+                if (valor > 0) {
+                    // Se valor > 0, req1 venceu ou empatou
+                    // No Diagrama de Mudge, o valor é atribuído ao vencedor
+                    // Se req1 vence, ele ganha o valor. Se req2 vence, ele ganha o valor.
+                    // A função getComparacaoCliente retorna o valor do ponto de vista de req1
+                    // Se retornar 1, 3 ou 5, req1 venceu.
+                    // Se retornar o "inverso" (que o DB trata), req2 venceu.
+                    
+                    // Precisamos saber QUEM venceu para somar corretamente
+                    const rawComp = qfdDB.loadData().comparacaoCliente.find(
+                        c => (c.requisito1 === req1.id && c.requisito2 === req2.id) ||
+                             (c.requisito1 === req2.id && c.requisito2 === req1.id)
+                    );
+                    
+                    if (rawComp) {
+                        if (rawComp.requisito1 === req1.id) {
+                            linhas[i] += rawComp.valor;
+                            colunas[j] += rawComp.valor;
+                        } else {
+                            linhas[j] += rawComp.valor;
+                            colunas[i] += rawComp.valor;
+                        }
+                        total += rawComp.valor;
+                    }
+                }
             }
-        }
+        });
     });
     
     return { linhas, colunas, total };
+}
+
+function exportComparacoesCSV() {
+    const comparacoes = qfdDB.getComparacoesCliente();
+    if (comparacoes.length === 0) {
+        alert('Não há comparações para exportar.');
+        return;
+    }
+
+    let csvContent = "requisito1_id,requisito2_id,valor\n";
+    comparacoes.forEach(c => {
+        csvContent += `${c.requisito1},${c.requisito2},${c.valor}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'comparacoes-cliente.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function importComparacoesCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        let count = 0;
+
+        lines.forEach((line, index) => {
+            if (index === 0 || !line.trim()) return;
+            const [req1, req2, valor] = line.split(',');
+            if (req1 && req2 && valor) {
+                qfdDB.setComparacaoCliente(req1.trim(), req2.trim(), parseInt(valor.trim()));
+                count++;
+            }
+        });
+
+        alert(`${count} comparações importadas com sucesso!`);
+        location.reload();
+    };
+    reader.readAsText(file);
 }
 
 function showTooltip(e) {

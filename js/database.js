@@ -195,12 +195,15 @@ class QFDDatabase {
         
         if (!comp) return 0;
         
-        // Se a comparação está invertida, retorna o valor inverso
-        if (comp.requisito1 === requisito2) {
-            return comp.valor === 1 ? 5 : comp.valor === 5 ? 1 : comp.valor;
+        // Se a comparação está invertida, retorna o valor do ponto de vista do requisito1
+        // No Diagrama de Mudge, se req1 vence, valor é positivo. Se req2 vence, req1 recebe 0.
+        // Mas o sistema salva o valor do vencedor.
+        if (comp.requisito1 === requisito1) {
+            return comp.valor;
+        } else {
+            // Se o salvo foi req2 como vencedor, req1 tem 0 pontos nesta comparação
+            return 0; 
         }
-        
-        return comp.valor;
     }
 
     // Obtém todas as comparações de cliente
@@ -222,10 +225,9 @@ class QFDDatabase {
             comparacoes.forEach(comp => {
                 if (comp.requisito1 === req.id) {
                     pontuacao += comp.valor;
-                } else if (comp.requisito2 === req.id) {
-                    // Valor inverso para o segundo requisito
-                    pontuacao += comp.valor === 1 ? 5 : comp.valor === 5 ? 1 : comp.valor;
                 }
+                // No novo modelo, se ele é requisito2 e está salvo, ele perdeu (0 pontos)
+                // A pontuação só é somada para o requisito1 (vencedor)
             });
             
             req.importancia = pontuacao;
