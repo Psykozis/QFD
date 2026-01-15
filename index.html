@@ -30,7 +30,24 @@
                         <a href="pages/relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a>
                     </div>
                 </li>
+                <li>
+                    <a href="#"><i class="fas fa-database"></i> Backup & Export <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
+                    <div class="dropdown-content">
+                        <a href="#" onclick="exportProjectData()"><i class="fas fa-download"></i> Exportar Backup (JSON)</a>
+                        <a href="#" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Importar Backup (JSON)</a>
+                        <hr>
+                        <a href="#" onclick="document.getElementById('import-csv-cliente').click()"><i class="fas fa-file-csv"></i> Importar Req. Cliente (CSV)</a>
+                        <a href="#" onclick="document.getElementById('import-csv-projeto').click()"><i class="fas fa-file-csv"></i> Importar Req. Projeto (CSV)</a>
+                        <hr>
+                        <a href="#" onclick="exportPageData('cliente')"><i class="fas fa-file-export"></i> Exportar Req. Cliente</a>
+                        <a href="#" onclick="exportPageData('projeto')"><i class="fas fa-file-export"></i> Exportar Req. Projeto</a>
+                        <a href="#" onclick="exportPageData('matriz')"><i class="fas fa-file-export"></i> Exportar Matriz QFD</a>
+                    </div>
+                </li>
             </ul>
+            <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
+            <input type="file" id="import-csv-cliente" style="display: none;" onchange="importCSV(event, 'cliente')" accept=".csv">
+            <input type="file" id="import-csv-projeto" style="display: none;" onchange="importCSV(event, 'projeto')" accept=".csv">
         </div>
     </nav>
 
@@ -42,7 +59,7 @@
                 <div class="progress-section">
                     <h3>Progresso do Projeto</h3>
                     <div class="progress-cards">
-                        <div class="progress-card" id="progress-cliente">
+                        <div class="progress-card clickable" id="progress-cliente" onclick="window.location.href='pages/requisitos-cliente.html'">
                             <div class="card-icon">
                                 <i class="fas fa-users"></i>
                             </div>
@@ -53,7 +70,7 @@
                             </div>
                         </div>
 
-                        <div class="progress-card" id="progress-comparacao">
+                        <div class="progress-card clickable" id="progress-comparacao" onclick="window.location.href='pages/comparacao-cliente.html'">
                             <div class="card-icon">
                                 <i class="fas fa-balance-scale"></i>
                             </div>
@@ -64,7 +81,7 @@
                             </div>
                         </div>
 
-                        <div class="progress-card" id="progress-projeto">
+                        <div class="progress-card clickable" id="progress-projeto" onclick="window.location.href='pages/requisitos-projeto.html'">
                             <div class="card-icon">
                                 <i class="fas fa-project-diagram"></i>
                             </div>
@@ -75,7 +92,7 @@
                             </div>
                         </div>
 
-                        <div class="progress-card" id="progress-correlacao">
+                        <div class="progress-card clickable" id="progress-correlacao" onclick="window.location.href='pages/correlacao-projeto.html'">
                             <div class="card-icon">
                                 <i class="fas fa-network-wired"></i>
                             </div>
@@ -86,7 +103,7 @@
                             </div>
                         </div>
 
-                        <div class="progress-card" id="progress-qfd">
+                        <div class="progress-card clickable" id="progress-qfd" onclick="window.location.href='pages/matriz-qfd.html'">
                             <div class="card-icon">
                                 <i class="fas fa-table"></i>
                             </div>
@@ -97,7 +114,7 @@
                             </div>
                         </div>
 
-                        <div class="progress-card" id="progress-relatorio">
+                        <div class="progress-card clickable" id="progress-relatorio" onclick="window.location.href='pages/relatorio.html'">
                             <div class="card-icon">
                                 <i class="fas fa-file-pdf"></i>
                             </div>
@@ -107,21 +124,6 @@
                                 <span class="count" id="count-relatorio">Aguardando dados</span>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="quick-actions">
-                    <h3>Ações Rápidas</h3>
-                    <div class="action-buttons">
-                        <a href="pages/requisitos-cliente.html" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Adicionar Requisitos de Cliente
-                        </a>
-                        <a href="pages/requisitos-projeto.html" class="btn btn-secondary">
-                            <i class="fas fa-plus"></i> Adicionar Requisitos de Projeto
-                        </a>
-                        <button class="btn btn-danger" onclick="resetAllData()">
-                            <i class="fas fa-trash"></i> Limpar Todos os Dados
-                        </button>
                     </div>
                 </div>
 
@@ -181,6 +183,11 @@
     <footer class="footer">
         <div class="container">
             <p>&copy; 2024 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+            <p style="font-size: 0.85rem; margin-top: 10px; opacity: 0.8;">
+                Este site foi gerado através da inteligência artificial <strong>Manus AI</strong>, com prompt gerado pelo <strong>Engenheiro Marlon Soares Sigales</strong>.
+                Os códigos estão abertos para quem quiser utilizar e ajustar no GitHub: <a href="https://github.com/Psykozis/QFD" target="_blank" style="color: #667eea;">https://github.com/Psykozis/QFD</a>.
+                Cópias são permitidas desde que devidamente citadas.
+            </p>
         </div>
     </footer>
 
