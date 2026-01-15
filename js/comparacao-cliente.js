@@ -137,16 +137,21 @@ function generateComparisonMatrix() {
                 matrixHTML += `<div class="matrix-cell matrix-diagonal" data-tooltip="${cellTooltip}">-</div>`;
             } else if (i < j) {
                 // Parte superior da matriz (comparações ativas)
-                const comparison = qfdDB.getComparacaoCliente(requisitos[i].id, requisitos[j].id);
-                const isCompleted = comparison > 0;
+                const req1Id = requisitos[i].id;
+                const req2Id = requisitos[j].id;
+                const storedComparison = qfdDB.getComparacoesCliente().find(
+                    c => (c.requisito1 === req1Id && c.requisito2 === req2Id) ||
+                         (c.requisito1 === req2Id && c.requisito2 === req1Id)
+                );
+                const isCompleted = !!storedComparison;
                 
                 matrixHTML += `<div class="matrix-cell matrix-comparison ${isCompleted ? 'completed' : ''}" 
-                    data-req1="${requisitos[i].id}" 
-                    data-req2="${requisitos[j].id}"
+                    data-req1="${req1Id}" 
+                    data-req2="${req2Id}"
                     data-i="${i}" 
                     data-j="${j}"
                     data-tooltip="${cellTooltip}<br><em>Clique para comparar</em>">
-                    ${isCompleted ? getComparisonDisplay(comparison, i, j) : '<span class="comparison-placeholder">?</span>'}
+                    ${isCompleted ? getComparisonDisplay(0, i, j) : '<span class="comparison-placeholder">?</span>'}
                 </div>`;
             } else {
                 // Parte inferior da matriz (espelhada)
@@ -344,9 +349,7 @@ function hideTooltip() {
 }
 
 function getComparisonDisplay(comparison, i, j) {
-    if (comparison === 0) return '<span class="comparison-placeholder">?</span>';
-    
-    // Determina qual requisito "ganhou" e com que intensidade
+    // Busca a comparação bruta no banco para saber quem é o requisito1 (vencedor)
     const req1Id = requisitos[i].id;
     const req2Id = requisitos[j].id;
     const storedComparison = qfdDB.getComparacoesCliente().find(
@@ -362,7 +365,6 @@ function getComparisonDisplay(comparison, i, j) {
         value = storedComparison.valor;
     } else {
         winnerIndex = j;
-        // Inverte o valor para mostrar corretamente na matriz triangular superior
         value = storedComparison.valor;
     }
     

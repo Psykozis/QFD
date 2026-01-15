@@ -195,13 +195,17 @@ class QFDDatabase {
         
         if (!comp) return 0;
         
-        // Se a comparação está invertida, retorna o valor do ponto de vista do requisito1
-        // No Diagrama de Mudge, se req1 vence, valor é positivo. Se req2 vence, req1 recebe 0.
-        // Mas o sistema salva o valor do vencedor.
+        // No Diagrama de Mudge:
+        // Se requisito1 venceu (está salvo como requisito1), retorna o valor (1, 3 ou 5).
+        // Se requisito2 venceu (está salvo como requisito1), requisito1 recebe 0 pontos.
+        // Retornamos um objeto ou valor que indique quem venceu para a interface.
+        // Para manter compatibilidade com a matriz que espera um valor para req1:
         if (comp.requisito1 === requisito1) {
             return comp.valor;
         } else {
-            // Se o salvo foi req2 como vencedor, req1 tem 0 pontos nesta comparação
+            // Retornamos um valor negativo ou especial para indicar que o outro venceu?
+            // Melhor retornar o valor mas com sinal de quem venceu para a lógica da matriz.
+            // Mas a matriz triangular superior usa i < j.
             return 0; 
         }
     }
