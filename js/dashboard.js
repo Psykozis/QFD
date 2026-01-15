@@ -5,6 +5,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     updateDashboard();
+    setupDropdownMenu();
     
     // Atualiza dashboard a cada 5 segundos se a página estiver ativa
     setInterval(() => {
@@ -13,6 +14,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 5000);
 });
+
+function setupDropdownMenu() {
+    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+    
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const menu = this.nextElementSibling;
+            if (menu) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(openMenu => {
+                    if (openMenu !== menu) openMenu.classList.remove('show');
+                });
+                menu.classList.toggle('show');
+            }
+        });
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.nav-dropdown')) {
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+}
 
 function updateDashboard() {
     const stats = qfdDB.getProjectStats();

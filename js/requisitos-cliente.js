@@ -18,7 +18,44 @@ function setupEventListeners() {
     const textarea = document.getElementById('descricao-requisito');
     if (textarea) {
         textarea.addEventListener('input', autoResizeTextarea);
+        
+        // Salvar com Enter (sem Shift)
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmitRequisito(new Event('submit'));
+            }
+        });
     }
+
+    setupDropdownMenu();
+}
+
+function setupDropdownMenu() {
+    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+    
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const menu = this.nextElementSibling;
+            if (menu) {
+                // Fecha outros menus abertos
+                document.querySelectorAll('.dropdown-menu.show').forEach(openMenu => {
+                    if (openMenu !== menu) openMenu.classList.remove('show');
+                });
+                menu.classList.toggle('show');
+            }
+        });
+    });
+    
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.nav-dropdown')) {
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
 }
 
 function handleSubmitRequisito(event) {

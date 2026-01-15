@@ -256,7 +256,80 @@ function addMatrixEventListeners() {
     const influenceCells = document.querySelectorAll('.influence-cell');
     influenceCells.forEach(cell => {
         cell.addEventListener('click', () => openInfluenceModal(cell));
+        
+        // Adiciona hover tooltip
+        cell.addEventListener('mouseenter', showTooltip);
+        cell.addEventListener('mouseleave', hideTooltip);
     });
+
+    // Adiciona tooltips para cabeçalhos
+    const headerCells = document.querySelectorAll('.row-header, .req-number-cell');
+    headerCells.forEach(cell => {
+        cell.addEventListener('mouseenter', showTooltip);
+        cell.addEventListener('mouseleave', hideTooltip);
+    });
+
+    setupDropdownMenu();
+}
+
+function setupDropdownMenu() {
+    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+    
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const menu = this.nextElementSibling;
+            if (menu) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(openMenu => {
+                    if (openMenu !== menu) openMenu.classList.remove('show');
+                });
+                menu.classList.toggle('show');
+            }
+        });
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.nav-dropdown')) {
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+}
+
+function showTooltip(e) {
+    const tooltipText = e.target.closest('[data-tooltip]').getAttribute('data-tooltip');
+    if (!tooltipText) return;
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'custom-tooltip';
+    tooltip.innerHTML = tooltipText;
+    document.body.appendChild(tooltip);
+    
+    const rect = e.target.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    let top = rect.top - tooltipRect.height - 10;
+    
+    if (left < 10) left = 10;
+    if (left + tooltipRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - tooltipRect.width - 10;
+    }
+    if (top < 10) {
+        top = rect.bottom + 10;
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    tooltip.style.opacity = '1';
+}
+
+function hideTooltip() {
+    const tooltip = document.querySelector('.custom-tooltip');
+    if (tooltip) {
+        tooltip.remove();
+    }
 }
 
 function openInfluenceModal(cell) {
