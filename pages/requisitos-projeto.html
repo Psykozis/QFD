@@ -30,7 +30,24 @@
                         <a href="relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a>
                     </div>
                 </li>
+                <li>
+                    <a href="#"><i class="fas fa-database"></i> Backup & Export <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
+                    <div class="dropdown-content">
+                        <a href="#" onclick="exportProjectData()"><i class="fas fa-download"></i> Exportar Backup (JSON)</a>
+                        <a href="#" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Importar Backup (JSON)</a>
+                        <hr>
+                        <a href="#" onclick="document.getElementById('import-csv-cliente').click()"><i class="fas fa-file-csv"></i> Importar Req. Cliente (CSV)</a>
+                        <a href="#" onclick="document.getElementById('import-csv-projeto').click()"><i class="fas fa-file-csv"></i> Importar Req. Projeto (CSV)</a>
+                        <hr>
+                        <a href="#" onclick="exportPageData('cliente')"><i class="fas fa-file-export"></i> Exportar Req. Cliente</a>
+                        <a href="#" onclick="exportPageData('projeto')"><i class="fas fa-file-export"></i> Exportar Req. Projeto</a>
+                        <a href="#" onclick="exportPageData('matriz')"><i class="fas fa-file-export"></i> Exportar Matriz QFD</a>
+                    </div>
+                </li>
             </ul>
+            <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
+            <input type="file" id="import-csv-cliente" style="display: none;" onchange="importCSV(event, 'cliente')" accept=".csv">
+            <input type="file" id="import-csv-projeto" style="display: none;" onchange="importCSV(event, 'projeto')" accept=".csv">
         </div>
     </nav>
 
@@ -221,6 +238,11 @@
     <footer class="footer">
         <div class="container">
             <p>&copy; 2024 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+            <p style="font-size: 0.85rem; margin-top: 10px; opacity: 0.8;">
+                Este site foi gerado através da inteligência artificial <strong>Manus AI</strong>, com prompt gerado pelo <strong>Engenheiro Marlon Soares Sigales</strong>.
+                Os códigos estão abertos para quem quiser utilizar e ajustar no GitHub: <a href="https://github.com/Psykozis/QFD" target="_blank" style="color: #667eea;">https://github.com/Psykozis/QFD</a>.
+                Cópias são permitidas desde que devidamente citadas.
+            </p>
         </div>
     </footer>
 
