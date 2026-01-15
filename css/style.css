@@ -695,3 +695,137 @@ body {
     background-color: #f0f4ff !important;
     cursor: help;
 }
+
+/* Correções para Matriz de Comparação */
+.matrix-table-wrapper {
+    overflow-x: auto;
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.matrix-table {
+    display: table;
+    border-collapse: collapse;
+    min-width: 100%;
+    background: white;
+}
+
+.matrix-row {
+    display: table-row;
+}
+
+.matrix-cell {
+    display: table-cell;
+    padding: 12px;
+    border: 1px solid #e9ecef;
+    text-align: center;
+    vertical-align: middle;
+    min-width: 80px;
+}
+
+.matrix-header .matrix-cell {
+    background: #f8f9fa;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.matrix-row-header {
+    background: #f8f9fa;
+    font-weight: bold;
+    text-align: left;
+    min-width: 200px;
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+}
+
+.matrix-corner {
+    position: sticky;
+    left: 0;
+    top: 0;
+    z-index: 15;
+    background: #e9ecef !important;
+}
+
+/* Estilos para Somatórios */
+.req-summary {
+    display: block;
+    font-size: 0.8rem;
+    color: #667eea;
+    margin-top: 4px;
+}
+
+.matrix-row-total, .matrix-column-total, .matrix-grand-total {
+    background: #f0f4ff !important;
+    font-weight: bold;
+    color: #4a5568;
+}
+
+/* Hovers e Tooltips */
+.matrix-comparison:hover {
+    background-color: #edf2ff !important;
+    cursor: pointer;
+}
+
+.matrix-header-cell:hover, .matrix-row-header:hover {
+    background-color: #f1f3f5 !important;
+}
+
+/* Legenda Separada */
+.matrix-legend {
+    padding: 1rem;
+}
+
+.legend-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+}
+
+.legend-number {
+    background: #667eea;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.legend-text {
+    flex: 1;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.legend-score {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #4a5568;
+    background: #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
