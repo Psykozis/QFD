@@ -494,3 +494,73 @@ function importProjectData(event) {
     reader.readAsText(file);
 }
 
+
+// === NOVAS FUNCIONALIDADES: CSV E EXPORTAÇÃO POR PÁGINA ===
+
+function importCSV(event, type) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        let count = 0;
+
+        lines.forEach(line => {
+            const content = line.trim();
+            if (content && !content.startsWith('id,') && !content.startsWith('descricao')) {
+                // Tenta extrair a descrição (assume que é a primeira coluna ou a linha toda)
+                const parts = content.split(',');
+                const descricao = parts.length > 1 ? parts[1].replace(/"/g, '') : parts[0].replace(/"/g, '');
+                
+                if (type === 'cliente') {
+                    qfdDB.addRequisitoCliente(descricao);
+                } else {
+                    qfdDB.addRequisitoProjeto(descricao);
+                }
+                count++;
+            }
+        });
+
+        alert(`${count} requisitos importados com sucesso!`);
+        location.reload();
+    };
+    reader.readAsText(file);
+}
+
+function exportPageData(type) {
+    const data = qfdDB.loadData();
+    let exportContent = '';
+    let fileName = '';
+
+    if (type === 'cliente') {
+        exportContent = "id,descricao,importancia,peso\n";
+        data.requisitosCliente.forEach(req => {
+            exportContent += `${req.id},"${req.descricao}",${req.importancia},${req.peso}\n`;
+        });
+        fileName = 'requisitos-cliente.csv';
+    } else if (type === 'projeto') {
+        exportContent = "id,descricao,sentido,dificuldade\n";
+        data.requisitosProjeto.forEach(req => {
+            exportContent += `${req.id},"${req.descricao}",${req.sentidoMelhoria},${req.dificuldadeTecnica}\n`;
+        });
+        fileName = 'requisitos-projeto.csv';
+    } else if (type === 'matriz') {
+        exportContent = "cliente_id,projeto_id,influencia\n";
+        data.matrizQFD.forEach(rel => {
+            exportContent += `${rel.requisitoCliente},${rel.requisitoProjeto},${rel.influencia}\n`;
+        });
+        fileName = 'matriz-qfd.csv';
+    }
+
+    const blob = new Blob([exportContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
