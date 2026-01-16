@@ -829,3 +829,153 @@ body {
     padding: 2px 8px;
     border-radius: 10px;
 }
+
+/* Tooltips para células de comparação e cabeçalhos */
+.tooltip-cell {
+    position: relative;
+    cursor: help;
+}
+
+.tooltip-cell:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    white-space: normal;
+    max-width: 300px;
+    width: max-content;
+    z-index: 1000;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    line-height: 1.4;
+}
+
+.tooltip-cell:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    z-index: 1001;
+    margin-bottom: 2px;
+}
+
+/* Tooltip para cabeçalhos de requisitos */
+.requisito-header-cell {
+    position: relative;
+    cursor: help;
+    background-color: #f8f9fa;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.requisito-header-cell:hover {
+    background-color: #e9ecef;
+}
+
+.requisito-header-cell:hover::after {
+    content: attr(data-requisito-full);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(102, 126, 234, 0.95);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    white-space: normal;
+    max-width: 350px;
+    width: max-content;
+    z-index: 1000;
+    margin-top: 8px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    pointer-events: none;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.requisito-header-cell:hover::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-bottom-color: rgba(102, 126, 234, 0.95);
+    z-index: 1001;
+    margin-top: 2px;
+}
+
+/* Hover para células de preenchimento na matriz */
+.matriz-cell {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.matriz-cell:hover {
+    background-color: #fff3cd !important;
+    box-shadow: inset 0 0 0 2px #ffc107;
+}
+
+.matriz-cell:hover::after {
+    content: attr(data-comparison-info);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(33, 37, 41, 0.95);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    white-space: pre-line;
+    max-width: 400px;
+    width: max-content;
+    z-index: 1000;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.matriz-cell:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: rgba(33, 37, 41, 0.95);
+    z-index: 1001;
+    margin-bottom: 2px;
+}
+
+/* Animação suave para tooltips */
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.tooltip-cell:hover::after,
+.requisito-header-cell:hover::after,
+.matriz-cell:hover::after {
+    animation: tooltipFadeIn 0.2s ease-out;
+}
