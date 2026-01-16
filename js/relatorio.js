@@ -1855,27 +1855,27 @@ function generateRoofVisualization() {
             } else if (j < i) {
                 // Triângulo inferior - espelhado do superior
                 const corr = correlacoes.find(c => 
-                    (c.req1 === requisitosProjeto[i].id && c.req2 === requisitosProjeto[j].id) ||
-                    (c.req1 === requisitosProjeto[j].id && c.req2 === requisitosProjeto[i].id)
+                    (c.requisito1 === requisitosProjeto[i].id && c.requisito2 === requisitosProjeto[j].id) ||
+                    (c.requisito1 === requisitosProjeto[j].id && c.requisito2 === requisitosProjeto[i].id)
                 );
                 
                 let cellClass = 'roof-cell-lower';
                 let cellValue = '○';
                 
                 if (corr) {
-                    if (corr.value === '++') {
+                    if (corr.correlacao === '++') {
                         cellClass += ' strong-positive';
                         cellValue = '++';
-                    } else if (corr.value === '+') {
+                    } else if (corr.correlacao === '+') {
                         cellClass += ' positive';
                         cellValue = '+';
-                    } else if (corr.value === '-') {
+                    } else if (corr.correlacao === '-') {
                         cellClass += ' negative';
                         cellValue = '-';
-                    } else if (corr.value === '--') {
+                    } else if (corr.correlacao === '--') {
                         cellClass += ' strong-negative';
                         cellValue = '--';
-                    } else if (corr.value === '0') {
+                    } else if (corr.correlacao === '0') {
                         cellValue = '0';
                     }
                 }
@@ -1887,27 +1887,27 @@ function generateRoofVisualization() {
             } else {
                 // Triângulo superior
                 const corr = correlacoes.find(c => 
-                    (c.req1 === requisitosProjeto[i].id && c.req2 === requisitosProjeto[j].id) ||
-                    (c.req1 === requisitosProjeto[j].id && c.req2 === requisitosProjeto[i].id)
+                    (c.requisito1 === requisitosProjeto[i].id && c.requisito2 === requisitosProjeto[j].id) ||
+                    (c.requisito1 === requisitosProjeto[j].id && c.requisito2 === requisitosProjeto[i].id)
                 );
                 
                 let cellClass = 'roof-cell-upper';
                 let cellValue = '○';
                 
                 if (corr) {
-                    if (corr.value === '++') {
+                    if (corr.correlacao === '++') {
                         cellClass += ' strong-positive';
                         cellValue = '++';
-                    } else if (corr.value === '+') {
+                    } else if (corr.correlacao === '+') {
                         cellClass += ' positive';
                         cellValue = '+';
-                    } else if (corr.value === '-') {
+                    } else if (corr.correlacao === '-') {
                         cellClass += ' negative';
                         cellValue = '-';
-                    } else if (corr.value === '--') {
+                    } else if (corr.correlacao === '--') {
                         cellClass += ' strong-negative';
                         cellValue = '--';
-                    } else if (corr.value === '0') {
+                    } else if (corr.correlacao === '0') {
                         cellValue = '0';
                     }
                 }
