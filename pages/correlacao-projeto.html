@@ -42,14 +42,16 @@
                         <a href="#" onclick="exportPageData('cliente')"><i class="fas fa-file-export"></i> Exportar Req. Cliente</a>
                         <a href="#" onclick="exportPageData('projeto')"><i class="fas fa-file-export"></i> Exportar Req. Projeto</a>
                         <a href="#" onclick="exportPageData('matriz')"><i class="fas fa-file-export"></i> Exportar Matriz QFD</a>
+                        <hr>
+                        <a href="#" onclick="exportCorrelacoes('csv')"><i class="fas fa-file-csv"></i> Exportar Correlações (CSV)</a>
+                        <a href="#" onclick="importCorrelacoes()"><i class="fas fa-file-csv"></i> Importar Correlações (CSV)</a>
                     </div>
                 </li>
             </ul>
             <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
             <input type="file" id="import-csv-cliente" style="display: none;" onchange="importCSV(event, 'cliente')" accept=".csv">
             <input type="file" id="import-csv-projeto" style="display: none;" onchange="importCSV(event, 'projeto')" accept=".csv">
-                </li>
-            </ul>
+            <input type="file" id="import-csv-correlacoes" style="display: none;" onchange="importCorrelacoesCsv(event)" accept=".csv">
         </div>
     </nav>
 
@@ -185,6 +187,26 @@
                 </div>
             </div>
 
+            <!-- Modal para preenchimento instantâneo de correlações -->
+            <div id="correlation-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="modal-title">Definir Correlação</h3>
+                        <button class="modal-close" onclick="closeCorrelationModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="modal-requisitos" class="modal-requisitos"></div>
+                        <div class="correlation-options">
+                            <button class="correlation-btn strong-positive" onclick="setCorrelation('++')" title="Correlação Positiva Muito Forte">++</button>
+                            <button class="correlation-btn positive" onclick="setCorrelation('+')">+</button>
+                            <button class="correlation-btn neutral" onclick="setCorrelation('0')">0</button>
+                            <button class="correlation-btn negative" onclick="setCorrelation('-')">-</button>
+                            <button class="correlation-btn strong-negative" onclick="setCorrelation('--')">--</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Análise das correlações -->
             <div id="analysis-section" class="card" style="display: none;">
                 <div class="card-header">
@@ -197,6 +219,14 @@
                 </div>
                 
                 <div class="analysis-content">
+                    <div class="analysis-filters">
+                        <button class="filter-btn" onclick="filterAnalysis('all')"><i class="fas fa-list"></i> Todas</button>
+                        <button class="filter-btn" onclick="filterAnalysis('strong-positive')"><i class="fas fa-arrow-up"></i> Muito Fortes Positivas</button>
+                        <button class="filter-btn" onclick="filterAnalysis('positive')"><i class="fas fa-plus"></i> Positivas</button>
+                        <button class="filter-btn" onclick="filterAnalysis('neutral')"><i class="fas fa-minus"></i> Sem Correlacao</button>
+                        <button class="filter-btn" onclick="filterAnalysis('negative')"><i class="fas fa-arrow-down"></i> Negativas</button>
+                        <button class="filter-btn" onclick="filterAnalysis('strong-negative')"><i class="fas fa-ban"></i> Muito Fortes Negativas</button>
+                    </div>
                     <div class="correlation-summary" id="correlation-summary">
                         <!-- Resumo será gerado dinamicamente -->
                     </div>
