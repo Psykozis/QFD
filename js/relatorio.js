@@ -565,13 +565,17 @@ function generateMatrixTable() {
     });
     
     // Rodapé com cálculos
+    // Calcular importância relativa
+    const totalImportancia = requisitosProjeto.reduce((sum, req) => sum + (req.importanciaAbsoluta || 0), 0);
+    
     tableHTML += `
         <tr class="footer-row">
-            <td class="footer-label">Imp. Absoluta</td>
+            <td class="footer-label">Imp. Relativa (%)</td>
     `;
     
     requisitosProjeto.forEach(req => {
-        tableHTML += `<td class="absolute-importance">${req.importanciaAbsoluta.toFixed(1)}</td>`;
+        const importanciaRelativa = totalImportancia > 0 ? ((req.importanciaAbsoluta || 0) / totalImportancia * 100).toFixed(1) : 0;
+        tableHTML += `<td class="relative-importance">${importanciaRelativa}%</td>`;
     });
     
     tableHTML += '<td></td></tr>';
