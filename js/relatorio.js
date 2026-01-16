@@ -1805,3 +1805,129 @@ function escapeHtml(text) {
     };
     return text.replace(/[&<>"']/g, m => map[m]);
 }
+
+
+// Funcao para gerar visualizacao completa do Telhado QFD
+function generateRoofVisualization() {
+    const correlacoes = qfdDB.getCorrelacoesProjeto();
+    const matrizQFD = qfdDB.getMatrizQFD();
+    
+    let html = '<div class="report-section"><h2>Visualização do Telhado QFD</h2>';
+    html += '<p>Matriz completa do telhado QFD mostrando as correlações entre todos os requisitos de projeto.</p>';
+    
+    html += '<div class="roof-visualization-container">';
+    html += '<table class="roof-visualization-table">';
+    
+    // Cabeçalho com números dos requisitos
+    html += '<thead><tr><th class="roof-corner"></th>';
+    for (let i = 0; i < requisitosProjeto.length; i++) {
+        const req = requisitosProjeto[i];
+        const sentido = getSentidoSymbol(req.sentidoMelhoria);
+        html += `<th class="roof-header-cell report-header-cell-with-hover" data-tooltip="RP ${i + 1}: ${escapeHtml(req.descricao)}">${i + 1}${sentido}</th>`;
+    }
+    html += '</tr></thead>';
+    
+    // Corpo da tabela com matriz triangular
+    html += '<tbody>';
+    for (let i = 0; i < requisitosProjeto.length; i++) {
+        html += '<tr>';
+        
+        // Cabeçalho da linha
+        const reqI = requisitosProjeto[i];
+        const sentidoI = getSentidoSymbol(reqI.sentidoMelhoria);
+        html += `<th class="roof-row-header report-header-cell-with-hover" data-tooltip="RP ${i + 1}: ${escapeHtml(reqI.descricao)}">${i + 1}${sentidoI}</th>`;
+        
+        // Células da matriz
+        for (let j = 0; j < requisitosProjeto.length; j++) {
+            if (i === j) {
+                // Diagonal - sem correlação consigo mesmo
+                html += '<td class="roof-diagonal-cell"></td>';
+            } else if (j < i) {
+                // Triângulo inferior - espelhado do superior
+                const corr = correlacoes.find(c => 
+                    (c.req1 === requisitosProjeto[i].id && c.req2 === requisitosProjeto[j].id) ||
+                    (c.req1 === requisitosProjeto[j].id && c.req2 === requisitosProjeto[i].id)
+                );
+                
+                let cellClass = 'roof-cell-lower';
+                let cellValue = '○';
+                
+                if (corr) {
+                    if (corr.value === '++') {
+                        cellClass += ' strong-positive';
+                        cellValue = '++';
+                    } else if (corr.value === '+') {
+                        cellClass += ' positive';
+                        cellValue = '+';
+                    } else if (corr.value === '-') {
+                        cellClass += ' negative';
+                        cellValue = '-';
+                    } else if (corr.value === '--') {
+                        cellClass += ' strong-negative';
+                        cellValue = '--';
+                    } else if (corr.value === '0') {
+                        cellValue = '0';
+                    }
+                }
+                
+                const reqJ = requisitosProjeto[j];
+                const tooltip = `RP ${i + 1} vs RP ${j + 1}: ${escapeHtml(reqI.descricao)} vs ${escapeHtml(reqJ.descricao)}`;
+                
+                html += `<td class="${cellClass} report-cell-with-hover" data-tooltip="${tooltip}">${cellValue}</td>`;
+            } else {
+                // Triângulo superior
+                const corr = correlacoes.find(c => 
+                    (c.req1 === requisitosProjeto[i].id && c.req2 === requisitosProjeto[j].id) ||
+                    (c.req1 === requisitosProjeto[j].id && c.req2 === requisitosProjeto[i].id)
+                );
+                
+                let cellClass = 'roof-cell-upper';
+                let cellValue = '○';
+                
+                if (corr) {
+                    if (corr.value === '++') {
+                        cellClass += ' strong-positive';
+                        cellValue = '++';
+                    } else if (corr.value === '+') {
+                        cellClass += ' positive';
+                        cellValue = '+';
+                    } else if (corr.value === '-') {
+                        cellClass += ' negative';
+                        cellValue = '-';
+                    } else if (corr.value === '--') {
+                        cellClass += ' strong-negative';
+                        cellValue = '--';
+                    } else if (corr.value === '0') {
+                        cellValue = '0';
+                    }
+                }
+                
+                const reqJ = requisitosProjeto[j];
+                const tooltip = `RP ${i + 1} vs RP ${j + 1}: ${escapeHtml(reqI.descricao)} vs ${escapeHtml(reqJ.descricao)}`;
+                
+                html += `<td class="${cellClass} report-cell-with-hover" data-tooltip="${tooltip}">${cellValue}</td>`;
+            }
+        }
+        
+        html += '</tr>';
+    }
+    html += '</tbody>';
+    
+    html += '</table>';
+    html += '</div>';
+    
+    // Legenda
+    html += '<div class="roof-legend">';
+    html += '<h4>Legenda de Correlações:</h4>';
+    html += '<div class="legend-items">';
+    html += '<div class="legend-item"><span class="legend-symbol strong-positive">++</span> Correlação Positiva Muito Forte</div>';
+    html += '<div class="legend-item"><span class="legend-symbol positive">+</span> Correlação Positiva</div>';
+    html += '<div class="legend-item"><span class="legend-symbol">0</span> Sem Correlação</div>';
+    html += '<div class="legend-item"><span class="legend-symbol negative">-</span> Correlação Negativa</div>';
+    html += '<div class="legend-item"><span class="legend-symbol strong-negative">--</span> Correlação Negativa Muito Forte</div>';
+    html += '</div>';
+    html += '</div>';
+    
+    html += '</div>';
+    return html;
+}
