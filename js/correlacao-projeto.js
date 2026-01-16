@@ -1740,4 +1740,31 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeCorrelationModal();
     }
+    
+    // Atalhos de teclado para definir correlacoes
+    const modal = document.getElementById('correlation-modal');
+    if (modal && modal.style.display === 'flex' && currentModalReq1 && currentModalReq2) {
+        switch(e.key) {
+            case '*':
+                e.preventDefault();
+                setCorrelation('++');
+                break;
+            case '+':
+                e.preventDefault();
+                setCorrelation('+');
+                break;
+            case '0':
+                e.preventDefault();
+                setCorrelation('0');
+                break;
+            case '-':
+                e.preventDefault();
+                setCorrelation('-');
+                break;
+            case '/':
+                e.preventDefault();
+                setCorrelation('--');
+                break;
+        }
+    }
 });
