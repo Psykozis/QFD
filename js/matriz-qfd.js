@@ -114,7 +114,7 @@ function generateMainHeader() {
     headerHTML += '<th class="corner-cell">Requisitos</th>';
     
     for (let i = 0; i < requisitosProjeto.length; i++) {
-        headerHTML += `<th class="req-number-cell" data-tooltip="${escapeHtml(requisitosProjeto[i].descricao)}">
+        headerHTML += `<th class="req-number-cell requisito-header-cell" data-requisito-full="${escapeHtml(requisitosProjeto[i].descricao)}">
             <div class="req-number">${i + 1}</div>
         </th>`;
     }
@@ -151,7 +151,7 @@ function generateMatrixRows() {
         rowsHTML += '<tr class="matrix-row">';
         
         // Cabeçalho da linha (requisito de cliente)
-        rowsHTML += `<td class="row-header" data-tooltip="${escapeHtml(reqCliente.descricao)}">
+        rowsHTML += `<td class="row-header requisito-header-cell" data-requisito-full="${escapeHtml(reqCliente.descricao)}">
             <div class="req-info">
                 <span class="req-number">${i + 1}</span>
                 <span class="req-text">${truncateText(reqCliente.descricao, 40)}</span>
@@ -164,12 +164,12 @@ function generateMatrixRows() {
             const influencia = qfdDB.getMatrizQFD(reqCliente.id, reqProjeto.id);
             const tooltipText = `Cliente: ${escapeHtml(reqCliente.descricao)} | Projeto: ${escapeHtml(reqProjeto.descricao)}`;
             
-            rowsHTML += `<td class="influence-cell ${influencia > 0 ? 'filled' : ''}" 
+            rowsHTML += `<td class="influence-cell matriz-cell ${influencia > 0 ? 'filled' : ''}" 
                 data-cliente="${reqCliente.id}" 
                 data-projeto="${reqProjeto.id}"
                 data-i="${i}" 
                 data-j="${j}"
-                data-tooltip="${tooltipText}">
+                data-comparison-info="Cliente: ${escapeHtml(reqCliente.descricao)}\n\nProjeto: ${escapeHtml(reqProjeto.descricao)}\n\nInfluência: ${influencia > 0 ? influencia : 'Não definida'}">
                 ${influencia > 0 ? `<span class="influence-value level-${influencia}">${influencia}</span>` : ''}
             </td>`;
         }

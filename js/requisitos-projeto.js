@@ -18,6 +18,16 @@ function setupEventListeners() {
     const textarea = document.getElementById('descricao-requisito');
     if (textarea) {
         textarea.addEventListener('input', autoResizeTextarea);
+        // Adicionar evento para salvar com Enter
+        textarea.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                const form = document.getElementById('form-requisito-projeto');
+                if (form) {
+                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                }
+            }
+        });
     }
 }
 
