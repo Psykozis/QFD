@@ -1647,3 +1647,161 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
+
+// ============================================
+// NOVAS FUNCIONALIDADES - DICIONÁRIO E TELHADO
+// ============================================
+
+// Funcao para gerar dicionario de requisitos
+function generateDictionary() {
+    let html = '<div class="report-section"><h2>Dicionário de Requisitos</h2>';
+    html += '<p>Mapeamento de códigos de requisitos com suas descrições completas.</p>';
+    
+    // Tabela de Requisitos de Cliente
+    html += '<h3>Requisitos de Cliente (RC)</h3>';
+    html += '<table class="dictionary-table"><thead><tr><th>Código</th><th>Descrição</th></tr></thead><tbody>';
+    requisitosCliente.forEach((req, idx) => {
+        html += `<tr><td class="req-code">RC ${idx + 1}</td><td class="req-description report-cell-with-hover" data-tooltip="${escapeHtml(req.descricao)}">${escapeHtml(req.descricao)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    
+    // Tabela de Requisitos de Projeto
+    html += '<h3>Requisitos de Projeto (RP)</h3>';
+    html += '<table class="dictionary-table"><thead><tr><th>Código</th><th>Descrição</th><th>Sentido</th></tr></thead><tbody>';
+    requisitosProjeto.forEach((req, idx) => {
+        const sentido = getSentidoLabel(req.sentidoMelhoria);
+        html += `<tr><td class="req-code">RP ${idx + 1}</td><td class="req-description report-cell-with-hover" data-tooltip="${escapeHtml(req.descricao)}">${escapeHtml(req.descricao)}</td><td>${sentido}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+    
+    return html;
+}
+
+// Funcao para obter label do sentido de melhoria
+function getSentidoLabel(sentido) {
+    const labels = {
+        'maior': 'Maior é Melhor ↑',
+        'menor': 'Menor é Melhor ↓',
+        'nominal': 'Valor Nominal ◯'
+    };
+    return labels[sentido] || sentido;
+}
+
+// Funcao para gerar telhado QFD
+function generateRoofMatrix() {
+    const correlacoes = qfdDB.getCorrelacoesProjeto();
+    
+    let html = '<div class="report-section"><h2>Telhado QFD - Correlações entre Requisitos</h2>';
+    html += '<p>Matriz triangular superior mostrando as correlações entre requisitos de projeto.</p>';
+    html += '<div class="roof-matrix-preview"><table class="roof-table-preview">';
+    
+    // Cabeçalho com números dos requisitos
+    html += '<tr>';
+    for (let i = 0; i < requisitosProjeto.length; i++) {
+        const req = requisitosProjeto[i];
+        const sentido = getSentidoSymbol(req.sentidoMelhoria);
+        html += `<td class="report-header-cell-with-hover" data-tooltip="RP ${i + 1}: ${escapeHtml(req.descricao)}">${i + 1}${sentido}</td>`;
+    }
+    html += '</tr>';
+    
+    // Matriz triangular
+    for (let i = 0; i < requisitosProjeto.length - 1; i++) {
+        html += '<tr>';
+        for (let j = 0; j < requisitosProjeto.length; j++) {
+            if (j <= i) {
+                html += '<td></td>';
+            } else {
+                const corr = correlacoes.find(c => 
+                    (c.req1 === requisitosProjeto[i].id && c.req2 === requisitosProjeto[j].id) ||
+                    (c.req1 === requisitosProjeto[j].id && c.req2 === requisitosProjeto[i].id)
+                );
+                
+                let cellClass = 'roof-cell-preview';
+                let cellValue = '○';
+                
+                if (corr) {
+                    if (corr.value === '++') {
+                        cellClass += ' strong-positive';
+                        cellValue = '++';
+                    } else if (corr.value === '+') {
+                        cellClass += ' positive';
+                        cellValue = '+';
+                    } else if (corr.value === '-') {
+                        cellClass += ' negative';
+                        cellValue = '-';
+                    } else if (corr.value === '--') {
+                        cellClass += ' strong-negative';
+                        cellValue = '--';
+                    } else if (corr.value === '0') {
+                        cellValue = '0';
+                    }
+                }
+                
+                const req1 = requisitosProjeto[i];
+                const req2 = requisitosProjeto[j];
+                const tooltip = `RP ${i + 1} vs RP ${j + 1}: ${escapeHtml(req1.descricao)} vs ${escapeHtml(req2.descricao)}`;
+                
+                html += `<td class="${cellClass} report-cell-with-hover" data-tooltip="${tooltip}">${cellValue}</td>`;
+            }
+        }
+        html += '</tr>';
+    }
+    
+    html += '</table></div></div>';
+    return html;
+}
+
+// Funcao para obter símbolo do sentido de melhoria
+function getSentidoSymbol(sentido) {
+    const symbols = {
+        'maior': '↑',
+        'menor': '↓',
+        'nominal': '◯'
+    };
+    return symbols[sentido] || '';
+}
+
+// Funcao para gerar importância relativa
+function generateRelativeImportance() {
+    const requisitos = requisitosCliente;
+    
+    if (requisitos.length === 0) return '';
+    
+    const totalImportancia = requisitos.reduce((sum, req) => sum + (req.importancia || 0), 0);
+    
+    let html = '<div class="report-section"><h2>Importância Relativa dos Requisitos</h2>';
+    html += '<p>Distribuição percentual da importância entre os requisitos de cliente.</p>';
+    html += '<table class="dictionary-table"><thead><tr><th>Requisito</th><th>Importância Absoluta</th><th>Importância Relativa</th></tr></thead><tbody>';
+    
+    requisitos.forEach((req, idx) => {
+        const importanciaRelativa = totalImportancia > 0 ? ((req.importancia || 0) / totalImportancia * 100).toFixed(1) : 0;
+        const barWidth = importanciaRelativa;
+        
+        html += `<tr>
+            <td class="req-code report-cell-with-hover" data-tooltip="RC ${idx + 1}: ${escapeHtml(req.descricao)}">RC ${idx + 1}</td>
+            <td>${req.importancia || 0}</td>
+            <td>
+                <div class="importance-relative">
+                    <div class="importance-bar" style="width: ${barWidth}%"></div>
+                    <span class="importance-value">${importanciaRelativa}%</span>
+                </div>
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table></div>';
+    return html;
+}
+
+// Funcao auxiliar para escapar HTML
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
