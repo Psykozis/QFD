@@ -1191,3 +1191,24 @@ body {
         transform: translateY(0);
     }
 }
+
+
+/* Legenda de atalhos de teclado */
+.keyboard-shortcuts {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+}
+
+.keyboard-shortcuts p {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0;
+    font-style: italic;
+}
+
+.keyboard-shortcuts strong {
+    color: #4b5563;
+    font-weight: 600;
+}
