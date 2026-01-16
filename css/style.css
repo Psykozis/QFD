@@ -987,3 +987,318 @@ body {
     z-index: 1000;
     margin-bottom: 5px;
 }
+
+/* ===== ESTILOS PARA VISUALIZAÇÃO COMPLETA DO TELHADO QFD ===== */
+
+.roof-visualization-container {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.roof-visualization-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.roof-corner {
+    width: 60px;
+    height: 60px;
+    background: #e9ecef;
+    border: 1px solid #dee2e6;
+}
+
+.roof-header-cell {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    font-size: 0.9rem;
+    padding: 0;
+}
+
+.roof-row-header {
+    width: 60px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    font-size: 0.9rem;
+    padding: 0;
+}
+
+.roof-cell-upper,
+.roof-cell-lower,
+.roof-diagonal-cell {
+    width: 50px;
+    height: 50px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 600;
+    font-size: 0.9rem;
+    background: white;
+}
+
+.roof-diagonal-cell {
+    background: #f0f4ff;
+}
+
+.roof-cell-upper.strong-positive,
+.roof-cell-lower.strong-positive {
+    background: #86efac;
+    color: #059669;
+    border-color: #059669;
+}
+
+.roof-cell-upper.positive,
+.roof-cell-lower.positive {
+    background: #dcfce7;
+    color: #10b981;
+    border-color: #10b981;
+}
+
+.roof-cell-upper.negative,
+.roof-cell-lower.negative {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.roof-cell-upper.strong-negative,
+.roof-cell-lower.strong-negative {
+    background: #fca5a5;
+    color: #991b1b;
+    border-color: #991b1b;
+}
+
+.roof-legend {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.roof-legend h4 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.legend-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.legend-symbol {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #f0f4ff;
+    border: 1px solid #667eea;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.legend-symbol.strong-positive {
+    background: #86efac;
+    color: #059669;
+    border-color: #059669;
+}
+
+.legend-symbol.positive {
+    background: #dcfce7;
+    color: #10b981;
+    border-color: #10b981;
+}
+
+.legend-symbol.negative {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.legend-symbol.strong-negative {
+    background: #fca5a5;
+    color: #991b1b;
+    border-color: #991b1b;
+}
+
+
+/* ===== ESTILOS PARA VISUALIZAÇÃO COMPLETA DO TELHADO QFD ===== */
+
+.roof-visualization-container {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.roof-visualization-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.roof-corner {
+    width: 60px;
+    height: 60px;
+    background: #e9ecef;
+    border: 1px solid #dee2e6;
+}
+
+.roof-header-cell {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    font-size: 0.9rem;
+    padding: 0;
+}
+
+.roof-row-header {
+    width: 60px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    font-size: 0.9rem;
+    padding: 0;
+}
+
+.roof-cell-upper,
+.roof-cell-lower,
+.roof-diagonal-cell {
+    width: 50px;
+    height: 50px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 600;
+    font-size: 0.9rem;
+    background: white;
+}
+
+.roof-diagonal-cell {
+    background: #f0f4ff;
+}
+
+.roof-cell-upper.strong-positive,
+.roof-cell-lower.strong-positive {
+    background: #86efac;
+    color: #059669;
+    border-color: #059669;
+}
+
+.roof-cell-upper.positive,
+.roof-cell-lower.positive {
+    background: #dcfce7;
+    color: #10b981;
+    border-color: #10b981;
+}
+
+.roof-cell-upper.negative,
+.roof-cell-lower.negative {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.roof-cell-upper.strong-negative,
+.roof-cell-lower.strong-negative {
+    background: #fca5a5;
+    color: #991b1b;
+    border-color: #991b1b;
+}
+
+.roof-legend {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.roof-legend h4 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.legend-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.legend-symbol {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #f0f4ff;
+    border: 1px solid #667eea;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.legend-symbol.strong-positive {
+    background: #86efac;
+    color: #059669;
+    border-color: #059669;
+}
+
+.legend-symbol.positive {
+    background: #dcfce7;
+    color: #10b981;
+    border-color: #10b981;
+}
+
+.legend-symbol.negative {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.legend-symbol.strong-negative {
+    background: #fca5a5;
+    color: #991b1b;
+    border-color: #991b1b;
+}
