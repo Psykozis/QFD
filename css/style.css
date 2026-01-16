@@ -1302,3 +1302,18 @@ body {
     color: #991b1b;
     border-color: #991b1b;
 }
+
+/* Estilos para Importância Relativa na Matriz */
+.relative-importance {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+}
+
+.absolute-importance {
+    background: #f0f4ff;
+    color: #667eea;
+    font-weight: 600;
+    text-align: center;
+}
