@@ -142,6 +142,9 @@ function generatePreview() {
     // Seções selecionadas
     selectedSections.forEach(section => {
         switch (section) {
+            case 'section-dictionary':
+                previewHTML += generateDictionary();
+                break;
             case 'section-summary':
                 previewHTML += generateSummarySection();
                 break;
@@ -150,6 +153,9 @@ function generatePreview() {
                 break;
             case 'section-project-req':
                 previewHTML += generateProjectRequirementsSection();
+                break;
+            case 'section-roof':
+                previewHTML += generateRoofVisualization();
                 break;
             case 'section-correlations':
                 previewHTML += generateCorrelationsSection();
