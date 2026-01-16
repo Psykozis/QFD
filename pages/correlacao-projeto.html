@@ -197,11 +197,14 @@
                     <div class="modal-body">
                         <div id="modal-requisitos" class="modal-requisitos"></div>
                         <div class="correlation-options">
-                            <button class="correlation-btn strong-positive" onclick="setCorrelation('++')" title="Correlação Positiva Muito Forte">++</button>
-                            <button class="correlation-btn positive" onclick="setCorrelation('+')">+</button>
-                            <button class="correlation-btn neutral" onclick="setCorrelation('0')">0</button>
-                            <button class="correlation-btn negative" onclick="setCorrelation('-')">-</button>
-                            <button class="correlation-btn strong-negative" onclick="setCorrelation('--')">--</button>
+                            <button class="correlation-btn strong-positive" onclick="setCorrelation('++')" title="Correlação Positiva Muito Forte (Tecla: *)">++</button>
+                            <button class="correlation-btn positive" onclick="setCorrelation('+')" title="Correlação Positiva (Tecla: +)">+</button>
+                            <button class="correlation-btn neutral" onclick="setCorrelation('0')" title="Sem Correlação (Tecla: 0)">0</button>
+                            <button class="correlation-btn negative" onclick="setCorrelation('-')" title="Correlação Negativa (Tecla: -)">-</button>
+                            <button class="correlation-btn strong-negative" onclick="setCorrelation('--')" title="Correlação Negativa Muito Forte (Tecla: /)">--</button>
+                        </div>
+                        <div class="keyboard-shortcuts">
+                            <p><strong>Atalhos de teclado:</strong> * = ++, + = +, 0 = 0, - = -, / = --</p>
                         </div>
                     </div>
                 </div>
