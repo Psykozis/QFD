@@ -429,11 +429,56 @@ body {
 }
 
 /* Matriz QFD específica */
+.qfd-container {
+    position: relative;
+    margin-top: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.qfd-roof-container {
+    margin-left: 200px; /* Alinhado com o início das colunas de projeto */
+    margin-bottom: -1px;
+    overflow: visible;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.qfd-roof-container.collapsed {
+    display: none;
+}
+
+.qfd-roof-table {
+    border-collapse: collapse;
+    margin: 0 auto;
+}
+
+.qfd-roof-cell {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #ddd;
+    transform: rotate(45deg);
+    position: relative;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+}
+
+.qfd-roof-cell .symbol {
+    transform: rotate(-45deg);
+    font-weight: bold;
+}
+
 .qfd-matrix {
     overflow-x: auto;
     background: white;
-    border-radius: 12px;
+    border-radius: 0 0 12px 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    width: 100%;
 }
 
 .qfd-table {
@@ -460,6 +505,23 @@ body {
     text-align: left;
     font-weight: 600;
     min-width: 200px;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+}
+
+.importance-header, .importance-cell {
+    min-width: 80px !important;
+}
+
+.importance-value-cell {
+    background: #f0f4ff;
+    font-weight: bold;
+}
+
+.importance-percent-cell {
+    background: #eef2ff;
+    color: #667eea;
 }
 
 /* Footer */
@@ -675,14 +737,28 @@ body {
     padding: 10px 15px;
     border-radius: 6px;
     font-size: 0.85rem;
-    z-index: 9999;
+    z-index: 10000;
     pointer-events: none;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     max-width: 300px;
     line-height: 1.4;
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.2s ease;
     border-left: 3px solid #667eea;
+}
+
+.qfd-tooltip {
+    position: fixed;
+    background: rgba(33, 37, 41, 0.95);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    z-index: 10000;
+    pointer-events: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    max-width: 300px;
+    line-height: 1.4;
 }
 
 /* Efeito de Hover nas células da matriz */
