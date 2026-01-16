@@ -1736,35 +1736,38 @@ document.addEventListener('click', function(e) {
 });
 
 // Fechar modal ao pressionar ESC
+// Fechar modal ao pressionar ESC e atalhos de teclado
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
+    const modal = document.getElementById('correlation-modal');
+    const isModalOpen = modal && modal.style.display === 'flex';
+    
+    // ESC para fechar modal
+    if (e.key === 'Escape' && isModalOpen) {
         closeCorrelationModal();
+        return;
     }
     
     // Atalhos de teclado para definir correlacoes
-    const modal = document.getElementById('correlation-modal');
-    if (modal && modal.style.display === 'flex' && currentModalReq1 && currentModalReq2) {
-        switch(e.key) {
-            case '*':
-                e.preventDefault();
-                setCorrelation('++');
-                break;
-            case '+':
-                e.preventDefault();
-                setCorrelation('+');
-                break;
-            case '0':
-                e.preventDefault();
-                setCorrelation('0');
-                break;
-            case '-':
-                e.preventDefault();
-                setCorrelation('-');
-                break;
-            case '/':
-                e.preventDefault();
-                setCorrelation('--');
-                break;
+    if (isModalOpen && currentModalReq1 && currentModalReq2) {
+        let correlationValue = null;
+        
+        // Verificar qual tecla foi pressionada
+        if (e.key === '*' || (e.shiftKey && e.key === '8')) {
+            correlationValue = '++';
+        } else if (e.key === '+' || (e.shiftKey && e.key === '=')) {
+            correlationValue = '+';
+        } else if (e.key === '0') {
+            correlationValue = '0';
+        } else if (e.key === '-') {
+            correlationValue = '-';
+        } else if (e.key === '/' || e.key === '?') {
+            correlationValue = '--';
+        }
+        
+        if (correlationValue) {
+            e.preventDefault();
+            console.log('Atalho de teclado acionado: ' + e.key + ' -> ' + correlationValue);
+            setCorrelation(correlationValue);
         }
     }
 });
