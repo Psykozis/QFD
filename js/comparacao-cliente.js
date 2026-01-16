@@ -90,10 +90,10 @@ function generateComparisonMatrix() {
     for (let i = 0; i < requisitos.length; i++) {
         const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}`;
         matrixHTML += `<div class="matrix-cell matrix-header-cell" 
-            title="${tooltipText}"
             data-tooltip="${tooltipText}">
             <div class="header-content">
                 <span class="req-number">${i + 1}</span>
+                <div class="req-desc-mini">${truncateText(requisitos[i].descricao, 15)}</div>
                 <span class="req-summary">${somatorios.colunas[i] || 0}</span>
             </div>
         </div>`;
@@ -209,7 +209,11 @@ function generateComparisonMatrix() {
     // Adiciona event listeners para as células de comparação
     const comparisonCells = matrixContainer.querySelectorAll('.matrix-comparison');
     comparisonCells.forEach(cell => {
-        cell.addEventListener('click', () => openComparisonModal(cell));
+        cell.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openComparisonModal(this);
+        });
         
         // Adiciona hover tooltip
         cell.addEventListener('mouseenter', showTooltip);
@@ -311,34 +315,46 @@ function importComparacoesCSV(event) {
     };
     reader.readAsText(file);
 }
-
 function showTooltip(e) {
-    const tooltipText = e.target.closest('[data-tooltip]').getAttribute('data-tooltip');
+    const target = e.target.closest('[data-tooltip]');
+    if (!target) return;
+    const tooltipText = target.getAttribute('data-tooltip');
     if (!tooltipText) return;
+    
+    // Remove tooltip existente se houver
+    hideTooltip();
     
     const tooltip = document.createElement('div');
     tooltip.className = 'custom-tooltip';
     tooltip.innerHTML = tooltipText;
     document.body.appendChild(tooltip);
     
-    const rect = e.target.getBoundingClientRect();
+    const rect = target.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
     
     let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
     let top = rect.top - tooltipRect.height - 10;
     
-    // Ajusta posição se sair da tela
+    // Ajusta posição se sair da tela horizontalmente
     if (left < 10) left = 10;
     if (left + tooltipRect.width > window.innerWidth - 10) {
         left = window.innerWidth - tooltipRect.width - 10;
     }
+    
+    // Ajusta posição se sair da tela verticalmente (mostra abaixo se não couber acima)
     if (top < 10) {
         top = rect.bottom + 10;
+    }
+    
+    // Garante que não saia pela parte inferior
+    if (top + tooltipRect.height > window.innerHeight - 10) {
+        top = window.innerHeight - tooltipRect.height - 10;
     }
     
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
     tooltip.style.opacity = '1';
+}    tooltip.style.opacity = '1';
 }
 
 function hideTooltip() {
@@ -1623,6 +1639,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             .value-badge.value-5 {
                 background: #dc3545;
+            }
+
+            .req-desc-mini {
+                font-size: 0.65rem;
+                color: #666;
+                max-width: 60px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                margin: 2px 0;
             }
             
             /* Results Styles */
