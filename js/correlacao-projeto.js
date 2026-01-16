@@ -1539,3 +1539,205 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
+
+// ============================================
+// NOVAS FUNCIONALIDADES - MODAL E FILTROS
+// ============================================
+
+let currentModalReq1 = null;
+let currentModalReq2 = null;
+let currentFilterType = 'all';
+
+// Funcao para abrir modal de correlacao instantanea
+function openCorrelationModal(req1, req2, i, j) {
+    currentModalReq1 = { ...req1, index: i };
+    currentModalReq2 = { ...req2, index: j };
+    
+    const modal = document.getElementById('correlation-modal');
+    const modalRequisitos = document.getElementById('modal-requisitos');
+    
+    const html = `
+        <div class="req-info">Requisito ${i + 1}: ${escapeHtml(req1.descricao.substring(0, 60))}${req1.descricao.length > 60 ? '...' : ''}</div>
+        <div class="req-desc">Sentido: ${getSentidoLabel(req1.sentidoMelhoria)} ${getSentidoSymbol(req1.sentidoMelhoria)}</div>
+        <hr style="margin: 0.75rem 0; border: none; border-top: 1px solid #ddd;">
+        <div class="req-info">Requisito ${j + 1}: ${escapeHtml(req2.descricao.substring(0, 60))}${req2.descricao.length > 60 ? '...' : ''}</div>
+        <div class="req-desc">Sentido: ${getSentidoLabel(req2.sentidoMelhoria)} ${getSentidoSymbol(req2.sentidoMelhoria)}</div>
+    `;
+    
+    modalRequisitos.innerHTML = html;
+    modal.style.display = 'flex';
+}
+
+// Funcao para fechar modal
+function closeCorrelationModal() {
+    const modal = document.getElementById('correlation-modal');
+    modal.style.display = 'none';
+    currentModalReq1 = null;
+    currentModalReq2 = null;
+}
+
+// Funcao para definir correlacao via modal
+function setCorrelation(value) {
+    if (!currentModalReq1 || !currentModalReq2) return;
+    
+    qfdDB.setCorrelacaoProjeto(currentModalReq1.id, currentModalReq2.id, value);
+    
+    // Atualizar celula na matriz
+    const cell = document.querySelector(
+        `.roof-cell[data-req1="${currentModalReq1.id}"][data-req2="${currentModalReq2.id}"]`
+    );
+    if (cell) {
+        cell.innerHTML = getCorrelationDisplay(value);
+        cell.classList.add('completed');
+    }
+    
+    // Atualizar status
+    loadRequisitos();
+    updateStatus();
+    
+    // Fechar modal
+    closeCorrelationModal();
+    
+    // Atualizar analise se houver correlacoes
+    if (correlacoesFeitas > 0) {
+        showAnalysis();
+    }
+}
+
+// Funcao para filtrar analise por tipo de correlacao
+function filterAnalysis(type) {
+    currentFilterType = type;
+    
+    // Atualizar botoes ativos
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+    
+    // Filtrar itens de analise
+    const analysisItems = document.querySelectorAll('.analysis-item');
+    analysisItems.forEach(item => {
+        const itemType = item.getAttribute('data-correlation-type');
+        
+        if (type === 'all' || itemType === type) {
+            item.classList.remove('hidden');
+            item.classList.add('visible');
+        } else {
+            item.classList.remove('visible');
+            item.classList.add('hidden');
+        }
+    });
+}
+
+// Funcao para exportar correlacoes em CSV
+function exportCorrelacoes(format) {
+    if (format === 'csv') {
+        const correlacoes = qfdDB.getCorrelacoesProjeto();
+        
+        let csv = 'Requisito 1,Requisito 2,Correlacao,Descricao\n';
+        
+        correlacoes.forEach(corr => {
+            const req1 = requisitos.find(r => r.id === corr.req1);
+            const req2 = requisitos.find(r => r.id === corr.req2);
+            
+            if (req1 && req2) {
+                const descricao = getCorrelationDescription(corr.value);
+                csv += `"${req1.descricao}","${req2.descricao}","${corr.value}","${descricao}"\n`;
+            }
+        });
+        
+        downloadCSV(csv, 'correlacoes-projeto.csv');
+    }
+}
+
+// Funcao para importar correlacoes em CSV
+function importCorrelacoes() {
+    document.getElementById('import-csv-correlacoes').click();
+}
+
+// Funcao para processar importacao de correlacoes CSV
+function importCorrelacoesCsv(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const csv = e.target.result;
+        const lines = csv.split('\n');
+        
+        let imported = 0;
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim() === '') continue;
+            
+            const parts = lines[i].split(',');
+            if (parts.length >= 3) {
+                const descricao1 = parts[0].replace(/"/g, '').trim();
+                const descricao2 = parts[1].replace(/"/g, '').trim();
+                const valor = parts[2].replace(/"/g, '').trim();
+                
+                const req1 = requisitos.find(r => r.descricao === descricao1);
+                const req2 = requisitos.find(r => r.descricao === descricao2);
+                
+                if (req1 && req2) {
+                    qfdDB.setCorrelacaoProjeto(req1.id, req2.id, valor);
+                    imported++;
+                }
+            }
+        }
+        
+        loadRequisitos();
+        setupCorrelation();
+        updateStatus();
+        
+        alert(`${imported} correlacoes importadas com sucesso!`);
+    };
+    reader.readAsText(file);
+    
+    // Limpar input
+    event.target.value = '';
+}
+
+// Funcao auxiliar para descarregar CSV
+function downloadCSV(csv, filename) {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Funcao para obter descricao da correlacao
+function getCorrelationDescription(value) {
+    const descriptions = {
+        '++': 'Correlacao Positiva Muito Forte',
+        '+': 'Correlacao Positiva',
+        '0': 'Sem Correlacao',
+        '-': 'Correlacao Negativa',
+        '--': 'Correlacao Negativa Muito Forte'
+    };
+    return descriptions[value] || 'Nao definida';
+}
+
+// Fechar modal ao clicar fora
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('correlation-modal');
+    if (modal && e.target === modal) {
+        closeCorrelationModal();
+    }
+});
+
+// Fechar modal ao pressionar ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeCorrelationModal();
+    }
+});
