@@ -5,6 +5,19 @@ https://psykozis.github.io/QFD/index.html
 
 # Sistema QFD - Planejamento Técnico
 
+## Como abrir o projeto (CSS carregando só após clicar?)
+
+Se você abrir o `index.html` direto pelo disco (duplo clique ou arrastar para o navegador), a URL fica como `file:///...`. Nesse modo, **alguns navegadores atrasam o carregamento do CSS** (e de recursos externos como ícones) até haver um clique — por isso o layout pode aparecer sem estilo e só aplicar depois que você clica em algum lugar.
+
+**Solução recomendada:** abrir o projeto via um servidor HTTP.
+
+- **Opção 1 – GitHub Pages:** use o link acima (já servido por HTTP).
+- **Opção 2 – Servidor local na pasta do projeto:**
+  - Com Node: na pasta do projeto, execute `npx serve .` e abra `http://localhost:3000`.
+  - Com Python 3: execute `python -m http.server 8080` e abra `http://localhost:8080`.
+
+Assim o CSS e os ícones carregam logo na abertura da página.
+
 ## Visão Geral
 Sistema web para criação de QFD (Quality Function Deployment) com banco de dados local usando LocalStorage.
 

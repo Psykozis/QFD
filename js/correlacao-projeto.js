@@ -1,12 +1,36 @@
 /**
- * JavaScript para Página de Correlação de Requisitos de Projeto - Versão Modificada
- * Implementa o telhado da casa QFD com pop-ups e hovers melhorados
+ * ============================================================================
+ * CORRELAÇÃO DE REQUISITOS DE PROJETO - TELHADO QFD
+ * ============================================================================
+ * 
+ * Este módulo gerencia o "telhado" da Casa da Qualidade, que representa as
+ * correlações entre requisitos técnicos de projeto.
+ * 
+ * Tipos de correlação:
+ * - '++': Positiva muito forte (sinergia forte)
+ * - '+': Positiva (sinergia moderada)
+ * - '0': Neutra (independentes)
+ * - '-': Negativa (competem entre si)
+ * - '--': Negativa muito forte (conflitantes)
+ * 
+ * Funcionalidades:
+ * - Matriz triangular de correlações
+ * - Popup interativo para definição
+ * - Análise de conflitos e sinergias
+ * - Exportação de análises
  */
+
+// ========================================================================
+// SEÇÃO 1: VARIÁVEIS GLOBAIS E INICIALIZAÇÃO
+// ========================================================================
 
 let requisitos = [];
 let totalCorrelacoes = 0;
 let correlacoesFeitas = 0;
 
+/**
+ * Inicializa a página quando o DOM está pronto
+ */
 document.addEventListener('DOMContentLoaded', function() {
     loadRequisitos();
     setupCorrelation();

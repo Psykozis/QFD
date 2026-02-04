@@ -1,13 +1,34 @@
 /**
- * Dashboard JavaScript para Sistema QFD
- * Atualiza o progresso em tempo real
+ * ============================================================================
+ * DASHBOARD - VISUALIZAÇÃO DO PROGRESSO DO PROJETO QFD
+ * ============================================================================
+ * 
+ * Este módulo gerencia a página principal (dashboard) do sistema QFD,
+ * exibindo o progresso de cada etapa do projeto em tempo real através
+ * de cards visuais e atualizações automáticas.
+ * 
+ * Funcionalidades:
+ * - Atualização automática do progresso a cada 5 segundos
+ * - Cards de progresso para cada etapa do QFD
+ * - Sistema de dropdown para navegação
+ * - Validação de dados e exibição de estatísticas
+ * - Sistema de backup automático
  */
 
+// ========================================================================
+// SEÇÃO 1: INICIALIZAÇÃO E CONFIGURAÇÃO
+// ========================================================================
+
+/**
+ * Inicializa o dashboard quando a página é carregada
+ * Configura atualização automática e menu dropdown
+ */
 document.addEventListener('DOMContentLoaded', function() {
     updateDashboard();
     setupDropdownMenu();
     
     // Atualiza dashboard a cada 5 segundos se a página estiver ativa
+    // Evita atualizações desnecessárias quando a aba está oculta
     setInterval(() => {
         if (!document.hidden) {
             updateDashboard();
@@ -15,6 +36,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 5000);
 });
 
+/**
+ * Configura o comportamento dos menus dropdown da navegação
+ * Permite abrir/fechar menus e fecha automaticamente ao clicar fora
+ */
 function setupDropdownMenu() {
     const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
     
@@ -40,6 +65,14 @@ function setupDropdownMenu() {
     });
 }
 
+// ========================================================================
+// SEÇÃO 2: ATUALIZAÇÃO DO DASHBOARD E PROGRESSO
+// ========================================================================
+
+/**
+ * Atualiza todas as informações do dashboard
+ * Calcula progresso de cada etapa e atualiza os cards visuais
+ */
 function updateDashboard() {
     const stats = qfdDB.getProjectStats();
     
@@ -74,6 +107,13 @@ function updateDashboard() {
     updateLastModified(stats.lastModified);
 }
 
+/**
+ * Atualiza um card de progresso específico no dashboard
+ * 
+ * @param {string} type - Tipo do card: 'cliente', 'projeto', 'comparacao', 'correlacao', 'qfd'
+ * @param {number} value - Valor numérico do progresso
+ * @param {string} unit - Unidade de medida ('requisitos', '% completo', etc.)
+ */
 function updateProgressCard(type, value, unit) {
     const statusElement = document.getElementById(`status-${type}`);
     const countElement = document.getElementById(`count-${type}`);
@@ -109,6 +149,12 @@ function updateProgressCard(type, value, unit) {
     cardElement.style.borderLeftColor = getProgressColor(value, type);
 }
 
+/**
+ * Atualiza o status do card de relatório PDF
+ * Indica se o relatório pode ser gerado ou não
+ * 
+ * @param {boolean} canGenerate - true se há dados suficientes para gerar relatório
+ */
 function updateReportStatus(canGenerate) {
     const statusElement = document.getElementById('status-relatorio');
     const countElement = document.getElementById('count-relatorio');
@@ -126,6 +172,12 @@ function updateReportStatus(canGenerate) {
     }
 }
 
+/**
+ * Atualiza a exibição da data/hora da última modificação do projeto
+ * Cria o elemento se não existir
+ * 
+ * @param {string} lastModified - Data da última modificação em formato ISO
+ */
 function updateLastModified(lastModified) {
     const date = new Date(lastModified);
     const formattedDate = date.toLocaleString('pt-BR');
@@ -152,11 +204,29 @@ function updateLastModified(lastModified) {
     }
 }
 
+// ========================================================================
+// SEÇÃO 3: FUNÇÕES AUXILIARES DE CÁLCULO
+// ========================================================================
+
+/**
+ * Calcula o total de comparações possíveis entre n itens
+ * Usa a fórmula de combinações: n * (n-1) / 2
+ * 
+ * @param {number} count - Número de itens
+ * @returns {number} Total de comparações possíveis
+ */
 function calculateTotalComparisons(count) {
     // Fórmula para combinações: n * (n-1) / 2
     return count > 1 ? (count * (count - 1)) / 2 : 0;
 }
 
+/**
+ * Retorna a cor da borda do card baseado no progresso
+ * 
+ * @param {number} value - Valor do progresso (0-100)
+ * @param {string} type - Tipo do card
+ * @returns {string} Cor em formato hexadecimal
+ */
 function getProgressColor(value, type) {
     if (type === 'cliente' || type === 'projeto') {
         return value > 0 ? '#28a745' : '#6c757d';
@@ -168,7 +238,14 @@ function getProgressColor(value, type) {
     return '#28a745';
 }
 
-// Função para mostrar detalhes do progresso
+// ========================================================================
+// SEÇÃO 4: MODAL DE DETALHES E VALIDAÇÃO
+// ========================================================================
+
+/**
+ * Exibe um modal com detalhes completos do progresso do projeto
+ * Inclui estatísticas detalhadas e erros de validação se houver
+ */
 function showProgressDetails() {
     const stats = qfdDB.getProjectStats();
     const validation = qfdDB.validateData();
@@ -280,6 +357,9 @@ function showProgressDetails() {
     }
 }
 
+/**
+ * Fecha o modal de detalhes do progresso
+ */
 function closeModal() {
     const modal = document.querySelector('.modal-overlay');
     if (modal) {
@@ -300,7 +380,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Função para criar backup automático
+// ========================================================================
+// SEÇÃO 5: SISTEMA DE BACKUP AUTOMÁTICO
+// ========================================================================
+
+/**
+ * Cria um backup automático dos dados do projeto
+ * Armazena no LocalStorage com prefixo 'qfd_backup'
+ */
 function createAutoBackup() {
     const data = qfdDB.exportData();
     const backup = {
@@ -314,7 +401,10 @@ function createAutoBackup() {
     localStorage.setItem('qfd_backup', JSON.stringify(backup));
 }
 
-// Cria backup automático a cada mudança significativa
+/**
+ * Configura o sistema de backup automático
+ * Intercepta chamadas de saveData para criar backup automaticamente
+ */
 function setupAutoBackup() {
     const originalSaveData = qfdDB.saveData;
     qfdDB.saveData = function(data) {
@@ -323,12 +413,17 @@ function setupAutoBackup() {
     };
 }
 
-// Inicializa backup automático
+/**
+ * Inicializa o sistema de backup automático quando a página carrega
+ */
 document.addEventListener('DOMContentLoaded', function() {
     setupAutoBackup();
 });
 
-// Função para restaurar backup
+/**
+ * Restaura dados de um backup anterior
+ * Solicita confirmação antes de restaurar
+ */
 function restoreBackup() {
     const backup = localStorage.getItem('qfd_backup');
     if (!backup) {
@@ -349,7 +444,10 @@ function restoreBackup() {
     }
 }
 
-// Adiciona botão de backup se não existir
+/**
+ * Adiciona botões de backup e restore ao dashboard se não existirem
+ * Cria elementos dinamicamente para facilitar a gestão de dados
+ */
 document.addEventListener('DOMContentLoaded', function() {
     const quickActions = document.querySelector('.action-buttons');
     if (quickActions && !document.getElementById('backup-btn')) {

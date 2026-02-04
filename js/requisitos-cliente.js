@@ -1,13 +1,43 @@
 /**
- * JavaScript para Página de Requisitos de Cliente
+ * ============================================================================
+ * GERENCIAMENTO DE REQUISITOS DE CLIENTE
+ * ============================================================================
+ * 
+ * Este módulo gerencia a página de cadastro e edição de requisitos de cliente.
+ * Permite adicionar, editar, excluir e exportar requisitos que representam
+ * as necessidades e expectativas do cliente sobre o produto.
+ * 
+ * Funcionalidades:
+ * - Cadastro de novos requisitos
+ * - Edição inline de requisitos existentes
+ * - Exclusão individual ou em massa
+ * - Exportação para CSV
+ * - Validação de dados
+ * - Auto-resize de textarea
  */
 
+// ========================================================================
+// SEÇÃO 1: INICIALIZAÇÃO
+// ========================================================================
+
+/**
+ * Inicializa a página quando o DOM está pronto
+ * Carrega requisitos existentes e configura event listeners
+ */
 document.addEventListener('DOMContentLoaded', function() {
     loadRequisitos();
     setupEventListeners();
     updateNavigationState();
 });
 
+// ========================================================================
+// SEÇÃO 2: CONFIGURAÇÃO DE EVENTOS
+// ========================================================================
+
+/**
+ * Configura todos os event listeners da página
+ * Inclui formulário, textarea auto-resize e menu dropdown
+ */
 function setupEventListeners() {
     const form = document.getElementById('form-requisito');
     if (form) {
@@ -31,6 +61,9 @@ function setupEventListeners() {
     setupDropdownMenu();
 }
 
+/**
+ * Configura o comportamento do menu dropdown de navegação
+ */
 function setupDropdownMenu() {
     const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
     
@@ -58,6 +91,16 @@ function setupDropdownMenu() {
     });
 }
 
+// ========================================================================
+// SEÇÃO 3: GERENCIAMENTO DE REQUISITOS
+// ========================================================================
+
+/**
+ * Processa o envio do formulário de novo requisito
+ * Valida dados e adiciona ao banco de dados
+ * 
+ * @param {Event} event - Evento de submit do formulário
+ */
 function handleSubmitRequisito(event) {
     event.preventDefault();
     
@@ -90,6 +133,10 @@ function handleSubmitRequisito(event) {
     }
 }
 
+/**
+ * Carrega e exibe todos os requisitos de cliente cadastrados
+ * Atualiza a lista na interface e o contador de requisitos
+ */
 function loadRequisitos() {
     const requisitos = qfdDB.getRequisitosCliente();
     const listaContainer = document.getElementById('lista-requisitos');
@@ -159,6 +206,11 @@ function loadRequisitos() {
     listaContainer.innerHTML = requisitosHTML;
 }
 
+/**
+ * Habilita o modo de edição para um requisito específico
+ * 
+ * @param {string} id - ID único do requisito a ser editado
+ */
 function editRequisito(id) {
     const descElement = document.getElementById(`desc-${id}`);
     const editForm = document.getElementById(`edit-form-${id}`);
@@ -175,6 +227,11 @@ function editRequisito(id) {
     }
 }
 
+/**
+ * Salva as alterações feitas em um requisito em edição
+ * 
+ * @param {string} id - ID único do requisito sendo editado
+ */
 function saveEdit(id) {
     const textarea = document.getElementById(`edit-desc-${id}`);
     if (!textarea) return;
@@ -206,6 +263,11 @@ function saveEdit(id) {
     }
 }
 
+/**
+ * Cancela a edição de um requisito, restaurando o estado original
+ * 
+ * @param {string} id - ID único do requisito sendo editado
+ */
 function cancelEdit(id) {
     const descElement = document.getElementById(`desc-${id}`);
     const editForm = document.getElementById(`edit-form-${id}`);
@@ -216,6 +278,12 @@ function cancelEdit(id) {
     }
 }
 
+/**
+ * Remove um requisito de cliente após confirmação
+ * Remove também todas as comparações e relações QFD associadas
+ * 
+ * @param {string} id - ID único do requisito a ser removido
+ */
 function deleteRequisito(id) {
     const requisitos = qfdDB.getRequisitosCliente();
     const requisito = requisitos.find(r => r.id === id);
@@ -237,6 +305,13 @@ function deleteRequisito(id) {
     }
 }
 
+// ========================================================================
+// SEÇÃO 4: FUNÇÕES UTILITÁRIAS
+// ========================================================================
+
+/**
+ * Limpa o formulário de cadastro de requisitos
+ */
 function clearForm() {
     const form = document.getElementById('form-requisito');
     if (form) {
@@ -272,6 +347,9 @@ function clearAllRequisitos() {
     }
 }
 
+/**
+ * Exporta todos os requisitos de cliente para um arquivo CSV
+ */
 function exportRequisitos() {
     const requisitos = qfdDB.getRequisitosCliente();
     
@@ -286,6 +364,12 @@ function exportRequisitos() {
     showAlert('Requisitos exportados com sucesso!', 'success');
 }
 
+/**
+ * Gera o conteúdo CSV a partir de um array de requisitos
+ * 
+ * @param {Array} requisitos - Array de requisitos a serem exportados
+ * @returns {string} Conteúdo do arquivo CSV
+ */
 function generateCSV(requisitos) {
     const headers = ['Número', 'Descrição', 'Importância', 'Peso (%)', 'Data de Criação'];
     const rows = requisitos.map((req, index) => [
@@ -299,6 +383,13 @@ function generateCSV(requisitos) {
     return [headers, ...rows].map(row => row.join(',')).join('\n');
 }
 
+/**
+ * Faz o download de um arquivo no navegador
+ * 
+ * @param {string} content - Conteúdo do arquivo
+ * @param {string} filename - Nome do arquivo
+ * @param {string} mimeType - Tipo MIME do arquivo
+ */
 function downloadFile(content, filename, mimeType) {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -312,6 +403,10 @@ function downloadFile(content, filename, mimeType) {
     URL.revokeObjectURL(url);
 }
 
+/**
+ * Atualiza o estado do botão de navegação "Próximo"
+ * Desabilita se não houver pelo menos 2 requisitos cadastrados
+ */
 function updateNavigationState() {
     const requisitos = qfdDB.getRequisitosCliente();
     const btnProximo = document.getElementById('btn-proximo');
@@ -327,12 +422,23 @@ function updateNavigationState() {
     }
 }
 
+/**
+ * Ajusta automaticamente a altura do textarea conforme o conteúdo
+ * 
+ * @param {Event} event - Evento de input do textarea
+ */
 function autoResizeTextarea(event) {
     const textarea = event.target;
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
 }
 
+/**
+ * Formata uma data ISO para o formato brasileiro
+ * 
+ * @param {string} dateString - Data em formato ISO
+ * @returns {string} Data formatada (dd/mm/aaaa hh:mm)
+ */
 function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR', {
@@ -350,6 +456,13 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+/**
+ * Exibe uma mensagem de alerta na interface
+ * Remove alertas anteriores e cria um novo
+ * 
+ * @param {string} message - Mensagem a ser exibida
+ * @param {string} type - Tipo do alerta: 'success', 'warning', 'danger', 'info'
+ */
 function showAlert(message, type = 'info') {
     // Remove alertas existentes
     const existingAlerts = document.querySelectorAll('.alert');
@@ -408,6 +521,12 @@ function showAlert(message, type = 'info') {
     }, 5000);
 }
 
+/**
+ * Retorna o ícone apropriado para cada tipo de alerta
+ * 
+ * @param {string} type - Tipo do alerta
+ * @returns {string} Nome do ícone FontAwesome
+ */
 function getAlertIcon(type) {
     const icons = {
         success: 'check-circle',
@@ -418,7 +537,14 @@ function getAlertIcon(type) {
     return icons[type] || 'info-circle';
 }
 
-// Adiciona estilos específicos da página
+// ========================================================================
+// SEÇÃO 5: ESTILOS DINÂMICOS
+// ========================================================================
+
+/**
+ * Adiciona estilos CSS específicos da página se não existirem
+ * Cria estilos para cards de requisitos, formulários e responsividade
+ */
 document.addEventListener('DOMContentLoaded', function() {
     if (!document.getElementById('requisitos-cliente-styles')) {
         const styles = document.createElement('style');

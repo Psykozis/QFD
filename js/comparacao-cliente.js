@@ -1,12 +1,36 @@
 /**
- * JavaScript para Página de Comparação de Requisitos de Cliente - Versão Corrigida
- * Implementa o Diagrama de Mudge para hierarquização com melhorias
+ * ============================================================================
+ * COMPARAÇÃO DE REQUISITOS DE CLIENTE - DIAGRAMA DE MUDGE
+ * ============================================================================
+ * 
+ * Este módulo implementa o Diagrama de Mudge para hierarquização de
+ * requisitos de cliente através de comparações pareadas.
+ * 
+ * O Diagrama de Mudge permite determinar a importância relativa de cada
+ * requisito comparando-os dois a dois. Cada comparação indica qual requisito
+ * é mais importante e em que grau:
+ * - Valor 1: Pouco mais importante
+ * - Valor 3: Moderadamente mais importante  
+ * - Valor 5: Muito mais importante
+ * 
+ * Funcionalidades:
+ * - Matriz triangular de comparações
+ * - Modal interativo para comparações
+ * - Cálculo automático de importância e pesos
+ * - Visualização de resultados
  */
+
+// ========================================================================
+// SEÇÃO 1: VARIÁVEIS GLOBAIS E INICIALIZAÇÃO
+// ========================================================================
 
 let requisitos = [];
 let totalComparacoes = 0;
 let comparacoesFeitas = 0;
 
+/**
+ * Inicializa a página quando o DOM está pronto
+ */
 document.addEventListener('DOMContentLoaded', function() {
     loadRequisitos();
     setupComparison();

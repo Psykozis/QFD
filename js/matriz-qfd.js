@@ -1,11 +1,36 @@
 /**
- * JavaScript para Página da Matriz QFD Principal - Versão Corrigida
+ * ============================================================================
+ * MATRIZ QFD - CASA DA QUALIDADE
+ * ============================================================================
+ * 
+ * Este módulo gerencia a matriz QFD principal, que relaciona requisitos
+ * de cliente com requisitos de projeto. É o "corpo" da Casa da Qualidade.
+ * 
+ * A matriz exibe:
+ * - Requisitos de cliente nas linhas
+ * - Requisitos de projeto nas colunas
+ * - Valores de influência nas células (0, 1, 3, 9)
+ * - Importância e peso dos requisitos de cliente
+ * - Telhado de correlações (roof) entre requisitos de projeto
+ * 
+ * Funcionalidades:
+ * - Visualização interativa da matriz
+ * - Edição de valores de influência
+ * - Cálculo automático de importância de projeto
+ * - Visualização do telhado de correlações
  */
+
+// ========================================================================
+// SEÇÃO 1: VARIÁVEIS GLOBAIS E INICIALIZAÇÃO
+// ========================================================================
 
 let requisitosCliente = [];
 let requisitosProjeto = [];
 let relacoesFeitas = 0;
 
+/**
+ * Inicializa a página quando o DOM está pronto
+ */
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
     setupMatrix();

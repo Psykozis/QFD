@@ -1,15 +1,40 @@
 /**
- * Sistema de Banco de Dados Local para QFD
- * Utiliza LocalStorage para persistência de dados
+ * ============================================================================
+ * SISTEMA DE BANCO DE DADOS LOCAL PARA QFD
+ * ============================================================================
+ * 
+ * Este módulo implementa uma camada de persistência de dados usando LocalStorage
+ * do navegador. Gerencia todas as operações CRUD para requisitos de cliente,
+ * requisitos de projeto, comparações, correlações e a matriz QFD.
+ * 
+ * Estrutura de Dados:
+ * - requisitosCliente: Array de requisitos do cliente
+ * - requisitosProjeto: Array de requisitos técnicos do projeto
+ * - comparacaoCliente: Array de comparações pareadas entre requisitos cliente
+ * - correlacaoProjeto: Array de correlações entre requisitos de projeto
+ * - matrizQFD: Array de relações entre requisitos cliente e projeto
+ * - metadata: Informações sobre criação e modificação do projeto
+ * 
+ * @class QFDDatabase
  */
-
 class QFDDatabase {
+    /**
+     * Construtor da classe QFDDatabase
+     * Inicializa a chave de armazenamento e cria a estrutura inicial do banco
+     */
     constructor() {
         this.storageKey = 'qfd_data';
         this.initializeDatabase();
     }
 
-    // Inicializa a estrutura do banco de dados
+    // ========================================================================
+    // SEÇÃO 1: INICIALIZAÇÃO E GERENCIAMENTO DE DADOS
+    // ========================================================================
+
+    /**
+     * Inicializa a estrutura do banco de dados no LocalStorage
+     * Cria a estrutura padrão se não existir
+     */
     initializeDatabase() {
         const defaultData = {
             requisitosCliente: [],
@@ -29,19 +54,33 @@ class QFDDatabase {
         }
     }
 
-    // Salva dados no LocalStorage
+    /**
+     * Salva dados no LocalStorage
+     * Atualiza automaticamente a data de última modificação
+     * 
+     * @param {Object} data - Objeto com todos os dados do projeto QFD
+     */
     saveData(data) {
         data.metadata.lastModified = new Date().toISOString();
         localStorage.setItem(this.storageKey, JSON.stringify(data));
     }
 
-    // Carrega dados do LocalStorage
+    /**
+     * Carrega dados do LocalStorage
+     * 
+     * @returns {Object|null} Dados do projeto ou null se não existir
+     */
     loadData() {
         const data = localStorage.getItem(this.storageKey);
         return data ? JSON.parse(data) : null;
     }
 
-    // Gera UUID simples
+    /**
+     * Gera um UUID (Identificador Único Universal) simples
+     * Usado para identificar unicamente cada requisito
+     * 
+     * @returns {string} UUID no formato xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+     */
     generateUUID() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
             const r = Math.random() * 16 | 0;
@@ -50,9 +89,20 @@ class QFDDatabase {
         });
     }
 
-    // === REQUISITOS DE CLIENTE ===
+    // ========================================================================
+    // SEÇÃO 2: GERENCIAMENTO DE REQUISITOS DE CLIENTE
+    // ========================================================================
+    // 
+    // Requisitos de Cliente são as necessidades e expectativas expressas
+    // pelo cliente sobre o produto. Eles são hierarquizados através de
+    // comparações pareadas (Diagrama de Mudge).
     
-    // Adiciona requisito de cliente
+    /**
+     * Adiciona um novo requisito de cliente
+     * 
+     * @param {string} descricao - Descrição do requisito do cliente
+     * @returns {Object} Objeto do requisito criado com ID, descrição, importância e peso
+     */
     addRequisitoCliente(descricao) {
         const data = this.loadData();
         const novoRequisito = {
@@ -68,13 +118,22 @@ class QFDDatabase {
         return novoRequisito;
     }
 
-    // Obtém todos os requisitos de cliente
+    /**
+     * Obtém todos os requisitos de cliente cadastrados
+     * 
+     * @returns {Array} Array com todos os requisitos de cliente
+     */
     getRequisitosCliente() {
         const data = this.loadData();
         return data.requisitosCliente || [];
     }
 
-    // Remove requisito de cliente
+    /**
+     * Remove um requisito de cliente e todas suas relações
+     * Remove também comparações e relações na matriz QFD associadas
+     * 
+     * @param {string} id - ID único do requisito a ser removido
+     */
     removeRequisitoCliente(id) {
         const data = this.loadData();
         data.requisitosCliente = data.requisitosCliente.filter(req => req.id !== id);
@@ -90,7 +149,13 @@ class QFDDatabase {
         this.saveData(data);
     }
 
-    // Atualiza requisito de cliente
+    /**
+     * Atualiza propriedades de um requisito de cliente existente
+     * 
+     * @param {string} id - ID único do requisito
+     * @param {Object} updates - Objeto com as propriedades a serem atualizadas
+     * @returns {Object|null} Requisito atualizado ou null se não encontrado
+     */
     updateRequisitoCliente(id, updates) {
         const data = this.loadData();
         const index = data.requisitosCliente.findIndex(req => req.id === id);
@@ -102,9 +167,23 @@ class QFDDatabase {
         return null;
     }
 
-    // === REQUISITOS DE PROJETO ===
+    // ========================================================================
+    // SEÇÃO 3: GERENCIAMENTO DE REQUISITOS DE PROJETO
+    // ========================================================================
+    // 
+    // Requisitos de Projeto são as características técnicas que devem ser
+    // implementadas para atender aos requisitos do cliente. Cada requisito
+    // possui um sentido de melhoria (crescente, decrescente ou nominal) e
+    // uma dificuldade técnica (1-5).
     
-    // Adiciona requisito de projeto
+    /**
+     * Adiciona um novo requisito de projeto
+     * 
+     * @param {string} descricao - Descrição do requisito técnico
+     * @param {string} sentidoMelhoria - Sentido da melhoria: 'up' (crescente), 'down' (decrescente) ou 'none' (nominal)
+     * @param {number} dificuldadeTecnica - Nível de dificuldade técnica (1-5)
+     * @returns {Object} Objeto do requisito criado
+     */
     addRequisitoProjeto(descricao, sentidoMelhoria = 'none', dificuldadeTecnica = 1) {
         const data = this.loadData();
         const novoRequisito = {
@@ -123,13 +202,22 @@ class QFDDatabase {
         return novoRequisito;
     }
 
-    // Obtém todos os requisitos de projeto
+    /**
+     * Obtém todos os requisitos de projeto cadastrados
+     * 
+     * @returns {Array} Array com todos os requisitos de projeto
+     */
     getRequisitosProjeto() {
         const data = this.loadData();
         return data.requisitosProjeto || [];
     }
 
-    // Remove requisito de projeto
+    /**
+     * Remove um requisito de projeto e todas suas relações
+     * Remove também correlações e relações na matriz QFD associadas
+     * 
+     * @param {string} id - ID único do requisito a ser removido
+     */
     removeRequisitoProjeto(id) {
         const data = this.loadData();
         data.requisitosProjeto = data.requisitosProjeto.filter(req => req.id !== id);
@@ -145,7 +233,13 @@ class QFDDatabase {
         this.saveData(data);
     }
 
-    // Atualiza requisito de projeto
+    /**
+     * Atualiza propriedades de um requisito de projeto existente
+     * 
+     * @param {string} id - ID único do requisito
+     * @param {Object} updates - Objeto com as propriedades a serem atualizadas
+     * @returns {Object|null} Requisito atualizado ou null se não encontrado
+     */
     updateRequisitoProjeto(id, updates) {
         const data = this.loadData();
         const index = data.requisitosProjeto.findIndex(req => req.id === id);
@@ -157,9 +251,28 @@ class QFDDatabase {
         return null;
     }
 
-    // === COMPARAÇÃO DE CLIENTE ===
+    // ========================================================================
+    // SEÇÃO 4: GERENCIAMENTO DE COMPARAÇÕES DE CLIENTE (DIAGRAMA DE MUDGE)
+    // ========================================================================
+    // 
+    // O Diagrama de Mudge é usado para hierarquizar requisitos através de
+    // comparações pareadas. Cada comparação indica qual requisito é mais
+    // importante e em que grau (1, 3 ou 5).
+    // 
+    // Valores possíveis:
+    // - 1: Pouco mais importante
+    // - 3: Moderadamente mais importante
+    // - 5: Muito mais importante
     
-    // Adiciona/atualiza comparação entre requisitos de cliente
+    /**
+     * Adiciona ou atualiza uma comparação entre dois requisitos de cliente
+     * Remove comparação existente antes de adicionar nova (evita duplicatas)
+     * Recalcula automaticamente a importância dos requisitos após salvar
+     * 
+     * @param {string} requisito1 - ID do requisito vencedor da comparação
+     * @param {string} requisito2 - ID do requisito perdedor da comparação
+     * @param {number} valor - Valor da importância (1, 3 ou 5)
+     */
     setComparacaoCliente(requisito1, requisito2, valor) {
         const data = this.loadData();
         
@@ -185,7 +298,16 @@ class QFDDatabase {
         this.calculateImportanciaCliente();
     }
 
-    // Obtém comparação entre dois requisitos
+    /**
+     * Obtém o valor de comparação entre dois requisitos de cliente
+     * 
+     * IMPORTANTE: Retorna o valor apenas se requisito1 foi o vencedor.
+     * Se requisito2 venceu, retorna 0 (pois requisito1 não ganhou pontos).
+     * 
+     * @param {string} requisito1 - ID do primeiro requisito
+     * @param {string} requisito2 - ID do segundo requisito
+     * @returns {number} Valor da comparação (1, 3, 5) ou 0 se não existe ou se requisito1 perdeu
+     */
     getComparacaoCliente(requisito1, requisito2) {
         const data = this.loadData();
         const comp = data.comparacaoCliente.find(
@@ -210,13 +332,24 @@ class QFDDatabase {
         }
     }
 
-    // Obtém todas as comparações de cliente
+    /**
+     * Obtém todas as comparações de cliente cadastradas
+     * 
+     * @returns {Array} Array com todas as comparações
+     */
     getComparacoesCliente() {
         const data = this.loadData();
         return data.comparacaoCliente || [];
     }
 
-    // Calcula importância dos requisitos de cliente
+    /**
+     * Calcula a importância e o peso relativo de cada requisito de cliente
+     * baseado nas comparações realizadas (Diagrama de Mudge)
+     * 
+     * Algoritmo:
+     * 1. Soma os pontos de cada requisito (apenas quando ele é o vencedor)
+     * 2. Normaliza os pesos dividindo pela soma total
+     */
     calculateImportanciaCliente() {
         const data = this.loadData();
         const requisitos = data.requisitosCliente;
@@ -248,9 +381,28 @@ class QFDDatabase {
         this.saveData(data);
     }
 
-    // === CORRELAÇÃO DE PROJETO ===
+    // ========================================================================
+    // SEÇÃO 5: GERENCIAMENTO DE CORRELAÇÕES DE PROJETO (TELHADO QFD)
+    // ========================================================================
+    // 
+    // Correlações indicam como os requisitos técnicos se relacionam entre si.
+    // São representadas no "telhado" da Casa da Qualidade.
+    // 
+    // Valores possíveis:
+    // - '++': Correlação positiva muito forte (sinergia forte)
+    // - '+': Correlação positiva (sinergia moderada)
+    // - '0': Sem correlação (independentes)
+    // - '-': Correlação negativa (competem entre si)
+    // - '--': Correlação negativa muito forte (conflitantes)
     
-    // Adiciona/atualiza correlação entre requisitos de projeto
+    /**
+     * Adiciona ou atualiza uma correlação entre dois requisitos de projeto
+     * Remove correlação existente antes de adicionar nova (evita duplicatas)
+     * 
+     * @param {string} requisito1 - ID do primeiro requisito
+     * @param {string} requisito2 - ID do segundo requisito
+     * @param {string} correlacao - Tipo de correlação ('++', '+', '0', '-', '--')
+     */
     setCorrelacaoProjeto(requisito1, requisito2, correlacao) {
         const data = this.loadData();
         
@@ -275,7 +427,13 @@ class QFDDatabase {
         this.saveData(data);
     }
 
-    // Obtém correlação entre dois requisitos de projeto
+    /**
+     * Obtém a correlação entre dois requisitos de projeto
+     * 
+     * @param {string} requisito1 - ID do primeiro requisito
+     * @param {string} requisito2 - ID do segundo requisito
+     * @returns {string} Tipo de correlação ou '0' (neutra) se não existe
+     */
     getCorrelacaoProjeto(requisito1, requisito2) {
         const data = this.loadData();
         const corr = data.correlacaoProjeto.find(
@@ -317,7 +475,13 @@ class QFDDatabase {
         this.calculateImportanciaProjeto();
     }
 
-    // Obtém influência entre requisito de cliente e projeto
+    /**
+     * Obtém o valor de influência entre um requisito de cliente e um de projeto
+     * 
+     * @param {string} requisitoCliente - ID do requisito de cliente
+     * @param {string} requisitoProjeto - ID do requisito de projeto
+     * @returns {number} Valor da influência (0, 1, 3 ou 9) ou 0 se não existe
+     */
     getMatrizQFD(requisitoCliente, requisitoProjeto) {
         const data = this.loadData();
         const rel = data.matrizQFD.find(
@@ -327,13 +491,25 @@ class QFDDatabase {
         return rel ? rel.influencia : 0;
     }
 
-    // Obtém todas as relações da matriz QFD
+    /**
+     * Obtém todas as relações da matriz QFD cadastradas
+     * 
+     * @returns {Array} Array com todas as relações da matriz
+     */
     getMatrizQFDCompleta() {
         const data = this.loadData();
         return data.matrizQFD || [];
     }
 
-    // Calcula importância dos requisitos de projeto
+    /**
+     * Calcula a importância absoluta, relativa (ranking) e peso relativo
+     * de cada requisito de projeto baseado na matriz QFD
+     * 
+     * Algoritmo:
+     * 1. Importância Absoluta = Soma (influência × importância do requisito cliente)
+     * 2. Importância Relativa = Ranking baseado na importância absoluta (1º, 2º, etc.)
+     * 3. Peso Relativo = Importância absoluta normalizada (0 a 1)
+     */
     calculateImportanciaProjeto() {
         const data = this.loadData();
         const requisitosProjeto = data.requisitosProjeto;
@@ -373,9 +549,14 @@ class QFDDatabase {
         this.saveData(data);
     }
 
-    // === UTILITÁRIOS ===
+    // ========================================================================
+    // SEÇÃO 7: FUNÇÕES UTILITÁRIAS E MANUTENÇÃO
+    // ========================================================================
     
-    // Limpa todos os dados
+    /**
+     * Limpa todos os dados do projeto e reinicializa o banco
+     * ATENÇÃO: Esta ação não pode ser desfeita!
+     */
     clearAllData() {
         localStorage.removeItem(this.storageKey);
         this.initializeDatabase();
@@ -398,7 +579,17 @@ class QFDDatabase {
         }
     }
 
-    // Obtém estatísticas do projeto
+    /**
+     * Obtém estatísticas resumidas do projeto
+     * 
+     * @returns {Object} Objeto com contadores e informações do projeto:
+     *   - requisitosCliente: Quantidade de requisitos de cliente
+     *   - requisitosProjeto: Quantidade de requisitos de projeto
+     *   - comparacoesCliente: Quantidade de comparações realizadas
+     *   - correlacoesProjeto: Quantidade de correlações definidas
+     *   - relacoesQFD: Quantidade de relações na matriz QFD
+     *   - lastModified: Data da última modificação
+     */
     getProjectStats() {
         const data = this.loadData();
         
@@ -412,7 +603,14 @@ class QFDDatabase {
         };
     }
 
-    // Valida integridade dos dados
+    /**
+     * Valida a integridade dos dados do projeto
+     * Verifica se não há referências órfãs (requisitos que não existem mais)
+     * 
+     * @returns {Object} Objeto com:
+     *   - isValid: boolean indicando se os dados estão válidos
+     *   - errors: Array com mensagens de erros encontrados
+     */
     validateData() {
         const data = this.loadData();
         const errors = [];
@@ -465,6 +663,10 @@ function resetAllData() {
     }
 }
 
+/**
+ * Função global para exportar dados do projeto em formato JSON
+ * Cria um arquivo JSON para download com todos os dados do projeto
+ */
 function exportProjectData() {
     const data = qfdDB.exportData();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -479,6 +681,11 @@ function exportProjectData() {
     URL.revokeObjectURL(url);
 }
 
+/**
+ * Função global para importar dados do projeto de um arquivo JSON
+ * 
+ * @param {Event} event - Evento do input file com o arquivo selecionado
+ */
 function importProjectData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -500,9 +707,19 @@ function importProjectData(event) {
     reader.readAsText(file);
 }
 
+// ========================================================================
+// SEÇÃO 8: FUNCIONALIDADES DE IMPORTAÇÃO/EXPORTAÇÃO CSV
+// ========================================================================
+// 
+// Permite importar e exportar dados em formato CSV para facilitar
+// a integração com planilhas e outras ferramentas
 
-// === NOVAS FUNCIONALIDADES: CSV E EXPORTAÇÃO POR PÁGINA ===
-
+/**
+ * Importa requisitos de um arquivo CSV
+ * 
+ * @param {Event} event - Evento do input file com o arquivo CSV selecionado
+ * @param {string} type - Tipo de requisito: 'cliente' ou 'projeto'
+ */
 function importCSV(event, type) {
     const file = event.target.files[0];
     if (!file) return;
@@ -535,6 +752,11 @@ function importCSV(event, type) {
     reader.readAsText(file);
 }
 
+/**
+ * Exporta dados específicos de uma página em formato CSV
+ * 
+ * @param {string} type - Tipo de dados a exportar: 'cliente', 'projeto' ou 'matriz'
+ */
 function exportPageData(type) {
     const data = qfdDB.loadData();
     let exportContent = '';

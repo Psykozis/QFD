@@ -1,7 +1,31 @@
 /**
- * JavaScript para Página de Requisitos de Projeto
+ * ============================================================================
+ * GERENCIAMENTO DE REQUISITOS DE PROJETO
+ * ============================================================================
+ * 
+ * Este módulo gerencia a página de cadastro e edição de requisitos técnicos
+ * do projeto. Requisitos de projeto são características técnicas que devem
+ * ser implementadas para atender aos requisitos do cliente.
+ * 
+ * Cada requisito possui:
+ * - Descrição técnica
+ * - Sentido de melhoria (crescente ↑, decrescente ↓, nominal *)
+ * - Dificuldade técnica (1-5)
+ * 
+ * Funcionalidades:
+ * - Cadastro com sentido de melhoria e dificuldade
+ * - Edição inline completa
+ * - Exclusão individual ou em massa
+ * - Exportação para CSV
  */
 
+// ========================================================================
+// SEÇÃO 1: INICIALIZAÇÃO
+// ========================================================================
+
+/**
+ * Inicializa a página quando o DOM está pronto
+ */
 document.addEventListener('DOMContentLoaded', function() {
     loadRequisitos();
     setupEventListeners();

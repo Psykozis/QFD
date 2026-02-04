@@ -1,6 +1,28 @@
 /**
- * JavaScript para Página de Relatório PDF - Versão Restaurada e Corrigida
+ * ============================================================================
+ * RELATÓRIO PDF - GERAÇÃO DE DOCUMENTAÇÃO
+ * ============================================================================
+ * 
+ * Este módulo gerencia a geração e visualização de relatórios em PDF
+ * com todas as informações do projeto QFD.
+ * 
+ * O relatório inclui:
+ * - Resumo do projeto
+ * - Lista de requisitos de cliente com pesos
+ * - Lista de requisitos de projeto
+ * - Telhado de correlações
+ * - Matriz QFD completa
+ * 
+ * Funcionalidades:
+ * - Configuração de metadados (título, empresa, autor, data)
+ * - Seleção de seções a incluir
+ * - Preview do relatório
+ * - Impressão/exportação para PDF
  */
+
+// ========================================================================
+// SEÇÃO 1: VARIÁVEIS GLOBAIS E INICIALIZAÇÃO
+// ========================================================================
 
 let requisitosCliente = [];
 let requisitosProjeto = [];
@@ -12,6 +34,9 @@ let reportConfig = {
     description: ''
 };
 
+/**
+ * Inicializa a página quando o DOM está pronto
+ */
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
     setupReport();
