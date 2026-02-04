@@ -217,6 +217,39 @@ function addMatrixEventListeners() {
             cell.addEventListener('click', () => openComparisonModal(cell));
         }
     });
+    
+    // Após carregar a matriz, verifica se deve abrir alguma célula (fluxo "salvar e ir para próxima")
+    const openNext = sessionStorage.getItem('comparacaoOpenNext');
+    if (openNext) {
+        try {
+            const { i: nextI, j: nextJ } = JSON.parse(openNext);
+            sessionStorage.removeItem('comparacaoOpenNext');
+            const nextCell = document.querySelector(
+                `.matrix-comparison[data-i="${nextI}"][data-j="${nextJ}"]`
+            );
+            if (nextCell) {
+                setTimeout(() => openComparisonModal(nextCell), 100);
+            }
+        } catch (e) {
+            sessionStorage.removeItem('comparacaoOpenNext');
+        }
+    }
+}
+
+/**
+ * Retorna as coordenadas da próxima célula de comparação na ordem:
+ * da esquerda para a direita, e ao fim da linha passa para a próxima.
+ * Matriz triangular superior: (0,1), (0,2), ... (0,n-1), (1,2), ... (n-2, n-1).
+ * @param {number} i - Índice da linha da célula atual
+ * @param {number} j - Índice da coluna da célula atual
+ * @returns {{ i: number, j: number } | null} Próxima célula ou null se for a última
+ */
+function getNextComparisonCell(i, j) {
+    const n = requisitos.length;
+    if (n < 2) return null;
+    if (j < n - 1) return { i, j: j + 1 };
+    if (i < n - 2) return { i: i + 1, j: i + 2 };
+    return null;
 }
 
 function showTooltip(e) {
@@ -263,43 +296,94 @@ function openComparisonModal(cell) {
              (c.requisito1 === req2Id && c.requisito2 === req1Id)
     );
     
+    // Remove qualquer modal existente antes de criar um novo
+    const existingModal = document.querySelector('.modal-overlay');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
+    modal.style.display = 'flex'; // Garante que o modal seja exibido como flex
     modal.innerHTML = `
         <div class="modal-content comparison-modal">
-            <div class="modal-header"><h3>Comparar Requisitos</h3><button class="modal-close" onclick="closeModal()">&times;</button></div>
+            <div class="modal-header">
+                <h3>Comparar Requisitos</h3>
+                <button class="modal-close" onclick="closeModal()" title="Fechar">&times;</button>
+            </div>
             <div class="modal-body">
-                <div class="comparison-question"><h4>Qual requisito é mais importante?</h4></div>
+                <div class="comparison-question">
+                    <h4>Qual requisito é mais importante?</h4>
+                </div>
                 <div class="requirements-comparison">
                     <div class="requirement-option ${storedComparison && storedComparison.requisito1 === req1Id ? 'selected' : ''}" data-req="${req1Id}" data-index="${i}">
-                        <div class="req-header"><span class="req-number">${i + 1}</span><span class="req-label">Requisito A</span></div>
+                        <div class="req-header">
+                            <span class="req-number">${i + 1}</span>
+                            <span class="req-label">Requisito A</span>
+                        </div>
                         <div class="req-description">${escapeHtml(req1.descricao)}</div>
                     </div>
                     <div class="vs-divider">VS</div>
                     <div class="requirement-option ${storedComparison && storedComparison.requisito1 === req2Id ? 'selected' : ''}" data-req="${req2Id}" data-index="${j}">
-                        <div class="req-header"><span class="req-number">${j + 1}</span><span class="req-label">Requisito B</span></div>
+                        <div class="req-header">
+                            <span class="req-number">${j + 1}</span>
+                            <span class="req-label">Requisito B</span>
+                        </div>
                         <div class="req-description">${escapeHtml(req2.descricao)}</div>
                     </div>
                 </div>
                 <div class="importance-levels" id="importance-levels" style="${storedComparison ? 'display:block' : 'display:none'}">
                     <h4>Quanto mais importante?</h4>
                     <div class="level-options">
-                        ${[1, 3, 5].map(v => `<button class="level-btn ${storedComparison && storedComparison.valor === v ? 'selected' : ''}" data-value="${v}"><span class="level-number">${v}</span></button>`).join('')}
+                        ${[1, 3, 5].map(v => `
+                            <button class="level-btn ${storedComparison && storedComparison.valor === v ? 'selected' : ''}" data-value="${v}">
+                                <span class="level-number">${v}</span>
+                                <small>${v === 1 ? 'Pouco' : v === 3 ? 'Moderado' : 'Muito'}</small>
+                            </button>
+                        `).join('')}
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
+                <small class="modal-footer-hint" style="margin-right: auto; align-self: center; color: #6c757d;"><kbd>Enter</kbd> salva e abre a próxima</small>
                 <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-                <button class="btn btn-primary" id="save-comparison" ${storedComparison ? '' : 'disabled'} onclick="saveComparison()">Salvar</button>
+                <button class="btn btn-primary" id="save-comparison" ${storedComparison ? '' : 'disabled'} onclick="saveComparison(false)">Salvar</button>
                 ${storedComparison ? `<button class="btn btn-danger" onclick="removeComparison('${req1Id}', '${req2Id}')">Remover</button>` : ''}
             </div>
         </div>
     `;
+    
+    // Fecha o modal ao clicar no overlay (fora do conteúdo)
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+    
+    // Fecha o modal ao pressionar ESC
+    const escHandler = function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+    
+    // Previne scroll do body quando o modal estiver aberto
+    document.body.style.overflow = 'hidden';
+    
     document.body.appendChild(modal);
-    setupModalLogic(req1Id, req2Id);
+    
+    const modalBox = modal.querySelector('.comparison-modal');
+    if (modalBox) {
+        modalBox.setAttribute('tabindex', '0');
+        modalBox.focus();
+    }
+    
+    setupModalLogic(req1Id, req2Id, i, j);
 }
 
-function setupModalLogic(req1Id, req2Id) {
+function setupModalLogic(req1Id, req2Id, cellI, cellJ) {
     let selectedReq = document.querySelector('.requirement-option.selected')?.dataset.req || null;
     let selectedValue = document.querySelector('.level-btn.selected')?.dataset.value || null;
 
@@ -321,14 +405,38 @@ function setupModalLogic(req1Id, req2Id) {
         };
     });
 
-    window.saveComparison = () => {
+    /**
+     * Salva a comparação e, se desejado, abre a próxima célula após recarregar.
+     * @param {boolean} openNextCell - Se true, após reload abre a próxima célula na ordem (usado pelo Enter)
+     */
+    window.saveComparison = (openNextCell) => {
         if (selectedReq && selectedValue) {
             const otherReq = selectedReq === req1Id ? req2Id : req1Id;
             qfdDB.setComparacaoCliente(selectedReq, otherReq, parseInt(selectedValue));
+            if (openNextCell) {
+                const next = getNextComparisonCell(cellI, cellJ);
+                if (next) {
+                    sessionStorage.setItem('comparacaoOpenNext', JSON.stringify(next));
+                }
+            }
             closeModal();
             location.reload();
         }
     };
+    
+    // Enter no modal: salva e abre a próxima célula
+    const modalContent = document.querySelector('.comparison-modal');
+    if (modalContent) {
+        modalContent.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                const saveBtn = document.getElementById('save-comparison');
+                if (saveBtn && !saveBtn.disabled) {
+                    saveComparison(true);
+                }
+            }
+        });
+    }
 
     window.removeComparison = (r1, r2) => {
         const comps = qfdDB.getComparacoesCliente().filter(c => 
@@ -344,7 +452,16 @@ function setupModalLogic(req1Id, req2Id) {
 
 window.closeModal = () => {
     const modal = document.querySelector('.modal-overlay');
-    if (modal) modal.remove();
+    if (modal) {
+        // Restaura scroll do body
+        document.body.style.overflow = '';
+        
+        // Animação de fechamento
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    }
 };
 
 function updateStatus() {
