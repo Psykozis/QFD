@@ -1,0 +1,24 @@
+
+==========================================================================================
+No QFD o telhado até está sendo recolhido, mas não está aparecendo as informações, se possível colocar numa div separada da matriz principal.
+Na coluna de importância do cliente peso %, há 2 informações na mesma coluna, seria interessante ter duas colunas, uma para a pontuação e outra para percentual
+
+Na comparação de clientes, a linha de cabeçalho de requisitos das colunas não está mostrando qual é o requisito mais (a informação está ali mas não apresenta)
+precisa de hovers com tooltips em cada célula explicitando a comparação (elas até existem mas aparecem fora da página)
+na verdade, o frontend está quebrando e quando se clica ele para de executar isso
+
+No relatório, remover triangulo inferior do telhado, caso contrário fica redundante e confuso
+==========================================================================================
+
+
+problema na comparação par a par de clientes, nada aparece
+
+qfd ta uma horrível o telhado
+
+o relatório perdeu o leiout que tinha antes
+
+==============================================================
+
+na matriz de comparação a célula aparece 11 para requisito 1 venceu com importancia 1
+faça com que isso seja melhor
+coloque o requisito em uma cor, na linha de cima (verde se for da linha e azul se for da coluna) e abaixo desse número o valor da importância,  sendo 5 negritado 
