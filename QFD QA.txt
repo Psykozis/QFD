@@ -14,7 +14,3 @@ qfd ta uma horrível o telhado
 o relatório perdeu o leiout que tinha antes
 
 ==============================================================
-
-na matriz de comparação a célula aparece 11 para requisito 1 venceu com importancia 1
-faça com que isso seja melhor
-coloque o requisito em uma cor, na linha de cima (verde se for da linha e azul se for da coluna) e abaixo desse número o valor da importância,  sendo 5 negritado 

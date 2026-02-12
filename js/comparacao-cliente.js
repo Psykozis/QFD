@@ -198,15 +198,23 @@ function calculateSummaries() {
 
 function getComparisonDisplay(storedComparison, i, j) {
     const req1Id = requisitos[i].id;
-    let winnerIndex, value;
+    let winnerIndex, value, winnerType;
     if (storedComparison.requisito1 === req1Id) {
         winnerIndex = i;
+        winnerType = 'row'; // Linha
         value = storedComparison.valor;
     } else {
         winnerIndex = j;
+        winnerType = 'col'; // Coluna
         value = storedComparison.valor;
     }
-    return `<div class="comparison-result"><span class="winner-indicator">${winnerIndex + 1}</span><span class="value-indicator value-${value}">${value}</span></div>`;
+    // Cores: verde para linha, azul para coluna
+    return `
+      <div class="comparison-result-v2">
+        <span class="winner-badge winner-${winnerType}">${winnerIndex + 1}</span>
+        <span class="importance-label${value === 5 ? ' importance-strong' : ''}">${value}</span>
+      </div>
+    `;
 }
 
 function addMatrixEventListeners() {

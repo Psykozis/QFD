@@ -5,6 +5,8 @@
     box-sizing: border-box;
 }
 
+/* --- Estilo para célula de comparação aprimorada --- */
+.comparison-result-v2 {
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
@@ -13,6 +15,7 @@ body {
 }
 
 .container {
+.winner-badge {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
@@ -25,17 +28,21 @@ body {
     padding: 2rem 0;
     text-align: center;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+.winner-row {
 }
 
 .header h1 {
+.winner-col {
     font-size: 2.5rem;
     margin-bottom: 0.5rem;
     font-weight: 700;
+.importance-label {
 }
 
 .header p {
     font-size: 1.1rem;
     opacity: 0.9;
+.importance-label.importance-strong {
 }
 
 /* Navegação */
