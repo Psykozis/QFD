@@ -335,8 +335,7 @@ function openCorrelationPopup(cell) {
     // Configura event listeners
     setupPopupEventListeners(req1Id, req2Id, currentCorrelation);
     
-    // Posiciona o popup próximo à célula clicada
-    positionPopup(popup, cell);
+    // Centralização será feita apenas pelo CSS da overlay
 }
 
 function positionPopup(popup, cell) {

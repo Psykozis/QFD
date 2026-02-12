@@ -9,10 +9,6 @@ na verdade, o frontend está quebrando e quando se clica ele para de executar is
 
 No relatório, remover triangulo inferior do telhado, caso contrário fica redundante e confuso
 ==========================================================================================
-
-
-problema na comparação par a par de clientes, nada aparece
-
 qfd ta uma horrível o telhado
 
 o relatório perdeu o leiout que tinha antes
