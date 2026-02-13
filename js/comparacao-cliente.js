@@ -90,7 +90,6 @@ function setupComparison() {
     if (legendSection) legendSection.style.display = 'block';
     
     generateComparisonMatrix();
-    generateLegend();
     
     if (comparacoesFeitas === totalComparacoes) {
         showResults();
@@ -198,23 +197,15 @@ function calculateSummaries() {
 
 function getComparisonDisplay(storedComparison, i, j) {
     const req1Id = requisitos[i].id;
-    let winnerIndex, value, winnerType;
+    let winnerIndex, value;
     if (storedComparison.requisito1 === req1Id) {
         winnerIndex = i;
-        winnerType = 'row'; // Linha
         value = storedComparison.valor;
     } else {
         winnerIndex = j;
-        winnerType = 'col'; // Coluna
         value = storedComparison.valor;
     }
-    // Cores: verde para linha, azul para coluna
-    return `
-      <div class="comparison-result-v2">
-        <span class="winner-badge winner-${winnerType}">${winnerIndex + 1}</span>
-        <span class="importance-label${value === 5 ? ' importance-strong' : ''}">${value}</span>
-      </div>
-    `;
+    return `<div class="comparison-result"><span class="winner-indicator">${winnerIndex + 1}</span><span class="value-indicator value-${value}">${value}</span></div>`;
 }
 
 function addMatrixEventListeners() {
@@ -493,179 +484,4 @@ function escapeHtml(text) {
 function showResults() {
     const resultsSection = document.getElementById('results-section');
     if (resultsSection) resultsSection.style.display = 'block';
-}
-/**
- * Reseta todas as comparações realizadas
- * Requer confirmação do usuário antes de executar a ação
- */
-function resetComparisons() {
-    if (confirm('Tem certeza que deseja resetar todas as comparações? Esta ação não pode ser desfeita.')) {
-        try {
-            const data = qfdDB.loadData();
-            data.comparacaoCliente = [];
-            qfdDB.saveData(data);
-            
-            loadRequisitos();
-            setupComparison();
-            updateStatus();
-            
-            const resultsSection = document.getElementById('results-section');
-            if (resultsSection) {
-                resultsSection.style.display = 'none';
-            }
-            
-            showAlert('Todas as comparações foram resetadas!', 'success');
-        } catch (error) {
-            console.error('Erro ao resetar comparações:', error);
-            showAlert('Erro ao resetar comparações. Verifique o console.', 'danger');
-        }
-    }
-}
-
-/**
- * Exporta os resultados das comparações (hierarquização) em formato CSV
- */
-function exportResults() {
-    const comparacoes = qfdDB.getComparacoesCliente();
-    
-    if (requisitos.length === 0) {
-        showAlert('Não há requisitos para exportar.', 'info');
-        return;
-    }
-    
-    const csvContent = generateResultsCSV();
-    const filename = `hierarquizacao-requisitos-${new Date().toISOString().split('T')[0]}.csv`;
-    downloadFile(csvContent, filename, 'text/csv');
-    
-    showAlert('Resultados exportados com sucesso!', 'success');
-}
-
-/**
- * Gera CSV com os resultados da hierarquização
- */
-function generateResultsCSV() {
-    const somatorios = calculateSummaries();
-    
-    // Cria ranking ordenado por importância
-    const ranking = requisitos.map((req, index) => ({
-        numero: index + 1,
-        descricao: req.descricao,
-        importancia: somatorios.linhas[index] || 0,
-        peso: ((somatorios.linhas[index] || 0) / somatorios.total * 100).toFixed(2)
-    })).sort((a, b) => b.importancia - a.importancia);
-    
-    const headers = ['Rank', 'Número', 'Requisito', 'Importância', 'Peso (%)'];
-    const rows = ranking.map((item, rank) => [
-        rank + 1,
-        item.numero,
-        `"${item.descricao.replace(/"/g, '""')}"`,
-        item.importancia,
-        item.peso
-    ]);
-    
-    return [headers, ...rows].map(row => row.join(',')).join('\n');
-}
-
-/**
- * Exporta as comparações realizadas em formato CSV
- */
-function exportComparacoesCSV() {
-    const comparacoes = qfdDB.getComparacoesCliente();
-    
-    if (comparacoes.length === 0) {
-        showAlert('Não há comparações para exportar.', 'info');
-        return;
-    }
-    
-    const csvContent = generateComparacoesCSV();
-    const filename = `comparacoes-requisitos-${new Date().toISOString().split('T')[0]}.csv`;
-    downloadFile(csvContent, filename, 'text/csv');
-    
-    showAlert('Comparações exportadas com sucesso!', 'success');
-}
-
-/**
- * Gera CSV com todas as comparações realizadas
- */
-function generateComparacoesCSV() {
-    const comparacoes = qfdDB.getComparacoesCliente();
-    
-    const headers = ['Requisito 1 (Num)', 'Requisito 2 (Num)', 'Vencedor', 'Importância', 'Requisito 1 (Descrição)', 'Requisito 2 (Descrição)'];
-    const rows = comparacoes.map(comp => {
-        const req1Index = requisitos.findIndex(r => r.id === comp.requisito1);
-        const req2Index = requisitos.findIndex(r => r.id === comp.requisito2);
-        const req1 = requisitos[req1Index];
-        const req2 = requisitos[req2Index];
-        
-        let winner, importance;
-        if (comp.requisito1 === (comp.requisito1 || comp.requisito1)) {
-            winner = req1Index + 1;
-        } else {
-            winner = req2Index + 1;
-        }
-        
-        const importanceText = comp.valor === 1 ? 'Pouco' : comp.valor === 3 ? 'Moderado' : 'Muito';
-        
-        return [
-            req1Index + 1,
-            req2Index + 1,
-            winner,
-            `${comp.valor} (${importanceText})`,
-            req1 ? `"${req1.descricao.replace(/"/g, '""')}"` : 'N/A',
-            req2 ? `"${req2.descricao.replace(/"/g, '""')}"` : 'N/A'
-        ];
-    });
-    
-    return [headers, ...rows].map(row => row.join(',')).join('\n');
-}
-
-/**
- * Função utilitária para download de arquivo
- */
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-/**
- * Função utilitária para mostrar alertas
- */
-function showAlert(message, type = 'info') {
-    // Implementação simples usando alert nativo
-    // Uma versão mais sofisticada poderia usar um toast ou modal
-    console.log(`[${type.toUpperCase()}] ${message}`);
-    alert(message);
-}
-
-/**
- * Gera a legenda dos requisitos no container
- */
-function generateLegend() {
-    const legendContainer = document.getElementById('matrix-legend-container');
-    if (!legendContainer) return;
-    
-    let legendHTML = '<div class="legend-list">';
-    legendHTML += '<h5>Numeração dos Requisitos</h5>';
-    legendHTML += '<div class="legend-items">';
-    
-    requisitos.forEach((req, index) => {
-        legendHTML += `
-            <div class="legend-item">
-                <span class="legend-number">${index + 1}</span>
-                <span class="legend-text">${escapeHtml(req.descricao)}</span>
-            </div>
-        `;
-    });
-    
-    legendHTML += '</div></div>';
-    
-    legendContainer.innerHTML = legendHTML;
 }
