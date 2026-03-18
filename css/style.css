@@ -747,6 +747,18 @@ body {
     border-left: 3px solid #667eea;
 }
 
+/* ========================================================================
+   FILTROS DA ANÁLISE (Correlação Projeto)
+   ======================================================================== */
+
+.analysis-item.hidden {
+    display: none !important;
+}
+
+.analysis-item.visible {
+    display: block;
+}
+
 .qfd-tooltip {
     position: fixed;
     background: rgba(33, 37, 41, 0.95);

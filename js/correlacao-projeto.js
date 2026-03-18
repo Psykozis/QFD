@@ -334,31 +334,9 @@ function openCorrelationPopup(cell) {
     
     // Configura event listeners
     setupPopupEventListeners(req1Id, req2Id, currentCorrelation);
-    
-    // Posiciona o popup próximo à célula clicada
-    positionPopup(popup, cell);
 }
 
-function positionPopup(popup, cell) {
-    const popupContent = popup.querySelector('.correlation-popup');
-    const cellRect = cell.getBoundingClientRect();
-    const popupRect = popupContent.getBoundingClientRect();
-    
-    let left = cellRect.left + (cellRect.width / 2) - (popupRect.width / 2);
-    let top = cellRect.bottom + 10;
-    
-    // Ajusta posição se sair da tela
-    if (left < 10) left = 10;
-    if (left + popupRect.width > window.innerWidth - 10) {
-        left = window.innerWidth - popupRect.width - 10;
-    }
-    if (top + popupRect.height > window.innerHeight - 10) {
-        top = cellRect.top - popupRect.height - 10;
-    }
-    
-    popupContent.style.left = left + 'px';
-    popupContent.style.top = top + 'px';
-}
+// OBS: popup centralizado via CSS (overlay com flex).
 
 function setupPopupEventListeners(req1Id, req2Id, currentCorrelation) {
     let selectedCorrelation = currentCorrelation;
@@ -480,35 +458,35 @@ function generateCorrelationSummary() {
     const summaryHTML = `
         <h4>Resumo das Correlações</h4>
         <div class="summary-grid">
-            <div class="summary-item strong-positive">
+            <div class="summary-item strong-positive analysis-item visible" data-correlation-type="strong-positive">
                 <div class="summary-icon">++</div>
                 <div class="summary-content">
                     <span class="summary-count">${counts['++']}</span>
                     <span class="summary-label">Positivas Muito Fortes</span>
                 </div>
             </div>
-            <div class="summary-item positive">
+            <div class="summary-item positive analysis-item visible" data-correlation-type="positive">
                 <div class="summary-icon">+</div>
                 <div class="summary-content">
                     <span class="summary-count">${counts['+']}</span>
                     <span class="summary-label">Positivas</span>
                 </div>
             </div>
-            <div class="summary-item neutral">
+            <div class="summary-item neutral analysis-item visible" data-correlation-type="neutral">
                 <div class="summary-icon">0</div>
                 <div class="summary-content">
                     <span class="summary-count">${counts['0']}</span>
                     <span class="summary-label">Neutras</span>
                 </div>
             </div>
-            <div class="summary-item negative">
+            <div class="summary-item negative analysis-item visible" data-correlation-type="negative">
                 <div class="summary-icon">-</div>
                 <div class="summary-content">
                     <span class="summary-count">${counts['-']}</span>
                     <span class="summary-label">Negativas</span>
                 </div>
             </div>
-            <div class="summary-item strong-negative">
+            <div class="summary-item strong-negative analysis-item visible" data-correlation-type="strong-negative">
                 <div class="summary-icon">--</div>
                 <div class="summary-content">
                     <span class="summary-count">${counts['--']}</span>
@@ -549,8 +527,9 @@ function generateConflictAnalysis() {
                 const req1Index = requisitos.indexOf(req1) + 1;
                 const req2Index = requisitos.indexOf(req2) + 1;
                 
+                const itemType = conflict.correlacao === '--' ? 'strong-negative' : 'negative';
                 conflictHTML += `
-                    <div class="conflict-item">
+                    <div class="conflict-item analysis-item visible" data-correlation-type="${itemType}">
                         <div class="conflict-header">
                             <span class="corr-symbol ${conflict.correlacao === '--' ? 'strong-negative' : 'negative'}">
                                 ${conflict.correlacao}
@@ -615,8 +594,9 @@ function generateSynergyAnalysis() {
                 const req1Index = requisitos.indexOf(req1) + 1;
                 const req2Index = requisitos.indexOf(req2) + 1;
                 
+                const itemType = synergy.correlacao === '++' ? 'strong-positive' : 'positive';
                 synergyHTML += `
-                    <div class="synergy-item">
+                    <div class="synergy-item analysis-item visible" data-correlation-type="${itemType}">
                         <div class="synergy-header">
                             <span class="corr-symbol ${synergy.correlacao === '++' ? 'strong-positive' : 'positive'}">
                                 ${synergy.correlacao}
@@ -861,7 +841,7 @@ function addPopupStyles() {
         }
         
         .correlation-popup {
-            position: absolute;
+            position: relative;
             background: white;
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -1637,9 +1617,8 @@ function filterAnalysis(type) {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    if (event && event.target) {
-        event.target.classList.add('active');
-    }
+    const ev = (typeof event !== 'undefined') ? event : null; // onclick inline usa window.event em alguns navegadores
+    if (ev && ev.target) ev.target.classList.add('active');
     
     // Filtrar itens de analise
     const analysisItems = document.querySelectorAll('.analysis-item');
