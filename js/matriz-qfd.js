@@ -27,6 +27,9 @@
 let requisitosCliente = [];
 let requisitosProjeto = [];
 let relacoesFeitas = 0;
+let currentInfluenceCell = null;
+let currentInfluenceI = null;
+let currentInfluenceJ = null;
 
 /**
  * Inicializa a página quando o DOM está pronto
@@ -35,6 +38,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadData();
     setupMatrix();
     setupGlobalEvents();
+    // Garante que o modal não apareça ao abrir a página
+    const influenceModal = document.getElementById('influence-modal');
+    if (influenceModal) influenceModal.style.display = 'none';
 });
 
 function loadData() {
@@ -120,9 +126,9 @@ function generateQFDMatrix() {
     html += '<tbody>';
     requisitosCliente.forEach((rc, i) => {
         html += `<tr><td class="row-header" data-tooltip="RC${i+1}: ${escapeHtml(rc.descricao)}">${i+1}. ${truncateText(rc.descricao, 30)}</td>`;
-        requisitosProjeto.forEach(rp => {
+        requisitosProjeto.forEach((rp, j) => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
-            html += `<td class="influence-cell" data-cliente="${rc.id}" data-projeto="${rp.id}" onclick="openInfluenceModal(this)">${val || ''}</td>`;
+            html += `<td class="influence-cell" data-cliente="${rc.id}" data-projeto="${rp.id}" data-i="${i}" data-j="${j}" onclick="openInfluenceModal(this)">${val || ''}</td>`;
         });
         html += `<td class="importance-value-cell">${rc.importancia.toFixed(1)}</td>`;
         html += `<td class="importance-percent-cell">${(rc.peso * 100).toFixed(1)}%</td></tr>`;
@@ -146,13 +152,86 @@ function hideTooltip() {
 }
 
 function openInfluenceModal(cell) {
+    const modal = document.getElementById('influence-modal');
+    const info = document.getElementById('modal-comparison-info');
+    if (!modal || !info) return;
+
+    currentInfluenceCell = cell;
+    currentInfluenceI = parseInt(cell.dataset.i);
+    currentInfluenceJ = parseInt(cell.dataset.j);
+
     const clienteId = cell.dataset.cliente;
     const projetoId = cell.dataset.projeto;
-    const val = prompt("Influência (0, 1, 3, 9):", cell.innerText || "0");
-    if (val !== null) {
-        qfdDB.setMatrizQFD(clienteId, projetoId, parseInt(val) || 0);
-        location.reload();
+
+    const rc = requisitosCliente[currentInfluenceI];
+    const rp = requisitosProjeto[currentInfluenceJ];
+    const currentVal = qfdDB.getMatrizQFD(clienteId, projetoId) || 0;
+
+    info.innerHTML = `
+        <strong>RC${currentInfluenceI + 1}:</strong> ${escapeHtml(rc?.descricao || '')}<br>
+        <strong>RP${currentInfluenceJ + 1}:</strong> ${escapeHtml(rp?.descricao || '')}<br>
+        <small>Valor atual: <strong>${currentVal}</strong> (pressione <kbd>Enter</kbd> para salvar e ir para a próxima célula)</small>
+    `;
+
+    // Exibe modal centralizado
+    modal.style.display = 'flex';
+
+    // Fecha no ESC
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeInfluenceModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+function closeInfluenceModal() {
+    const modal = document.getElementById('influence-modal');
+    if (modal) modal.style.display = 'none';
+    currentInfluenceCell = null;
+    currentInfluenceI = null;
+    currentInfluenceJ = null;
+}
+
+function getNextInfluenceCell(i, j) {
+    const rows = requisitosCliente.length;
+    const cols = requisitosProjeto.length;
+    if (rows === 0 || cols === 0) return null;
+    if (j < cols - 1) return { i, j: j + 1 };
+    if (i < rows - 1) return { i: i + 1, j: 0 };
+    return null;
+}
+
+function setInfluence(value) {
+    if (!currentInfluenceCell) return;
+    const clienteId = currentInfluenceCell.dataset.cliente;
+    const projetoId = currentInfluenceCell.dataset.projeto;
+
+    qfdDB.setMatrizQFD(clienteId, projetoId, value);
+
+    // Atualiza a célula imediatamente sem recarregar a página
+    currentInfluenceCell.textContent = value === 0 ? '' : String(value);
+
+    // Atualiza contagem de relações feitas e barra
+    relacoesFeitas = qfdDB.getMatrizQFDCompleta().length;
+    updateStatus();
+
+    // Vai para próxima célula ao pressionar Enter (ou ao clicar e escolher, avançamos também)
+    const next = getNextInfluenceCell(currentInfluenceI, currentInfluenceJ);
+    if (!next) {
+        closeInfluenceModal();
+        return;
     }
+
+    const nextCell = document.querySelector(`.influence-cell[data-i="${next.i}"][data-j="${next.j}"]`);
+    if (!nextCell) {
+        closeInfluenceModal();
+        return;
+    }
+
+    // Abre automaticamente a próxima
+    openInfluenceModal(nextCell);
 }
 
 function updateStatus() {
@@ -192,4 +271,37 @@ function setupGlobalEvents() {
             roof.style.display = roof.style.display === 'none' ? 'block' : 'none';
         };
     }
+
+    // Fecha modal de influência ao clicar fora do conteúdo
+    const influenceModal = document.getElementById('influence-modal');
+    if (influenceModal) {
+        influenceModal.addEventListener('click', (e) => {
+            if (e.target === influenceModal) closeInfluenceModal();
+        });
+    }
+
+    // Enter: salva o valor atualmente "selecionado" (atalhos 0/1/3/9)
+    document.addEventListener('keydown', (e) => {
+        const modalOpen = influenceModal && influenceModal.style.display === 'flex';
+        if (!modalOpen) return;
+
+        // Enter salva repetindo o último valor escolhido? Preferimos atalhos diretos:
+        // 0, 1, 3, 9 definem e avançam; Enter sozinho não muda nada sem uma escolha.
+        // Para cumprir o requisito "Enter avança sempre", usamos Enter para repetir o valor atual da célula.
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (!currentInfluenceCell) return;
+            const clienteId = currentInfluenceCell.dataset.cliente;
+            const projetoId = currentInfluenceCell.dataset.projeto;
+            const currentVal = qfdDB.getMatrizQFD(clienteId, projetoId) || 0;
+            setInfluence(currentVal);
+            return;
+        }
+
+        // Atalhos: 0 / 1 / 3 / 9 definem diretamente
+        if (e.key === '0') { e.preventDefault(); setInfluence(0); }
+        if (e.key === '1') { e.preventDefault(); setInfluence(1); }
+        if (e.key === '3') { e.preventDefault(); setInfluence(3); }
+        if (e.key === '9') { e.preventDefault(); setInfluence(9); }
+    });
 }
