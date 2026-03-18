@@ -205,7 +205,16 @@ function getComparisonDisplay(storedComparison, i, j) {
         winnerIndex = j;
         value = storedComparison.valor;
     }
-    return `<div class="comparison-result"><span class="winner-indicator">${winnerIndex + 1}</span><span class="value-indicator value-${value}">${value}</span></div>`;
+    return `
+        <div class="comparison-result">
+            <div class="comparison-winner">
+                <span class="winner-indicator">${winnerIndex + 1}</span>
+            </div>
+            <div class="comparison-importance importance-${value}">
+                <span class="value-indicator">${value}</span>
+            </div>
+        </div>
+    `;
 }
 
 function addMatrixEventListeners() {

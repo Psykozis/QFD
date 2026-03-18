@@ -1,16 +1,32 @@
 
 ==========================================================================================
+ver depois
+
+matriz-qfd.html
 No QFD o telhado até está sendo recolhido, mas não está aparecendo as informações, se possível colocar numa div separada da matriz principal.
 Na coluna de importância do cliente peso %, há 2 informações na mesma coluna, seria interessante ter duas colunas, uma para a pontuação e outra para percentual
 
-Na comparação de clientes, a linha de cabeçalho de requisitos das colunas não está mostrando qual é o requisito mais (a informação está ali mas não apresenta)
-precisa de hovers com tooltips em cada célula explicitando a comparação (elas até existem mas aparecem fora da página)
-na verdade, o frontend está quebrando e quando se clica ele para de executar isso
-
+relatorio.html
 No relatório, remover triangulo inferior do telhado, caso contrário fica redundante e confuso
 ==========================================================================================
-qfd ta uma horrível o telhado
+Urgentes
 
-o relatório perdeu o leiout que tinha antes
+
+comparacao-cliente.html
+na célula de comparação o número e a importância devem ser um abaixo do outro de preferência com o número do requisito em negrito e a importância colorida em 3 cores diferentes quando 1 azul, 3 verde, 5 vermelho
+
+correlacao-projeto.html 
+o popup deve ser no centro da página sempre, não acima do clique
+análises das correlções ao clicar devem apenas os referentes aparecerem, não todos
+
+matriz-qfd.html
+ao abrir página, uma popup surge, impossibilitando de usar a página.
+essa popup de comparação só deve surgir ao clicar na célula, e sumir ao apertar esc, X ou acabarem as células
+essa popup ao apertar enter, deve atualizar para a pródima célula sempre que enter for pressionado
+
+relatorio.html
+o relatório perdeu o leiout de apresentação das informações
+
+em todas as páginas, o botão de avançar e voltar, que está em baixo, deve estar contido na linha de menu, e removido da parte inferior
 
 ==============================================================

@@ -854,6 +854,45 @@ body {
     background-color: #f1f3f5 !important;
 }
 
+/* ========================================================================
+   MATRIZ DE COMPARAÇÃO - EXIBIÇÃO DO RESULTADO NA CÉLULA
+   (número do requisito em cima, importância embaixo)
+   ======================================================================== */
+
+.matrix-comparison .comparison-result {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    line-height: 1.1;
+}
+
+.matrix-comparison .comparison-winner .winner-indicator {
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #212529;
+}
+
+.matrix-comparison .comparison-importance .value-indicator {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+/* Cores por importância */
+.matrix-comparison .comparison-importance.importance-1 .value-indicator {
+    color: #1e60ff; /* azul */
+}
+
+.matrix-comparison .comparison-importance.importance-3 .value-indicator {
+    color: #1f9d55; /* verde */
+}
+
+.matrix-comparison .comparison-importance.importance-5 .value-indicator {
+    color: #dc3545; /* vermelho */
+    font-weight: 900; /* 5 mais destacado */
+}
+
 /* Legenda Separada */
 .matrix-legend {
     padding: 1rem;
