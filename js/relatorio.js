@@ -116,7 +116,7 @@ function generateClientReqs() {
 }
 
 function generateProjectReqs() {
-    let html = '<div class="report-section"><h3>Requisitos de Projeto</h3><table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Sentido</th></tr></thead><tbody>';
+    let html = '<div class="report-section"><h3>Requisitos de Projeto</h3><table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Sentido<br/>da melhoria</th></tr></thead><tbody>';
     requisitosProjeto.forEach((r, i) => {
         html += `<tr><td>RP${i+1}</td><td>${escapeHtml(r.descricao)}</td><td>${r.sentidoMelhoria}</td></tr>`;
     });
@@ -125,7 +125,7 @@ function generateProjectReqs() {
 
 function generateRoof() {
     const correlacoes = qfdDB.getCorrelacoesProjeto();
-    let html = '<div class="report-section"><h3>Telhado de Correlações</h3><table class="roof-table"><thead><tr><th></th>';
+    let html = '<div class="report-section"><h3>Telhado de Correlações QFD - compara Requisitos de Projeto entre si</h3><table class="roof-table"><thead><tr><th></th>';
     requisitosProjeto.forEach((_, i) => html += `<th>${i+1}</th>`);
     html += '</tr></thead><tbody>';
     

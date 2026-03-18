@@ -2,10 +2,58 @@
 ==========================================================================================
 ver depois
 
+comparação cliente
+pedir pra explicar como estão sendo calculados os valores da ultima linha
+
+as somas dos totais parecem estar com problemas, talvez deva ser outro nome
+se somar o valor atribuido para algum requisito 
+está diferente do que está ali marcado na coluna, na linha está certo
+isso interfere no ranqueamento
+além disso
+o label da linha de titulos para o total está apresentando o resultado
+não está aparecendo abaixo da matriz as legendas dos requisitos
+nem está preenchendo a hierarquização pós comparação
+
+req tot pos ?   %
+10	81	1	0	15,7281553398058
+11	80	2	1	15,5339805825243
+4	54	3	11	10,4854368932039
+2	51	4	12	9,90291262135922
+3	51	4	12	9,90291262135922
+1	41	5	16	7,96116504854369
+17	24	6	23	4,66019417475728
+8	22	7	25	4,27184466019418
+6	21	8	24	4,07766990291262
+9	19	9	30	3,68932038834951
+16	18	10	33	3,49514563106796
+18	18	10	31	3,49514563106796
+15	16	11	27	3,10679611650485
+5	6	12	57	1,16504854368932
+14	5	13	44	0,970873786407767
+12	4	14	51	0,776699029126214
+13	4	15	49	0,776699029126214
+7	0	16	69	0
+	515		?	
+
+
+
+
+
 matriz-qfd.html
-No QFD o telhado até está sendo recolhido, mas não está aparecendo as informações, se possível colocar numa div separada da matriz principal.
+No QFD o telhado até está sendo recolhido, mas não está aparecendo as informações, 
+se possível colocar numa div separada da matriz principal.
+ele está invertido com celulas de tamanhos diferentes da matriz principal, 
 Na coluna de importância do cliente peso %, há 2 informações na mesma coluna, seria interessante ter duas colunas, uma para a pontuação e outra para percentual
+toda vez que trocar para uma nova celula deve colocar a cor do contorno, hora na cor que está, hora em verde.
+"Valor atual: 5" está 5 e deveria ser 9 quando a influencia é forte 
+
 
 
 relatorio.html
-No relatório, remover triangulo inferior do telhado, caso contrário fica redundante e confuso
+
+colocar as separações entre o terço superior, médio e inferior para as especificações de projeto
+
+quando a matriz do qfd é maior que a folha corta a resposta
+fazer com que os requisitos sejam escritos em pé, e fazer as células serem menores
+os requisitos de cliente estão por extenso, podem estar representados por 'rc1'...
+não está gerando o pdf
