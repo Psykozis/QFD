@@ -45,6 +45,17 @@
                         <a href="#" onclick="exportPageData('matriz')"><i class="fas fa-file-export"></i> Exportar Matriz QFD</a>
                     </div>
                 </li>
+                <li class="nav-spacer"></li>
+                <li>
+                    <div class="nav-page-actions">
+                        <a href="matriz-qfd.html" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                        <a href="../index.html" class="btn btn-primary">
+                            Finalizar <i class="fas fa-home"></i>
+                        </a>
+                    </div>
+                </li>
             </ul>
             <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
             <input type="file" id="import-csv-cliente" style="display: none;" onchange="importCSV(event, 'cliente')" accept=".csv">
@@ -373,15 +384,6 @@
                 </div>
             </div>
 
-            <!-- Navegação -->
-            <div class="page-navigation">
-                <a href="matriz-qfd.html" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Voltar: Matriz QFD
-                </a>
-                <a href="../index.html" class="btn btn-primary">
-                    Finalizar: Dashboard <i class="fas fa-home"></i>
-                </a>
-            </div>
         </div>
     </main>
 

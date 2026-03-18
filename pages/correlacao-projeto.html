@@ -48,6 +48,17 @@
                         <a href="#" onclick="importCorrelacoes()"><i class="fas fa-file-csv"></i> Importar Correlações (CSV)</a>
                     </div>
                 </li>
+                <li class="nav-spacer"></li>
+                <li>
+                    <div class="nav-page-actions">
+                        <a href="requisitos-projeto.html" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                        <a href="matriz-qfd.html" class="btn btn-primary" id="btn-proximo">
+                            Avançar <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </li>
             </ul>
             <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
             <input type="file" id="import-csv-cliente" style="display: none;" onchange="importCSV(event, 'cliente')" accept=".csv">
@@ -290,15 +301,6 @@
                 </div>
             </div>
 
-            <!-- Navegação -->
-            <div class="page-navigation">
-                <a href="requisitos-projeto.html" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Voltar: Requisitos Projeto
-                </a>
-                <a href="matriz-qfd.html" class="btn btn-primary" id="btn-proximo">
-                    Próximo: Matriz QFD <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
         </div>
     </main>
 

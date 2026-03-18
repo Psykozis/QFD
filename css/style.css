@@ -54,6 +54,23 @@ body {
     margin: 0;
 }
 
+/* Ações de navegação (Voltar/Avançar) na barra de menu */
+.nav-spacer {
+    margin-left: auto;
+}
+
+.nav-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.nav-page-actions .btn {
+    padding: 0.55rem 0.9rem;
+    border-bottom: none;
+}
+
 .nav-menu li {
     position: relative;
 }

@@ -45,6 +45,17 @@
                         <a href="#" onclick="exportPageData('matriz')"><i class="fas fa-file-export"></i> Exportar Matriz QFD</a>
                     </div>
                 </li>
+                <li class="nav-spacer"></li>
+                <li>
+                    <div class="nav-page-actions">
+                        <a href="comparacao-cliente.html" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                        <a href="correlacao-projeto.html" class="btn btn-primary" id="btn-proximo">
+                            Avançar <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </li>
             </ul>
             <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
             <input type="file" id="import-csv-cliente" style="display: none;" onchange="importCSV(event, 'cliente')" accept=".csv">
@@ -224,15 +235,6 @@
                 </div>
             </div>
 
-            <!-- Navegação -->
-            <div class="page-navigation">
-                <a href="comparacao-cliente.html" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Voltar: Comparação Cliente
-                </a>
-                <a href="correlacao-projeto.html" class="btn btn-primary" id="btn-proximo">
-                    Próximo: Correlação <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
         </div>
     </main>
 
