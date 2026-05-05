@@ -30,6 +30,7 @@ let relacoesFeitas = 0;
 let currentInfluenceCell = null;
 let currentInfluenceI = null;
 let currentInfluenceJ = null;
+let activeCellHighlightGreen = false;
 
 /**
  * Inicializa a página quando o DOM está pronto
@@ -71,36 +72,31 @@ function generateRoof() {
         return;
     }
 
-    // O telhado é construído como uma grade de diamantes
-    let roofHTML = '<div class="roof-grid" style="display: grid; grid-template-columns: repeat(' + n + ', 40px); justify-content: center;">';
-    
-    for (let row = 0; row < n - 1; row++) {
-        for (let col = 0; col < n; col++) {
-            if (col > row) {
-                const i = row;
-                const j = col;
-                const correlation = qfdDB.getCorrelacaoProjeto(requisitosProjeto[i].id, requisitosProjeto[j].id);
-                const tooltip = `Correlação: RP${i+1} vs RP${j+1}<br>${getCorrelationLabel(correlation)}`;
-                
-                // Cálculo de posição para o triângulo
-                const left = (j + i) * 20;
-                const top = (j - i) * 20;
-                
-                roofHTML += `
-                    <div class="qfd-roof-cell" 
-                         style="position: absolute; left: ${left}px; top: ${top}px;"
-                         data-tooltip="${tooltip}">
-                        <span class="symbol">${getCorrelationSymbol(correlation)}</span>
-                    </div>`;
-            }
+    // Telhado renderizado em tabela triangular, separado da matriz principal e sem inversão
+    let roofHTML = '<table class="qfd-roof-table"><tbody>';
+    for (let i = 0; i < n - 1; i++) {
+        roofHTML += '<tr>';
+
+        // deslocamento à esquerda para formar o triângulo superior
+        for (let k = 0; k <= i; k++) {
+            roofHTML += '<td class="qfd-roof-empty"></td>';
         }
+
+        // células de correlação válidas
+        for (let j = i + 1; j < n; j++) {
+            const correlation = qfdDB.getCorrelacaoProjeto(requisitosProjeto[i].id, requisitosProjeto[j].id);
+            const tooltip = `Correlação: RP${i + 1} vs RP${j + 1}<br>${getCorrelationLabel(correlation)}`;
+            roofHTML += `
+                <td class="qfd-roof-cell" data-tooltip="${tooltip}">
+                    <span class="symbol">${getCorrelationSymbol(correlation)}</span>
+                </td>`;
+        }
+
+        roofHTML += '</tr>';
     }
-    
-    roofHTML += '</div>';
+    roofHTML += '</tbody></table>';
     roofContainer.innerHTML = roofHTML;
-    
-    // Altura dinâmica para o container do telhado
-    roofContainer.style.height = (n * 20) + 'px';
+    roofContainer.style.height = 'auto';
     
     const cells = roofContainer.querySelectorAll('[data-tooltip]');
     cells.forEach(cell => {
@@ -118,9 +114,9 @@ function generateQFDMatrix() {
     // Header
     html += '<thead><tr><th class="row-header">Requisitos</th>';
     requisitosProjeto.forEach((_, i) => {
-        html += `<th class="req-number-cell" data-tooltip="RP${i+1}: ${escapeHtml(requisitosProjeto[i].descricao)}">${i+1}</th>`;
+        html += `<th class="req-number-cell" data-tooltip="RP${i+1}: ${escapeHtml(requisitosProjeto[i].descricao)}"><span>RP${i+1}</span></th>`;
     });
-    html += '<th class="importance-header">Pontos</th><th class="importance-header">Peso %</th></tr></thead>';
+    html += '<th class="importance-header">Pontuação</th><th class="importance-header">Percentual (%)</th></tr></thead>';
     
     // Body
     html += '<tbody>';
@@ -160,12 +156,20 @@ function openInfluenceModal(cell) {
     currentInfluenceI = parseInt(cell.dataset.i);
     currentInfluenceJ = parseInt(cell.dataset.j);
 
+    // Destaca visualmente a célula ativa, alternando borda padrão/verde
+    document.querySelectorAll('.influence-cell.active-a, .influence-cell.active-b').forEach(c => {
+        c.classList.remove('active-a', 'active-b');
+    });
+    currentInfluenceCell.classList.add(activeCellHighlightGreen ? 'active-b' : 'active-a');
+    activeCellHighlightGreen = !activeCellHighlightGreen;
+
     const clienteId = cell.dataset.cliente;
     const projetoId = cell.dataset.projeto;
 
     const rc = requisitosCliente[currentInfluenceI];
     const rp = requisitosProjeto[currentInfluenceJ];
-    const currentVal = qfdDB.getMatrizQFD(clienteId, projetoId) || 0;
+    const cellValue = parseInt((cell.textContent || '').trim(), 10);
+    const currentVal = Number.isFinite(cellValue) ? cellValue : (qfdDB.getMatrizQFD(clienteId, projetoId) || 0);
 
     info.innerHTML = `
         <strong>RC${currentInfluenceI + 1}:</strong> ${escapeHtml(rc?.descricao || '')}<br>
@@ -237,6 +241,12 @@ function setInfluence(value) {
 function updateStatus() {
     const total = requisitosCliente.length * requisitosProjeto.length;
     const progresso = total > 0 ? Math.round((relacoesFeitas / total) * 100) : 0;
+    const totalClienteEl = document.getElementById('total-req-cliente');
+    if (totalClienteEl) totalClienteEl.textContent = requisitosCliente.length;
+    const totalProjetoEl = document.getElementById('total-req-projeto');
+    if (totalProjetoEl) totalProjetoEl.textContent = requisitosProjeto.length;
+    const relacoesEl = document.getElementById('relacoes-feitas');
+    if (relacoesEl) relacoesEl.textContent = `${relacoesFeitas} / ${total}`;
     const fill = document.getElementById('progress-fill');
     if (fill) fill.style.width = progresso + '%';
     const text = document.getElementById('progresso-percentual');
@@ -304,4 +314,29 @@ function setupGlobalEvents() {
         if (e.key === '3') { e.preventDefault(); setInfluence(3); }
         if (e.key === '9') { e.preventDefault(); setInfluence(9); }
     });
+}
+
+function toggleRoof() {
+    const roof = document.getElementById('qfd-roof-container');
+    const btn = document.getElementById('btn-toggle-roof');
+    if (!roof) return;
+    const hidden = roof.style.display === 'none';
+    roof.style.display = hidden ? 'block' : 'none';
+    if (btn) {
+        btn.innerHTML = hidden
+            ? '<i class="fas fa-compress-alt"></i> Recolher Telhado'
+            : '<i class="fas fa-expand-alt"></i> Mostrar Telhado';
+    }
+}
+
+function toggleDirections() {
+    // A matriz atual não possui linha separada de direção; mantemos compatibilidade do botão.
+    const btn = document.getElementById('btn-toggle-directions');
+    if (btn) {
+        const showing = btn.dataset.showing !== 'false';
+        btn.dataset.showing = showing ? 'false' : 'true';
+        btn.innerHTML = showing
+            ? '<i class="fas fa-eye"></i> Mostrar Sentidos'
+            : '<i class="fas fa-eye-slash"></i> Ocultar Sentidos';
+    }
 }

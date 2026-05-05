@@ -90,9 +90,13 @@ function setupComparison() {
     if (legendSection) legendSection.style.display = 'block';
     
     generateComparisonMatrix();
+    generateLegend();
+    updateStatus();
     
     if (comparacoesFeitas === totalComparacoes) {
         showResults();
+    } else if (resultsSection) {
+        resultsSection.style.display = 'none';
     }
 }
 
@@ -121,7 +125,7 @@ function generateComparisonMatrix() {
     }
     
     matrixHTML += `<div class="matrix-cell matrix-total-header">
-        <div class="total-content"><span class="total-label">Total</span><span class="total-value">${somatorios.total}</span></div>
+        <div class="total-content"><span class="total-label">Total</span></div>
     </div></div>`;
     
     // Linhas
@@ -164,8 +168,8 @@ function generateComparisonMatrix() {
         matrixHTML += `<div class="matrix-cell matrix-row-total"><div class="row-total-content"><span class="total-value">${somatorios.linhas[i] || 0}</span></div></div></div>`;
     }
     
-    // Rodapé Totais
-    matrixHTML += '<div class="matrix-row matrix-column-totals"><div class="matrix-cell matrix-total-label">Total</div>';
+    // Rodapé Totais de coluna (retorno geométrico da matriz superior)
+    matrixHTML += '<div class="matrix-row matrix-column-totals"><div class="matrix-cell matrix-total-label">Retorno Coluna</div>';
     for (let j = 0; j < requisitos.length; j++) {
         matrixHTML += `<div class="matrix-cell matrix-column-total"><span class="total-value">${somatorios.colunas[j] || 0}</span></div>`;
     }
@@ -183,16 +187,41 @@ function calculateSummaries() {
     
     const comparacoes = qfdDB.getComparacoesCliente();
     comparacoes.forEach(c => {
-        const i = requisitos.findIndex(r => r.id === c.requisito1);
-        const j = requisitos.findIndex(r => r.id === c.requisito2);
-        if (i !== -1 && j !== -1) {
-            linhas[i] += c.valor;
-            colunas[j] += c.valor;
+        const winnerIndex = requisitos.findIndex(r => r.id === c.requisito1);
+        const loserIndex = requisitos.findIndex(r => r.id === c.requisito2);
+        if (winnerIndex !== -1 && loserIndex !== -1) {
+            // Pontuação do requisito (linha) = soma dos valores em que venceu
+            linhas[winnerIndex] += c.valor;
+
+            // Retorno de coluna = soma dos valores pela posição geométrica da célula i<j
+            // (independente de quem venceu)
+            const upperCol = Math.max(winnerIndex, loserIndex);
+            colunas[upperCol] += c.valor;
+
             total += c.valor;
         }
     });
     
     return { linhas, colunas, total };
+}
+
+function generateLegend() {
+    const legendContainer = document.getElementById('matrix-legend-container');
+    if (!legendContainer) return;
+
+    const legendHTML = `
+        <div class="matrix-legend">
+            <div class="legend-items">
+                ${requisitos.map((req, index) => `
+                    <div class="legend-item">
+                        <span class="legend-number">${index + 1}</span>
+                        <span class="legend-text">${escapeHtml(req.descricao)}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    legendContainer.innerHTML = legendHTML;
 }
 
 function getComparisonDisplay(storedComparison, i, j) {
@@ -476,8 +505,19 @@ window.closeModal = () => {
 function updateStatus() {
     const totalPossible = calculateTotalComparisons(requisitos.length);
     const feitas = qfdDB.getComparacoesCliente().length;
+
+    const totalReqEl = document.getElementById('total-requisitos');
+    if (totalReqEl) totalReqEl.textContent = `${requisitos.length} Requisitos`;
+
     const statusEl = document.getElementById('comparacoes-feitas');
     if (statusEl) statusEl.textContent = `${feitas} / ${totalPossible}`;
+
+    const progresso = totalPossible > 0 ? Math.round((feitas / totalPossible) * 100) : 0;
+    const progressoEl = document.getElementById('progresso-percentual');
+    if (progressoEl) progressoEl.textContent = `${progresso}%`;
+
+    const fillEl = document.getElementById('progress-fill');
+    if (fillEl) fillEl.style.width = `${progresso}%`;
 }
 
 function truncateText(text, limit) {
@@ -492,5 +532,23 @@ function escapeHtml(text) {
 
 function showResults() {
     const resultsSection = document.getElementById('results-section');
-    if (resultsSection) resultsSection.style.display = 'block';
+    const rankingList = document.getElementById('ranking-list');
+    if (!resultsSection || !rankingList) return;
+
+    const atualizados = qfdDB.getRequisitosCliente();
+    const totalImportancia = atualizados.reduce((sum, r) => sum + (r.importancia || 0), 0);
+    const ordenados = [...atualizados].sort((a, b) => (b.importancia || 0) - (a.importancia || 0));
+
+    rankingList.innerHTML = ordenados.map((req, index) => {
+        const peso = totalImportancia > 0 ? ((req.importancia || 0) / totalImportancia) * 100 : 0;
+        return `
+            <div class="legend-item">
+                <span class="legend-number">${index + 1}</span>
+                <span class="legend-text"><strong>Req ${requisitos.findIndex(r => r.id === req.id) + 1}:</strong> ${escapeHtml(req.descricao)}</span>
+                <span class="legend-score">Pts: ${req.importancia || 0} | ${peso.toFixed(2)}%</span>
+            </div>
+        `;
+    }).join('');
+
+    resultsSection.style.display = 'block';
 }

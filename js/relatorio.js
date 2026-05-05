@@ -116,9 +116,37 @@ function generateClientReqs() {
 }
 
 function generateProjectReqs() {
-    let html = '<div class="report-section"><h3>Requisitos de Projeto</h3><table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Sentido<br/>da melhoria</th></tr></thead><tbody>';
-    requisitosProjeto.forEach((r, i) => {
-        html += `<tr><td>RP${i+1}</td><td>${escapeHtml(r.descricao)}</td><td>${r.sentidoMelhoria}</td></tr>`;
+    const ordenados = [...requisitosProjeto].sort((a, b) => (b.importanciaAbsoluta || 0) - (a.importanciaAbsoluta || 0));
+    const total = ordenados.length;
+    const t1 = Math.ceil(total / 3);
+    const t2 = Math.ceil((2 * total) / 3);
+
+    let html = `<div class="report-section">
+        <h3>Requisitos de Projeto</h3>
+        <div class="tercios-legend">
+            <div class="tercio-item tercio-superior"><strong>Terço Superior:</strong> requisitos com maior importância absoluta (prioridade técnica alta).</div>
+            <div class="tercio-item tercio-medio"><strong>Terço Médio:</strong> requisitos intermediários (prioridade moderada).</div>
+            <div class="tercio-item tercio-inferior"><strong>Terço Inferior:</strong> requisitos de menor impacto relativo (prioridade baixa).</div>
+        </div>
+        <table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Sentido</th><th>Imp. Abs.</th><th>Terço</th></tr></thead><tbody>`;
+    ordenados.forEach((r, i) => {
+        let tercio = 'Inferior';
+        let tercioClass = 'tercio-inferior';
+        if (i < t1) {
+            tercio = 'Superior';
+            tercioClass = 'tercio-superior';
+        } else if (i < t2) {
+            tercio = 'Médio';
+            tercioClass = 'tercio-medio';
+        }
+
+        html += `<tr class="${tercioClass}">
+            <td>RP${requisitosProjeto.findIndex(x => x.id === r.id) + 1}</td>
+            <td>${escapeHtml(r.descricao)}</td>
+            <td>${escapeHtml(r.sentidoMelhoria || '-')}</td>
+            <td>${(r.importanciaAbsoluta || 0).toFixed(2)}</td>
+            <td><strong>${tercio}</strong></td>
+        </tr>`;
     });
     return html + '</tbody></table></div>';
 }
@@ -151,19 +179,19 @@ function generateRoof() {
 }
 
 function generateMatrix() {
-    let html = '<div class="report-section"><h3>Matriz QFD</h3><table class="report-table"><thead><tr><th>RC \\ RP</th>';
-    requisitosProjeto.forEach((_, i) => html += `<th>RP${i+1}</th>`);
+    let html = '<div class="report-section"><h3>Matriz QFD</h3><div class="qfd-matrix-report-wrapper"><table class="report-table qfd-matrix-report"><thead><tr><th class="qfd-corner-cell">RC \\ RP</th>';
+    requisitosProjeto.forEach((_, i) => html += `<th class="qfd-rp-header"><span>RP${i+1}</span></th>`);
     html += '<th>Peso</th></tr></thead><tbody>';
     
-    requisitosCliente.forEach(rc => {
-        html += `<tr><td>${escapeHtml(truncateText(rc.descricao, 30))}</td>`;
+    requisitosCliente.forEach((rc, idx) => {
+        html += `<tr><td class="qfd-rc-label">RC${idx + 1}</td>`;
         requisitosProjeto.forEach(rp => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
-            html += `<td>${val || ''}</td>`;
+            html += `<td class="qfd-cell">${val || ''}</td>`;
         });
         html += `<td>${(rc.peso * 100).toFixed(1)}%</td></tr>`;
     });
-    return html + '</tbody></table></div>';
+    return html + '</tbody></table></div></div>';
 }
 
 function truncateText(text, limit) {
@@ -179,4 +207,58 @@ function escapeHtml(text) {
 
 function printReport() {
     window.print();
+}
+
+function refreshPreview() {
+    generatePreview();
+}
+
+async function generatePDF() {
+    const reportElement = document.getElementById('report-content');
+    if (!reportElement) return;
+
+    if (!window.jspdf || !window.html2canvas) {
+        alert('Bibliotecas de PDF não carregadas. Recarregue a página e tente novamente.');
+        return;
+    }
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const canvas = await window.html2canvas(reportElement, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 8;
+        const usableWidth = pageWidth - margin * 2;
+        const usableHeight = pageHeight - margin * 2;
+
+        const imgWidth = usableWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = margin;
+
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+        heightLeft -= usableHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight + margin;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+            heightLeft -= usableHeight;
+        }
+
+        const safeTitle = (reportConfig.title || 'relatorio-qfd').replace(/[^\w\-]+/g, '_');
+        pdf.save(`${safeTitle}.pdf`);
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+        alert('Erro ao gerar PDF. Tente novamente.');
+    }
 }

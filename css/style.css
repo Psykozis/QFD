@@ -448,19 +448,20 @@ body {
 /* Matriz QFD específica */
 .qfd-container {
     position: relative;
-    margin-top: 50px;
+    margin-top: 16px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
 }
 
 .qfd-roof-container {
-    margin-left: 200px; /* Alinhado com o início das colunas de projeto */
-    margin-bottom: -1px;
-    overflow: visible;
+    margin-left: 210px; /* alinhamento com início das colunas da matriz */
+    margin-bottom: 8px;
+    overflow-x: auto;
     position: relative;
     z-index: 2;
     transition: all 0.3s ease;
+    width: calc(100% - 210px);
 }
 
 .qfd-roof-container.collapsed {
@@ -469,24 +470,30 @@ body {
 
 .qfd-roof-table {
     border-collapse: collapse;
-    margin: 0 auto;
+    margin: 0;
 }
 
 .qfd-roof-cell {
-    width: 40px;
-    height: 40px;
+    width: 80px; /* mesmo tamanho base das colunas da matriz */
+    height: 32px;
     border: 1px solid #ddd;
-    transform: rotate(45deg);
     position: relative;
     background: white;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: help;
+    font-weight: 700;
+}
+
+.qfd-roof-empty {
+    width: 80px;
+    height: 32px;
+    border: none;
+    background: transparent;
 }
 
 .qfd-roof-cell .symbol {
-    transform: rotate(-45deg);
     font-weight: bold;
 }
 
@@ -517,6 +524,24 @@ body {
     font-weight: 600;
 }
 
+.qfd-table .req-number-cell {
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    height: 96px;
+    padding: 2px;
+    vertical-align: bottom;
+}
+
+.qfd-table .req-number-cell span {
+    display: inline-block;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 0.75rem;
+    line-height: 1;
+    letter-spacing: 0.2px;
+}
+
 .qfd-table .row-header {
     background: #f8f9fa;
     text-align: left;
@@ -539,6 +564,17 @@ body {
 .importance-percent-cell {
     background: #eef2ff;
     color: #667eea;
+}
+
+/* Destaque da célula ativa no fluxo de preenchimento */
+.influence-cell.active-a {
+    outline: 2px solid #667eea;
+    outline-offset: -2px;
+}
+
+.influence-cell.active-b {
+    outline: 2px solid #16a34a;
+    outline-offset: -2px;
 }
 
 /* Footer */
@@ -1110,6 +1146,97 @@ body {
 .roof-table td.corr-cell {
     font-weight: 700;
     text-align: center;
+}
+
+/* Separação por terços nas especificações de projeto */
+.report-table tr.tercio-superior td {
+    background: #ecfdf5;
+}
+
+.report-table tr.tercio-medio td {
+    background: #eff6ff;
+}
+
+.report-table tr.tercio-inferior td {
+    background: #fff7ed;
+}
+
+.tercios-legend {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0.25rem 0 0.9rem 0;
+}
+
+.tercios-legend .tercio-item {
+    border: 1px solid #d7dee8;
+    border-left-width: 5px;
+    border-radius: 8px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.tercios-legend .tercio-item.tercio-superior {
+    border-left-color: #16a34a;
+    background: #ecfdf5;
+}
+
+.tercios-legend .tercio-item.tercio-medio {
+    border-left-color: #2563eb;
+    background: #eff6ff;
+}
+
+.tercios-legend .tercio-item.tercio-inferior {
+    border-left-color: #ea580c;
+    background: #fff7ed;
+}
+
+/* Matriz QFD compacta para evitar corte no PDF */
+.qfd-matrix-report-wrapper {
+    overflow-x: auto;
+}
+
+.qfd-matrix-report {
+    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+}
+
+.qfd-matrix-report .qfd-corner-cell {
+    min-width: 64px;
+}
+
+.qfd-matrix-report .qfd-rp-header {
+    width: 24px;
+    min-width: 24px;
+    max-width: 24px;
+    padding: 4px 2px;
+    vertical-align: bottom;
+    text-align: center;
+}
+
+.qfd-matrix-report .qfd-rp-header span {
+    display: inline-block;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 0.7rem;
+    line-height: 1;
+}
+
+.qfd-matrix-report .qfd-rc-label {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.qfd-matrix-report .qfd-cell {
+    width: 24px;
+    min-width: 24px;
+    max-width: 24px;
+    height: 22px;
+    padding: 2px;
+    text-align: center;
+    font-size: 0.72rem;
+    line-height: 1;
 }
 
 @media (max-width: 768px) {
