@@ -23,3 +23,16 @@ a coluna de imp absoluta, deve ser a relativa e não a absoluta
 ao invés de down up e none, devem ser setar e para o none um asterisco
 no pdf gerado, todos os rp e rc devem apresentar um balão ao passar o mouse apresentando o que eles representam
 e as comparações da mesma forma 
+
+
+criar uma página
+quadro de especificaçoes dos requisitos do projeto
+nesse quadro deve conter 
+na primeira coluna os requisitos do projeto hierarquizados pelo QFD
+na segunda coluna unidade de mensuração a serem preenchidas
+na terceira coluna valor unidtario a ser preenchido
+na quarta coluna aspectos indesejáveis a ser preenchido (pré preenchido com o telhado do qfd fortemente negativo)
+
+
+
+
