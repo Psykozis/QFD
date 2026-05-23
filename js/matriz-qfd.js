@@ -114,7 +114,8 @@ function generateQFDMatrix() {
     // Header
     html += '<thead><tr><th class="row-header">Requisitos</th>';
     requisitosProjeto.forEach((_, i) => {
-        html += `<th class="req-number-cell" data-tooltip="RP${i+1}: ${escapeHtml(requisitosProjeto[i].descricao)}"><span>RP${i+1}</span></th>`;
+        const tip = escapeHtml(requisitosProjeto[i].descricao);
+        html += `<th class="req-number-cell" title="RP${i + 1}: ${tip}" data-tooltip="RP${i + 1}: ${tip}"><span>RP${i + 1}</span></th>`;
     });
     html += '<th class="importance-header">Pontuação</th><th class="importance-header">Percentual (%)</th></tr></thead>';
     

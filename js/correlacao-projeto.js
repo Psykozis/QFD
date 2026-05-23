@@ -320,8 +320,8 @@ function openCorrelationPopup(cell) {
             </div>
             <div class="popup-footer">
                 <button class="btn btn-sm btn-secondary" onclick="closeCorrelationPopup()">Cancelar</button>
-                <button class="btn btn-sm btn-primary" id="save-correlation-popup" onclick="saveCorrelationFromPopup()">
-                    Salvar
+                <button class="btn btn-sm btn-primary" id="save-correlation-popup" onclick="saveCorrelationFromPopup(false)">
+                    Salvar <small>(Enter = salvar e próximo)</small>
                 </button>
             </div>
         </div>
@@ -333,32 +333,63 @@ function openCorrelationPopup(cell) {
     addPopupStyles();
     
     // Configura event listeners
-    setupPopupEventListeners(req1Id, req2Id, currentCorrelation);
+    setupPopupEventListeners(req1Id, req2Id, currentCorrelation, i, j);
 }
 
 // OBS: popup centralizado via CSS (overlay com flex).
 
-function setupPopupEventListeners(req1Id, req2Id, currentCorrelation) {
-    let selectedCorrelation = currentCorrelation;
-    
-    // Event listeners para botões de correlação
-    const correlationBtns = document.querySelectorAll('.corr-quick-btn');
-    correlationBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            correlationBtns.forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedCorrelation = btn.dataset.value;
-            
-            // Atualiza descrição
-            const descriptionDiv = document.getElementById('correlation-description');
-            descriptionDiv.innerHTML = getCorrelationDescription(selectedCorrelation);
-        });
-    });
-    
-    // Salva referências globais
+function setupPopupEventListeners(req1Id, req2Id, currentCorrelation, i, j) {
     window.currentPopupCorrelationData = {
-        req1Id, req2Id, selectedCorrelation
+        req1Id, req2Id, selectedCorrelation: currentCorrelation, i, j
     };
+
+    const selectCorrelation = (value) => {
+        window.currentPopupCorrelationData.selectedCorrelation = value;
+        document.querySelectorAll('.corr-quick-btn').forEach(b => {
+            b.classList.toggle('selected', b.dataset.value === value);
+        });
+        const descriptionDiv = document.getElementById('correlation-description');
+        if (descriptionDiv) {
+            descriptionDiv.innerHTML = getCorrelationDescription(value);
+        }
+    };
+
+    document.querySelectorAll('.corr-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectCorrelation(btn.dataset.value));
+    });
+
+    if (window._correlationPopupKeyHandler) {
+        document.removeEventListener('keydown', window._correlationPopupKeyHandler);
+    }
+
+    window._correlationPopupKeyHandler = function(e) {
+        if (!document.querySelector('.correlation-popup-overlay')) return;
+
+        if (e.key === 'Escape') {
+            closeCorrelationPopup();
+            return;
+        }
+
+        let value = null;
+        if (e.key === '*' || (e.shiftKey && e.key === '8')) value = '++';
+        else if (e.key === '+' || (e.shiftKey && e.key === '=')) value = '+';
+        else if (e.key === '0') value = '0';
+        else if (e.key === '-') value = '-';
+        else if (e.key === '/' || e.key === '?') value = '--';
+
+        if (value) {
+            e.preventDefault();
+            selectCorrelation(value);
+            return;
+        }
+
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveCorrelationFromPopup(true);
+        }
+    };
+
+    document.addEventListener('keydown', window._correlationPopupKeyHandler);
 }
 
 function getCorrelationDescription(correlation) {
@@ -373,20 +404,53 @@ function getCorrelationDescription(correlation) {
     return descriptions[correlation] || '<i class="fas fa-question text-muted"></i> <strong>Indefinida:</strong> Selecione uma correlação';
 }
 
-function saveCorrelationFromPopup() {
+function getNextCorrelationCell(i, j) {
+    const n = requisitos.length;
+    for (let x = i; x < n - 1; x++) {
+        const startY = x === i ? j + 1 : x + 1;
+        for (let y = startY; y < n; y++) {
+            return { i: x, j: y };
+        }
+    }
+    return null;
+}
+
+function updateRoofCell(req1Id, req2Id, correlation) {
+    const cell = document.querySelector(
+        `.roof-cell[data-req1="${req1Id}"][data-req2="${req2Id}"]`
+    );
+    if (!cell) return;
+    cell.innerHTML = getCorrelationDisplay(correlation);
+    cell.classList.toggle('completed', correlation !== '0');
+}
+
+function openCorrelationPopupByIndices(i, j) {
+    const cell = document.querySelector(`.roof-cell[data-i="${i}"][data-j="${j}"]`);
+    if (cell) openCorrelationPopup(cell);
+}
+
+function saveCorrelationFromPopup(openNext = false) {
     const data = window.currentPopupCorrelationData;
     if (!data) return;
-    
+
+    const correlation = data.selectedCorrelation;
+    const savedI = data.i;
+    const savedJ = data.j;
+
     try {
-        qfdDB.setCorrelacaoProjeto(data.req1Id, data.req2Id, data.selectedCorrelation);
-        
+        qfdDB.setCorrelacaoProjeto(data.req1Id, data.req2Id, correlation);
         closeCorrelationPopup();
         loadRequisitos();
-        generateRoofMatrix();
+        updateRoofCell(data.req1Id, data.req2Id, correlation);
         updateStatus();
         showAnalysis();
-        
-        showAlert('Correlação salva com sucesso!', 'success');
+
+        if (openNext && savedI != null && savedJ != null) {
+            const next = getNextCorrelationCell(savedI, savedJ);
+            if (next) {
+                setTimeout(() => openCorrelationPopupByIndices(next.i, next.j), 80);
+            }
+        }
     } catch (error) {
         console.error('Erro ao salvar correlação:', error);
         showAlert('Erro ao salvar correlação.', 'danger');
@@ -395,8 +459,10 @@ function saveCorrelationFromPopup() {
 
 function closeCorrelationPopup() {
     const popup = document.querySelector('.correlation-popup-overlay');
-    if (popup) {
-        popup.remove();
+    if (popup) popup.remove();
+    if (window._correlationPopupKeyHandler) {
+        document.removeEventListener('keydown', window._correlationPopupKeyHandler);
+        delete window._correlationPopupKeyHandler;
     }
     delete window.currentPopupCorrelationData;
 }
@@ -435,6 +501,7 @@ function showAnalysis() {
     generateCorrelationSummary();
     generateConflictAnalysis();
     generateSynergyAnalysis();
+    generateNeutralRequirementsAnalysis();
 }
 
 function generateCorrelationSummary() {
@@ -497,6 +564,35 @@ function generateCorrelationSummary() {
     `;
     
     summaryContainer.innerHTML = summaryHTML;
+}
+
+function generateNeutralRequirementsAnalysis() {
+    const container = document.getElementById('neutral-requirements-analysis');
+    if (!container) return;
+
+    const correlacoes = qfdDB.getCorrelacoesProjeto();
+    const semCorrelacao = requisitos.filter(req =>
+        !correlacoes.some(c => c.requisito1 === req.id || c.requisito2 === req.id)
+    );
+
+    let html = '<h4><i class="fas fa-circle"></i> Requisitos sem correlação com outros</h4>';
+    html += '<p class="neutral-analysis-hint">Requisitos que ainda não possuem nenhuma correlação não-neutra registrada.</p>';
+
+    if (semCorrelacao.length === 0) {
+        html += '<div class="no-neutral-reqs"><i class="fas fa-check-circle"></i> Todos os requisitos já possuem ao menos uma correlação definida.</div>';
+    } else {
+        html += '<ul class="neutral-req-list">';
+        semCorrelacao.forEach(req => {
+            const idx = requisitos.indexOf(req) + 1;
+            html += `<li class="neutral-req-item analysis-item visible" data-correlation-type="neutral">
+                <span class="legend-number">${idx}</span>
+                <span>${escapeHtml(req.descricao)}</span>
+            </li>`;
+        });
+        html += '</ul>';
+    }
+
+    container.innerHTML = html;
 }
 
 function generateConflictAnalysis() {
@@ -1204,16 +1300,35 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             .roof-header-cell {
-                width: 40px;
-                height: 40px;
+                width: 36px;
+                min-width: 36px;
+                height: 36px;
                 display: flex;
+                flex-direction: column;
                 align-items: center;
                 justify-content: center;
+                gap: 0;
                 background: #667eea;
                 color: white;
                 font-weight: bold;
-                margin: 0 1px;
+                margin: 0 2px;
                 border-radius: 4px;
+                padding: 2px 1px;
+                line-height: 1;
+            }
+
+            .roof-header-cell .req-number {
+                font-size: 0.75rem;
+                font-weight: 700;
+                background: transparent;
+                padding: 0;
+                line-height: 1;
+            }
+
+            .roof-header-cell .req-direction {
+                font-size: 0.65rem;
+                line-height: 1;
+                opacity: 0.95;
             }
             
             .roof-row {
@@ -1581,57 +1696,51 @@ function closeCorrelationModal() {
     currentModalReq2 = null;
 }
 
-// Funcao para definir correlacao via modal
+// Funcao para definir correlacao via modal (legado HTML)
 function setCorrelation(value) {
     if (!currentModalReq1 || !currentModalReq2) return;
-    
+
     qfdDB.setCorrelacaoProjeto(currentModalReq1.id, currentModalReq2.id, value);
-    
-    // Atualizar celula na matriz
-    const cell = document.querySelector(
-        `.roof-cell[data-req1="${currentModalReq1.id}"][data-req2="${currentModalReq2.id}"]`
-    );
-    if (cell) {
-        cell.innerHTML = getCorrelationDisplay(value);
-        cell.classList.add('completed');
-    }
-    
-    // Atualizar status
-    loadRequisitos();
-    updateStatus();
-    
-    // Fechar modal
     closeCorrelationModal();
-    
-    // Atualizar analise se houver correlacoes
-    if (correlacoesFeitas > 0) {
-        showAnalysis();
-    }
+    loadRequisitos();
+    updateRoofCell(currentModalReq1.id, currentModalReq2.id, value);
+    updateStatus();
+    showAnalysis();
 }
 
 // Funcao para filtrar analise por tipo de correlacao
 function filterAnalysis(type) {
     currentFilterType = type;
-    
-    // Atualizar botoes ativos
+
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
+        const filter = btn.getAttribute('data-filter');
+        if (filter === type) btn.classList.add('active');
     });
-    const ev = (typeof event !== 'undefined') ? event : null; // onclick inline usa window.event em alguns navegadores
-    if (ev && ev.target) ev.target.classList.add('active');
-    
-    // Filtrar itens de analise
-    const analysisItems = document.querySelectorAll('.analysis-item');
-    analysisItems.forEach(item => {
+
+    const neutralSection = document.getElementById('neutral-requirements-analysis');
+    const conflictSection = document.getElementById('conflict-analysis');
+    const synergySection = document.getElementById('synergy-analysis');
+    const summarySection = document.getElementById('correlation-summary');
+
+    if (type === 'neutral') {
+        if (summarySection) summarySection.style.display = 'none';
+        if (conflictSection) conflictSection.style.display = 'none';
+        if (synergySection) synergySection.style.display = 'none';
+        if (neutralSection) neutralSection.style.display = 'block';
+        return;
+    }
+
+    if (summarySection) summarySection.style.display = '';
+    if (conflictSection) conflictSection.style.display = '';
+    if (synergySection) synergySection.style.display = '';
+    if (neutralSection) neutralSection.style.display = type === 'all' ? 'block' : 'none';
+
+    document.querySelectorAll('.analysis-item').forEach(item => {
         const itemType = item.getAttribute('data-correlation-type');
-        
-        if (type === 'all' || itemType === type) {
-            item.classList.remove('hidden');
-            item.classList.add('visible');
-        } else {
-            item.classList.remove('visible');
-            item.classList.add('hidden');
-        }
+        const show = type === 'all' || itemType === type;
+        item.classList.toggle('hidden', !show);
+        item.classList.toggle('visible', show);
     });
 }
 
@@ -1647,7 +1756,7 @@ function exportCorrelacoes(format) {
             const req2 = requisitos.find(r => r.id === corr.req2);
             
             if (req1 && req2) {
-                const descricao = getCorrelationDescription(corr.value);
+                const descricao = getCorrelationExportLabel(corr.correlacao || corr.value);
                 csv += `"${req1.descricao}","${req2.descricao}","${corr.value}","${descricao}"\n`;
             }
         });
@@ -1718,8 +1827,8 @@ function downloadCSV(csv, filename) {
     document.body.removeChild(link);
 }
 
-// Funcao para obter descricao da correlacao
-function getCorrelationDescription(value) {
+// Texto curto para exportação CSV (não sobrescreve getCorrelationDescription do popup)
+function getCorrelationExportLabel(value) {
     const descriptions = {
         '++': 'Correlacao Positiva Muito Forte',
         '+': 'Correlacao Positiva',
@@ -1769,8 +1878,13 @@ document.addEventListener('keydown', function(e) {
         
         if (correlationValue) {
             e.preventDefault();
-            console.log('Atalho de teclado acionado: ' + e.key + ' -> ' + correlationValue);
             setCorrelation(correlationValue);
+            return;
+        }
+
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            closeCorrelationModal();
         }
     }
 });

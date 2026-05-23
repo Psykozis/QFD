@@ -1154,7 +1154,7 @@ body {
 }
 
 .report-table tr.tercio-medio td {
-    background: #eff6ff;
+    background: #fef2f2;
 }
 
 .report-table tr.tercio-inferior td {
@@ -1182,8 +1182,8 @@ body {
 }
 
 .tercios-legend .tercio-item.tercio-medio {
-    border-left-color: #2563eb;
-    background: #eff6ff;
+    border-left-color: #dc2626;
+    background: #fef2f2;
 }
 
 .tercios-legend .tercio-item.tercio-inferior {
@@ -2185,4 +2185,129 @@ body {
         min-width: 70px;
         padding: 12px 20px;
     }
+}
+
+/* Comparação cliente — ranking e distribuição */
+.ranking-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 0.4rem;
+    border-radius: 8px;
+    border-left: 4px solid #dee2e6;
+}
+
+.ranking-item.tercio-superior {
+    background: #ecfdf5;
+    border-left-color: #16a34a;
+}
+
+.ranking-item.tercio-medio {
+    background: #fef2f2;
+    border-left-color: #dc2626;
+}
+
+.ranking-item.tercio-inferior {
+    background: #fff7ed;
+    border-left-color: #ea580c;
+}
+
+.importance-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 180px;
+    padding: 1rem 0.5rem;
+}
+
+.importance-bar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 56px;
+    min-width: 36px;
+}
+
+.bar-track {
+    width: 100%;
+    height: 140px;
+    display: flex;
+    align-items: flex-end;
+    background: #f1f5f9;
+    border-radius: 4px 4px 0 0;
+}
+
+.bar-fill {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    transition: height 0.3s ease;
+}
+
+.bar-fill.tercio-superior { background: #22c55e; }
+.bar-fill.tercio-medio { background: #ef4444; }
+.bar-fill.tercio-inferior { background: #f97316; }
+
+.bar-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.35rem;
+}
+
+.bar-value {
+    font-size: 0.7rem;
+    color: #64748b;
+}
+
+.comparacao-tercios-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.75rem;
+}
+
+.comparacao-tercios-legend .tercio-item {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    border-left: 3px solid;
+}
+
+/* Correlação — requisitos sem correlação */
+.neutral-requirements-analysis {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.neutral-req-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.75rem 0 0;
+}
+
+.neutral-req-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.35rem;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid #6c757d;
+}
+
+.neutral-analysis-hint {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin: 0.25rem 0 0;
+}
+
+.analysis-item.hidden {
+    display: none !important;
 }

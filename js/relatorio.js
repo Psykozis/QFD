@@ -50,6 +50,10 @@ document.addEventListener('DOMContentLoaded', function() {
 function loadData() {
     requisitosCliente = qfdDB.getRequisitosCliente();
     requisitosProjeto = qfdDB.getRequisitosProjeto();
+    if (typeof qfdDB.calculateImportanciaProjeto === 'function') {
+        qfdDB.calculateImportanciaProjeto();
+        requisitosProjeto = qfdDB.getRequisitosProjeto();
+    }
 }
 
 function setupReport() {
@@ -110,9 +114,15 @@ function generateSummary() {
 function generateClientReqs() {
     let html = '<div class="report-section"><h3>Requisitos do Cliente</h3><table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Peso</th></tr></thead><tbody>';
     requisitosCliente.forEach((r, i) => {
-        html += `<tr><td>RC${i+1}</td><td>${escapeHtml(r.descricao)}</td><td>${(r.peso * 100).toFixed(1)}%</td></tr>`;
+        const tooltip = escapeHtml(r.descricao);
+        html += `<tr title="${tooltip}"><td title="RC${i + 1}">RC${i + 1}</td><td title="${tooltip}">${escapeHtml(r.descricao)}</td><td>${((r.peso || 0) * 100).toFixed(1)}%</td></tr>`;
     });
     return html + '</tbody></table></div>';
+}
+
+function getSentidoSymbol(sentido) {
+    const symbols = { up: '↑', down: '↓', none: '*' };
+    return symbols[sentido] || (sentido || '-');
 }
 
 function generateProjectReqs() {
@@ -124,11 +134,11 @@ function generateProjectReqs() {
     let html = `<div class="report-section">
         <h3>Requisitos de Projeto</h3>
         <div class="tercios-legend">
-            <div class="tercio-item tercio-superior"><strong>Terço Superior:</strong> requisitos com maior importância absoluta (prioridade técnica alta).</div>
+            <div class="tercio-item tercio-superior"><strong>Terço Superior:</strong> requisitos com maior importância relativa (prioridade técnica alta).</div>
             <div class="tercio-item tercio-medio"><strong>Terço Médio:</strong> requisitos intermediários (prioridade moderada).</div>
             <div class="tercio-item tercio-inferior"><strong>Terço Inferior:</strong> requisitos de menor impacto relativo (prioridade baixa).</div>
         </div>
-        <table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Sentido</th><th>Imp. Abs.</th><th>Terço</th></tr></thead><tbody>`;
+        <table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Sentido</th><th>Imp. Rel.</th><th>Terço</th></tr></thead><tbody>`;
     ordenados.forEach((r, i) => {
         let tercio = 'Inferior';
         let tercioClass = 'tercio-inferior';
@@ -140,11 +150,14 @@ function generateProjectReqs() {
             tercioClass = 'tercio-medio';
         }
 
-        html += `<tr class="${tercioClass}">
-            <td>RP${requisitosProjeto.findIndex(x => x.id === r.id) + 1}</td>
-            <td>${escapeHtml(r.descricao)}</td>
-            <td>${escapeHtml(r.sentidoMelhoria || '-')}</td>
-            <td>${(r.importanciaAbsoluta || 0).toFixed(2)}</td>
+        const impRel = r.pesoRelativo != null ? (r.pesoRelativo * 100).toFixed(1) + '%' : '-';
+        const tooltip = escapeHtml(r.descricao);
+
+        html += `<tr class="${tercioClass}" title="${tooltip}">
+            <td title="RP${requisitosProjeto.findIndex(x => x.id === r.id) + 1}">RP${requisitosProjeto.findIndex(x => x.id === r.id) + 1}</td>
+            <td title="${tooltip}">${escapeHtml(r.descricao)}</td>
+            <td>${getSentidoSymbol(r.sentidoMelhoria)}</td>
+            <td>${impRel}</td>
             <td><strong>${tercio}</strong></td>
         </tr>`;
     });
@@ -180,16 +193,21 @@ function generateRoof() {
 
 function generateMatrix() {
     let html = '<div class="report-section"><h3>Matriz QFD</h3><div class="qfd-matrix-report-wrapper"><table class="report-table qfd-matrix-report"><thead><tr><th class="qfd-corner-cell">RC \\ RP</th>';
-    requisitosProjeto.forEach((_, i) => html += `<th class="qfd-rp-header"><span>RP${i+1}</span></th>`);
+    requisitosProjeto.forEach((rp, i) => {
+        const tip = escapeHtml(rp.descricao);
+        html += `<th class="qfd-rp-header" title="RP${i + 1}: ${tip}"><span>RP${i + 1}</span></th>`;
+    });
     html += '<th>Peso</th></tr></thead><tbody>';
-    
+
     requisitosCliente.forEach((rc, idx) => {
-        html += `<tr><td class="qfd-rc-label">RC${idx + 1}</td>`;
+        const rcTip = escapeHtml(rc.descricao);
+        html += `<tr><td class="qfd-rc-label" title="RC${idx + 1}: ${rcTip}">RC${idx + 1}</td>`;
         requisitosProjeto.forEach(rp => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
-            html += `<td class="qfd-cell">${val || ''}</td>`;
+            const cellTip = `RC${idx + 1} × RP${requisitosProjeto.findIndex(x => x.id === rp.id) + 1}: influência ${val || 'não definida'}`;
+            html += `<td class="qfd-cell" title="${cellTip}">${val || ''}</td>`;
         });
-        html += `<td>${(rc.peso * 100).toFixed(1)}%</td></tr>`;
+        html += `<td title="Peso de RC${idx + 1}">${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
     });
     return html + '</tbody></table></div></div>';
 }

@@ -530,6 +530,14 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function getTercioClass(rankIndex, total) {
+    const t1 = Math.ceil(total / 3);
+    const t2 = Math.ceil((2 * total) / 3);
+    if (rankIndex < t1) return 'tercio-superior';
+    if (rankIndex < t2) return 'tercio-medio';
+    return 'tercio-inferior';
+}
+
 function showResults() {
     const resultsSection = document.getElementById('results-section');
     const rankingList = document.getElementById('ranking-list');
@@ -541,14 +549,50 @@ function showResults() {
 
     rankingList.innerHTML = ordenados.map((req, index) => {
         const peso = totalImportancia > 0 ? ((req.importancia || 0) / totalImportancia) * 100 : 0;
+        const tercio = getTercioClass(index, ordenados.length);
+        const numOriginal = requisitos.findIndex(r => r.id === req.id) + 1;
         return `
-            <div class="legend-item">
+            <div class="ranking-item ${tercio}">
                 <span class="legend-number">${index + 1}</span>
-                <span class="legend-text"><strong>Req ${requisitos.findIndex(r => r.id === req.id) + 1}:</strong> ${escapeHtml(req.descricao)}</span>
+                <span class="legend-text"><strong>Req ${numOriginal}:</strong> ${escapeHtml(req.descricao)}</span>
                 <span class="legend-score">Pts: ${req.importancia || 0} | ${peso.toFixed(2)}%</span>
             </div>
         `;
     }).join('');
 
+    generateImportanceDistribution(ordenados, totalImportancia);
     resultsSection.style.display = 'block';
+}
+
+function generateImportanceDistribution(ordenados, totalImportancia) {
+    const chartContainer = document.querySelector('.chart-container');
+    if (!chartContainer || ordenados.length === 0) return;
+
+    const maxPts = Math.max(...ordenados.map(r => r.importancia || 0), 1);
+
+    chartContainer.innerHTML = `
+        <div class="importance-bars" role="img" aria-label="Distribuição de importância dos requisitos">
+            ${ordenados.map((req, index) => {
+                const pts = req.importancia || 0;
+                const pct = totalImportancia > 0 ? (pts / totalImportancia) * 100 : 0;
+                const barHeight = Math.max(4, (pts / maxPts) * 100);
+                const numOriginal = requisitos.findIndex(r => r.id === req.id) + 1;
+                const tercio = getTercioClass(index, ordenados.length);
+                return `
+                    <div class="importance-bar-item" title="${escapeHtml(req.descricao)} — ${pct.toFixed(1)}%">
+                        <div class="bar-track">
+                            <div class="bar-fill ${tercio}" style="height: ${barHeight}%"></div>
+                        </div>
+                        <span class="bar-label">R${numOriginal}</span>
+                        <span class="bar-value">${pct.toFixed(1)}%</span>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+        <div class="tercios-legend comparacao-tercios-legend">
+            <span class="tercio-item tercio-superior">Terço superior (maior importância)</span>
+            <span class="tercio-item tercio-medio">Terço médio</span>
+            <span class="tercio-item tercio-inferior">Terço inferior</span>
+        </div>
+    `;
 }

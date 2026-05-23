@@ -7,9 +7,15 @@ dividir por cores os três terços de importância
 a distribuição de importância, ao fim da página não está sendo preenchida
 
 correlacao-projeto
+Quando se clica para alterar, ele não está alterando no projeto, nem indo para o próximo ao apertar enter
+nem os atalhos para forte positivo *, positivo +, negativo -, forte negativo /, e enter para salvar e avançar para o próximo 
+
+no cabeçalho onde aparecem as setas e os números, o fundo dos números estão grandes demais e as setas ficam sem espaço
+
 nas analises das correlações, quando se clica em "sem correlação"
 aparece apenas o número de requisitos sem correlações, mas não quais
 seria importante -apenas nessa aba- apresenntar eles.
+
 
 matriz-qfd
 o telhado segue com problema, aqui ele pode ser apenas um objeto único sem interação, toda vez que se clica nele, retorna para a página do telhado.
@@ -32,7 +38,3 @@ na primeira coluna os requisitos do projeto hierarquizados pelo QFD
 na segunda coluna unidade de mensuração a serem preenchidas
 na terceira coluna valor unidtario a ser preenchido
 na quarta coluna aspectos indesejáveis a ser preenchido (pré preenchido com o telhado do qfd fortemente negativo)
-
-
-
-

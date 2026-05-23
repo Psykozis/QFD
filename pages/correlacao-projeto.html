@@ -235,13 +235,14 @@
                 
                 <div class="analysis-content">
                     <div class="analysis-filters">
-                        <button class="filter-btn" onclick="filterAnalysis('all')"><i class="fas fa-list"></i> Todas</button>
-                        <button class="filter-btn" onclick="filterAnalysis('strong-positive')"><i class="fas fa-arrow-up"></i> Muito Fortes Positivas</button>
-                        <button class="filter-btn" onclick="filterAnalysis('positive')"><i class="fas fa-plus"></i> Positivas</button>
-                        <button class="filter-btn" onclick="filterAnalysis('neutral')"><i class="fas fa-minus"></i> Sem Correlacao</button>
-                        <button class="filter-btn" onclick="filterAnalysis('negative')"><i class="fas fa-arrow-down"></i> Negativas</button>
-                        <button class="filter-btn" onclick="filterAnalysis('strong-negative')"><i class="fas fa-ban"></i> Muito Fortes Negativas</button>
+                        <button class="filter-btn active" data-filter="all" onclick="filterAnalysis('all')"><i class="fas fa-list"></i> Todas</button>
+                        <button class="filter-btn" data-filter="strong-positive" onclick="filterAnalysis('strong-positive')"><i class="fas fa-arrow-up"></i> Muito Fortes Positivas</button>
+                        <button class="filter-btn" data-filter="positive" onclick="filterAnalysis('positive')"><i class="fas fa-plus"></i> Positivas</button>
+                        <button class="filter-btn" data-filter="neutral" onclick="filterAnalysis('neutral')"><i class="fas fa-minus"></i> Sem Correlacao</button>
+                        <button class="filter-btn" data-filter="negative" onclick="filterAnalysis('negative')"><i class="fas fa-arrow-down"></i> Negativas</button>
+                        <button class="filter-btn" data-filter="strong-negative" onclick="filterAnalysis('strong-negative')"><i class="fas fa-ban"></i> Muito Fortes Negativas</button>
                     </div>
+                    <div id="neutral-requirements-analysis" class="neutral-requirements-analysis" style="display: none;"></div>
                     <div class="correlation-summary" id="correlation-summary">
                         <!-- Resumo será gerado dinamicamente -->
                     </div>
