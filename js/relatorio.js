@@ -2,27 +2,7 @@
  * ============================================================================
  * RELATÓRIO PDF - GERAÇÃO DE DOCUMENTAÇÃO
  * ============================================================================
- * 
- * Este módulo gerencia a geração e visualização de relatórios em PDF
- * com todas as informações do projeto QFD.
- * 
- * O relatório inclui:
- * - Resumo do projeto
- * - Lista de requisitos de cliente com pesos
- * - Lista de requisitos de projeto
- * - Telhado de correlações
- * - Matriz QFD completa
- * 
- * Funcionalidades:
- * - Configuração de metadados (título, empresa, autor, data)
- * - Seleção de seções a incluir
- * - Preview do relatório
- * - Impressão/exportação para PDF
  */
-
-// ========================================================================
-// SEÇÃO 1: VARIÁVEIS GLOBAIS E INICIALIZAÇÃO
-// ========================================================================
 
 let requisitosCliente = [];
 let requisitosProjeto = [];
@@ -34,16 +14,13 @@ let reportConfig = {
     description: ''
 };
 
-/**
- * Inicializa a página quando o DOM está pronto
- */
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
     setupReport();
-    
+
     const dateInput = document.getElementById('report-date');
     if (dateInput) dateInput.value = reportConfig.date;
-    
+
     setupEventListeners();
 });
 
@@ -62,7 +39,7 @@ function setupReport() {
     document.getElementById('report-config').style.display = hasData ? 'block' : 'none';
     document.getElementById('report-sections').style.display = hasData ? 'block' : 'none';
     document.getElementById('report-preview').style.display = hasData ? 'block' : 'none';
-    
+
     if (hasData) generatePreview();
 }
 
@@ -71,7 +48,7 @@ function setupEventListeners() {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', updateConfig);
     });
-    
+
     document.querySelectorAll('.section-checkbox input').forEach(cb => {
         cb.addEventListener('change', generatePreview);
     });
@@ -86,25 +63,49 @@ function updateConfig() {
     generatePreview();
 }
 
+function isSectionChecked(id) {
+    const el = document.getElementById(id);
+    return el ? el.checked : false;
+}
+
 function generatePreview() {
     const content = document.getElementById('report-content');
     if (!content) return;
-    
+
     let html = `<div class="report-page">
         <div class="report-header">
             <h1>${escapeHtml(reportConfig.title)}</h1>
             ${reportConfig.company ? `<h2>${escapeHtml(reportConfig.company)}</h2>` : ''}
             <p><strong>Data:</strong> ${reportConfig.date} | <strong>Autor:</strong> ${escapeHtml(reportConfig.author)}</p>
         </div>`;
-    
-    if (document.getElementById('section-summary').checked) html += generateSummary();
-    if (document.getElementById('section-client-req').checked) html += generateClientReqs();
-    if (document.getElementById('section-project-req').checked) html += generateProjectReqs();
-    if (document.getElementById('section-roof').checked) html += generateRoof();
-    if (document.getElementById('section-qfd-matrix').checked) html += generateMatrix();
-    
+
+    if (isSectionChecked('section-dictionary')) html += generateDictionary();
+    if (isSectionChecked('section-summary')) html += generateSummary();
+    if (isSectionChecked('section-client-req')) html += generateClientReqs();
+    if (isSectionChecked('section-project-req')) html += generateProjectReqs();
+    if (isSectionChecked('section-roof')) html += generateRoof();
+    if (isSectionChecked('section-qfd-matrix')) html += generateMatrix();
+    html += generateComparisonsSection();
+
     html += '</div>';
     content.innerHTML = html;
+    initReportTooltips();
+}
+
+/** Dicionário RC/RP — garante referência no PDF (html2canvas não preserva hover) */
+function generateDictionary() {
+    let html = '<div class="report-section"><h3>Dicionário de Requisitos</h3>';
+    html += '<p class="report-hint"><em>Passe o mouse sobre RC, RP e células no preview para ver descrições. No PDF exportado, use esta seção como referência.</em></p>';
+    html += '<h4>Requisitos de Cliente (RC)</h4><ul class="report-dict-list">';
+    requisitosCliente.forEach((r, i) => {
+        html += `<li><strong>RC${i + 1}</strong> — ${escapeHtml(r.descricao)}</li>`;
+    });
+    html += '</ul><h4>Requisitos de Projeto (RP)</h4><ul class="report-dict-list">';
+    requisitosProjeto.forEach((r, i) => {
+        html += `<li><strong>RP${i + 1}</strong> ${getSentidoSymbol(r.sentidoMelhoria)} — ${escapeHtml(r.descricao)}</li>`;
+    });
+    html += '</ul></div>';
+    return html;
 }
 
 function generateSummary() {
@@ -114,15 +115,23 @@ function generateSummary() {
 function generateClientReqs() {
     let html = '<div class="report-section"><h3>Requisitos do Cliente</h3><table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Peso</th></tr></thead><tbody>';
     requisitosCliente.forEach((r, i) => {
-        const tooltip = escapeHtml(r.descricao);
-        html += `<tr title="${tooltip}"><td title="RC${i + 1}">RC${i + 1}</td><td title="${tooltip}">${escapeHtml(r.descricao)}</td><td>${((r.peso || 0) * 100).toFixed(1)}%</td></tr>`;
+        const tip = `RC${i + 1}: ${r.descricao}`;
+        html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(tip)}">
+            <td>RC${i + 1}</td>
+            <td>${escapeHtml(r.descricao)}</td>
+            <td>${((r.peso || 0) * 100).toFixed(1)}%</td>
+        </tr>`;
     });
     return html + '</tbody></table></div>';
 }
 
 function getSentidoSymbol(sentido) {
-    const symbols = { up: '↑', down: '↓', none: '*' };
-    return symbols[sentido] || (sentido || '-');
+    const key = (sentido || '').toLowerCase();
+    const symbols = {
+        up: '↑', down: '↓', none: '*',
+        crescente: '↑', decrescente: '↓', nominal: '*'
+    };
+    return symbols[key] || (sentido === 'up' || sentido === 'down' || sentido === 'none' ? symbols[sentido] : '-');
 }
 
 function generateProjectReqs() {
@@ -134,11 +143,12 @@ function generateProjectReqs() {
     let html = `<div class="report-section">
         <h3>Requisitos de Projeto</h3>
         <div class="tercios-legend">
-            <div class="tercio-item tercio-superior"><strong>Terço Superior:</strong> requisitos com maior importância relativa (prioridade técnica alta).</div>
-            <div class="tercio-item tercio-medio"><strong>Terço Médio:</strong> requisitos intermediários (prioridade moderada).</div>
-            <div class="tercio-item tercio-inferior"><strong>Terço Inferior:</strong> requisitos de menor impacto relativo (prioridade baixa).</div>
+            <div class="tercio-item tercio-superior"><strong>Terço Superior:</strong> maior importância relativa (verde).</div>
+            <div class="tercio-item tercio-medio"><strong>Terço Médio:</strong> importância intermediária (vermelho).</div>
+            <div class="tercio-item tercio-inferior"><strong>Terço Inferior:</strong> menor importância relativa (laranja).</div>
         </div>
         <table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Sentido</th><th>Imp. Rel.</th><th>Terço</th></tr></thead><tbody>`;
+
     ordenados.forEach((r, i) => {
         let tercio = 'Inferior';
         let tercioClass = 'tercio-inferior';
@@ -150,12 +160,13 @@ function generateProjectReqs() {
             tercioClass = 'tercio-medio';
         }
 
+        const rpNum = requisitosProjeto.findIndex(x => x.id === r.id) + 1;
         const impRel = r.pesoRelativo != null ? (r.pesoRelativo * 100).toFixed(1) + '%' : '-';
-        const tooltip = escapeHtml(r.descricao);
+        const tip = `RP${rpNum}: ${r.descricao}`;
 
-        html += `<tr class="${tercioClass}" title="${tooltip}">
-            <td title="RP${requisitosProjeto.findIndex(x => x.id === r.id) + 1}">RP${requisitosProjeto.findIndex(x => x.id === r.id) + 1}</td>
-            <td title="${tooltip}">${escapeHtml(r.descricao)}</td>
+        html += `<tr class="${tercioClass} report-has-tip" data-report-tip="${escapeAttr(tip)}">
+            <td>RP${rpNum}</td>
+            <td>${escapeHtml(r.descricao)}</td>
             <td>${getSentidoSymbol(r.sentidoMelhoria)}</td>
             <td>${impRel}</td>
             <td><strong>${tercio}</strong></td>
@@ -166,24 +177,30 @@ function generateProjectReqs() {
 
 function generateRoof() {
     const correlacoes = qfdDB.getCorrelacoesProjeto();
-    let html = '<div class="report-section"><h3>Telhado de Correlações QFD - compara Requisitos de Projeto entre si</h3><table class="roof-table"><thead><tr><th></th>';
-    requisitosProjeto.forEach((_, i) => html += `<th>${i+1}</th>`);
+    let html = '<div class="report-section"><h3>Telhado de Correlações</h3><table class="report-table roof-table"><thead><tr><th></th>';
+    requisitosProjeto.forEach((rp, i) => {
+        const tip = `RP${i + 1}: ${rp.descricao} | Sentido: ${getSentidoSymbol(rp.sentidoMelhoria)}`;
+        html += `<th class="report-has-tip" data-report-tip="${escapeAttr(tip)}">RP${i + 1} ${getSentidoSymbol(rp.sentidoMelhoria)}</th>`;
+    });
     html += '</tr></thead><tbody>';
-    
+
     for (let i = 0; i < requisitosProjeto.length; i++) {
-        html += `<tr><th>${i+1}</th>`;
+        const rpRow = requisitosProjeto[i];
+        const rowTip = `RP${i + 1}: ${rpRow.descricao}`;
+        html += `<tr><th class="report-has-tip" data-report-tip="${escapeAttr(rowTip)}">${i + 1}</th>`;
         for (let j = 0; j < requisitosProjeto.length; j++) {
             if (i === j) {
-                html += '<td class="diagonal"></td>';
+                html += '<td class="diagonal">—</td>';
             } else if (j < i) {
-                // Triângulo inferior removido conforme solicitado
                 html += '<td class="empty"></td>';
             } else {
-                const corr = correlacoes.find(c => 
+                const corr = correlacoes.find(c =>
                     (c.requisito1 === requisitosProjeto[i].id && c.requisito2 === requisitosProjeto[j].id) ||
                     (c.requisito1 === requisitosProjeto[j].id && c.requisito2 === requisitosProjeto[i].id)
                 );
-                html += `<td class="corr-cell">${corr ? corr.correlacao : ''}</td>`;
+                const val = corr ? corr.correlacao : '';
+                const tip = `RP${i + 1} (${truncateText(rpRow.descricao, 40)}) ↔ RP${j + 1} (${truncateText(requisitosProjeto[j].descricao, 40)}): ${val || 'sem correlação'}`;
+                html += `<td class="corr-cell report-has-tip" data-report-tip="${escapeAttr(tip)}">${val}</td>`;
             }
         }
         html += '</tr>';
@@ -194,25 +211,89 @@ function generateRoof() {
 function generateMatrix() {
     let html = '<div class="report-section"><h3>Matriz QFD</h3><div class="qfd-matrix-report-wrapper"><table class="report-table qfd-matrix-report"><thead><tr><th class="qfd-corner-cell">RC \\ RP</th>';
     requisitosProjeto.forEach((rp, i) => {
-        const tip = escapeHtml(rp.descricao);
-        html += `<th class="qfd-rp-header" title="RP${i + 1}: ${tip}"><span>RP${i + 1}</span></th>`;
+        const tip = `RP${i + 1}: ${rp.descricao}`;
+        html += `<th class="qfd-rp-header report-has-tip" data-report-tip="${escapeAttr(tip)}"><span>RP${i + 1}</span></th>`;
     });
     html += '<th>Peso</th></tr></thead><tbody>';
 
     requisitosCliente.forEach((rc, idx) => {
-        const rcTip = escapeHtml(rc.descricao);
-        html += `<tr><td class="qfd-rc-label" title="RC${idx + 1}: ${rcTip}">RC${idx + 1}</td>`;
-        requisitosProjeto.forEach(rp => {
+        const rcTip = `RC${idx + 1}: ${rc.descricao}`;
+        html += `<tr><td class="qfd-rc-label report-has-tip" data-report-tip="${escapeAttr(rcTip)}">RC${idx + 1}</td>`;
+        requisitosProjeto.forEach((rp, j) => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
-            const cellTip = `RC${idx + 1} × RP${requisitosProjeto.findIndex(x => x.id === rp.id) + 1}: influência ${val || 'não definida'}`;
-            html += `<td class="qfd-cell" title="${cellTip}">${val || ''}</td>`;
+            const tip = `RC${idx + 1}: ${rc.descricao} | RP${j + 1}: ${rp.descricao} | Influência: ${val || 'não definida'}`;
+            html += `<td class="qfd-cell report-has-tip" data-report-tip="${escapeAttr(tip)}">${val || ''}</td>`;
         });
-        html += `<td title="Peso de RC${idx + 1}">${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
+        html += `<td class="report-has-tip" data-report-tip="Peso de RC${idx + 1}: ${((rc.peso || 0) * 100).toFixed(1)}%">${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
     });
     return html + '</tbody></table></div></div>';
 }
 
+/** Comparações pareadas do cliente (Diagrama de Mudge) */
+function generateComparisonsSection() {
+    const comparacoes = qfdDB.getComparacoesCliente();
+    if (!comparacoes.length) return '';
+
+    let html = '<div class="report-section"><h3>Comparações de Requisitos de Cliente</h3>';
+    html += '<table class="report-table"><thead><tr><th>Par</th><th>Vencedor</th><th>Importância</th><th>Detalhe</th></tr></thead><tbody>';
+
+    comparacoes.forEach(c => {
+        const req1 = requisitosCliente.find(r => r.id === c.requisito1);
+        const req2 = requisitosCliente.find(r => r.id === c.requisito2);
+        if (!req1 || !req2) return;
+
+        const i1 = requisitosCliente.indexOf(req1) + 1;
+        const i2 = requisitosCliente.indexOf(req2) + 1;
+        const tip = `Comparação RC${i1} vs RC${i2}: ${req1.descricao} × ${req2.descricao} — vencedor com importância ${c.valor}`;
+
+        html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(tip)}">
+            <td>RC${i1} vs RC${i2}</td>
+            <td>RC${i1}</td>
+            <td>${c.valor}</td>
+            <td>${escapeHtml(truncateText(req1.descricao, 50))} &gt; ${escapeHtml(truncateText(req2.descricao, 50))}</td>
+        </tr>`;
+    });
+
+    return html + '</tbody></table></div>';
+}
+
+function initReportTooltips() {
+    let tipEl = document.getElementById('report-tooltip-float');
+    if (!tipEl) {
+        tipEl = document.createElement('div');
+        tipEl.id = 'report-tooltip-float';
+        tipEl.className = 'report-tooltip-float';
+        document.body.appendChild(tipEl);
+    }
+
+    document.querySelectorAll('#report-content .report-has-tip').forEach(el => {
+        el.addEventListener('mouseenter', (e) => {
+            const text = el.getAttribute('data-report-tip');
+            if (!text) return;
+            tipEl.textContent = text;
+            tipEl.style.display = 'block';
+            moveReportTooltip(e, tipEl);
+        });
+        el.addEventListener('mousemove', (e) => moveReportTooltip(e, tipEl));
+        el.addEventListener('mouseleave', () => {
+            tipEl.style.display = 'none';
+        });
+    });
+}
+
+function moveReportTooltip(e, tipEl) {
+    const pad = 12;
+    let left = e.clientX + pad;
+    let top = e.clientY + pad;
+    const rect = tipEl.getBoundingClientRect();
+    if (left + rect.width > window.innerWidth - 8) left = e.clientX - rect.width - pad;
+    if (top + rect.height > window.innerHeight - 8) top = e.clientY - rect.height - pad;
+    tipEl.style.left = left + 'px';
+    tipEl.style.top = top + 'px';
+}
+
 function truncateText(text, limit) {
+    if (!text) return '';
     return text.length > limit ? text.substring(0, limit) + '...' : text;
 }
 
@@ -221,6 +302,10 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function escapeAttr(text) {
+    return escapeHtml(text).replace(/"/g, '&quot;');
 }
 
 function printReport() {

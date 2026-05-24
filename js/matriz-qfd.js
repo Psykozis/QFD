@@ -2,27 +2,7 @@
  * ============================================================================
  * MATRIZ QFD - CASA DA QUALIDADE
  * ============================================================================
- * 
- * Este módulo gerencia a matriz QFD principal, que relaciona requisitos
- * de cliente com requisitos de projeto. É o "corpo" da Casa da Qualidade.
- * 
- * A matriz exibe:
- * - Requisitos de cliente nas linhas
- * - Requisitos de projeto nas colunas
- * - Valores de influência nas células (0, 1, 3, 9)
- * - Importância e peso dos requisitos de cliente
- * - Telhado de correlações (roof) entre requisitos de projeto
- * 
- * Funcionalidades:
- * - Visualização interativa da matriz
- * - Edição de valores de influência
- * - Cálculo automático de importância de projeto
- * - Visualização do telhado de correlações
  */
-
-// ========================================================================
-// SEÇÃO 1: VARIÁVEIS GLOBAIS E INICIALIZAÇÃO
-// ========================================================================
 
 let requisitosCliente = [];
 let requisitosProjeto = [];
@@ -32,14 +12,10 @@ let currentInfluenceI = null;
 let currentInfluenceJ = null;
 let activeCellHighlightGreen = false;
 
-/**
- * Inicializa a página quando o DOM está pronto
- */
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
     setupMatrix();
     setupGlobalEvents();
-    // Garante que o modal não apareça ao abrir a página
     const influenceModal = document.getElementById('influence-modal');
     if (influenceModal) influenceModal.style.display = 'none';
 });
@@ -54,98 +30,101 @@ function setupMatrix() {
     const hasData = requisitosCliente.length > 0 && requisitosProjeto.length > 0;
     document.getElementById('insufficient-data').style.display = hasData ? 'none' : 'block';
     document.getElementById('qfd-section').style.display = hasData ? 'block' : 'none';
-    
+
+    const roofContainer = document.getElementById('qfd-roof-container');
+    if (roofContainer) roofContainer.style.display = 'none';
+
     if (hasData) {
         generateQFDMatrix();
-        generateRoof();
         updateStatus();
     }
 }
 
-function generateRoof() {
-    const roofContainer = document.getElementById('qfd-roof-container');
-    if (!roofContainer) return;
-
-    const n = requisitosProjeto.length;
-    if (n < 2) {
-        roofContainer.style.display = 'none';
-        return;
-    }
-
-    // Telhado renderizado em tabela triangular, separado da matriz principal e sem inversão
-    let roofHTML = '<table class="qfd-roof-table"><tbody>';
-    for (let i = 0; i < n - 1; i++) {
-        roofHTML += '<tr>';
-
-        // deslocamento à esquerda para formar o triângulo superior
-        for (let k = 0; k <= i; k++) {
-            roofHTML += '<td class="qfd-roof-empty"></td>';
-        }
-
-        // células de correlação válidas
-        for (let j = i + 1; j < n; j++) {
-            const correlation = qfdDB.getCorrelacaoProjeto(requisitosProjeto[i].id, requisitosProjeto[j].id);
-            const tooltip = `Correlação: RP${i + 1} vs RP${j + 1}<br>${getCorrelationLabel(correlation)}`;
-            roofHTML += `
-                <td class="qfd-roof-cell" data-tooltip="${tooltip}">
-                    <span class="symbol">${getCorrelationSymbol(correlation)}</span>
-                </td>`;
-        }
-
-        roofHTML += '</tr>';
-    }
-    roofHTML += '</tbody></table>';
-    roofContainer.innerHTML = roofHTML;
-    roofContainer.style.height = 'auto';
-    
-    const cells = roofContainer.querySelectorAll('[data-tooltip]');
-    cells.forEach(cell => {
-        cell.addEventListener('mouseenter', showTooltip);
-        cell.addEventListener('mouseleave', hideTooltip);
-    });
+function getSentidoSymbol(sentido) {
+    const symbols = { up: '↑', down: '↓', none: '*' };
+    return symbols[sentido] || '?';
 }
 
+/** Telhado + matriz em uma única tabela para alinhamento perfeito das colunas RP */
 function generateQFDMatrix() {
     const matrixContainer = document.getElementById('qfd-matrix');
     if (!matrixContainer) return;
-    
-    let html = '<table class="qfd-table">';
-    
-    // Header
-    html += '<thead><tr><th class="row-header">Requisitos</th>';
-    requisitosProjeto.forEach((_, i) => {
-        const tip = escapeHtml(requisitosProjeto[i].descricao);
-        html += `<th class="req-number-cell" title="RP${i + 1}: ${tip}" data-tooltip="RP${i + 1}: ${tip}"><span>RP${i + 1}</span></th>`;
+
+    const n = requisitosProjeto.length;
+    let html = '<table class="qfd-table qfd-unified">';
+
+    html += '<thead>';
+
+    // Telhado triangular (somente leitura, sem clique)
+    if (n >= 2) {
+        for (let i = 0; i < n - 1; i++) {
+            html += '<tr class="qfd-roof-row">';
+            if (i === 0) {
+                html += `<th class="qfd-roof-label" rowspan="${n - 1}" title="Correlações entre requisitos de projeto (definidas na etapa Correlação)">Correlações</th>`;
+            }
+            for (let k = 0; k <= i; k++) {
+                html += '<td class="qfd-roof-empty"></td>';
+            }
+            for (let j = i + 1; j < n; j++) {
+                const rp1 = requisitosProjeto[i];
+                const rp2 = requisitosProjeto[j];
+                const correlation = qfdDB.getCorrelacaoProjeto(rp1.id, rp2.id);
+                const tip = `RP${i + 1} ↔ RP${j + 1}: ${getCorrelationLabel(correlation)}`;
+                html += `<td class="qfd-roof-cell-readonly" title="${escapeHtml(tip)}">
+                    <span class="symbol">${getCorrelationSymbol(correlation)}</span>
+                </td>`;
+            }
+            html += '<td class="qfd-roof-side-empty"></td><td class="qfd-roof-side-empty"></td>';
+            html += '</tr>';
+        }
+    }
+
+    // Cabeçalho: RP vertical + sentido
+    html += '<tr><th class="row-header">Requisitos</th>';
+    requisitosProjeto.forEach((rp, i) => {
+        const tip = `RP${i + 1}: ${rp.descricao}`;
+        html += `<th class="req-number-cell" data-tooltip="${escapeHtml(tip)}">
+            <span class="rp-id">RP${i + 1}</span>
+            <span class="rp-sentido">${getSentidoSymbol(rp.sentidoMelhoria)}</span>
+        </th>`;
     });
-    html += '<th class="importance-header">Pontuação</th><th class="importance-header">Percentual (%)</th></tr></thead>';
-    
-    // Body
-    html += '<tbody>';
+    html += '<th class="importance-header">Pontuação</th><th class="importance-header">Percentual (%)</th></tr>';
+    html += '</thead><tbody>';
+
     requisitosCliente.forEach((rc, i) => {
-        html += `<tr><td class="row-header" data-tooltip="RC${i+1}: ${escapeHtml(rc.descricao)}">${i+1}. ${truncateText(rc.descricao, 30)}</td>`;
+        const rcTip = `RC${i + 1}: ${rc.descricao}`;
+        html += `<tr><td class="row-header" data-tooltip="${escapeHtml(rcTip)}">${i + 1}. ${truncateText(rc.descricao, 30)}</td>`;
         requisitosProjeto.forEach((rp, j) => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
-            html += `<td class="influence-cell" data-cliente="${rc.id}" data-projeto="${rp.id}" data-i="${i}" data-j="${j}" onclick="openInfluenceModal(this)">${val || ''}</td>`;
+            const cellTip = `RC${i + 1} × RP${j + 1}: influência ${val || 'não definida'}`;
+            html += `<td class="influence-cell" data-cliente="${rc.id}" data-projeto="${rp.id}" data-i="${i}" data-j="${j}" title="${escapeHtml(cellTip)}" onclick="openInfluenceModal(this)">${val || ''}</td>`;
         });
-        html += `<td class="importance-value-cell">${rc.importancia.toFixed(1)}</td>`;
-        html += `<td class="importance-percent-cell">${(rc.peso * 100).toFixed(1)}%</td></tr>`;
+        html += `<td class="importance-value-cell">${(rc.importancia || 0).toFixed(1)}</td>`;
+        html += `<td class="importance-percent-cell">${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
     });
+
     html += '</tbody></table>';
-    
     matrixContainer.innerHTML = html;
+
+    matrixContainer.querySelectorAll('[data-tooltip]').forEach(el => {
+        el.addEventListener('mouseenter', showTooltip);
+        el.addEventListener('mouseleave', hideTooltip);
+    });
 }
 
 function showTooltip(e) {
     const text = e.currentTarget.getAttribute('data-tooltip');
     const tooltip = document.getElementById('qfd-tooltip');
-    tooltip.innerHTML = text;
+    if (!tooltip || !text) return;
+    tooltip.textContent = text;
     tooltip.style.display = 'block';
     tooltip.style.left = (e.clientX + 15) + 'px';
     tooltip.style.top = (e.clientY + 15) + 'px';
 }
 
 function hideTooltip() {
-    document.getElementById('qfd-tooltip').style.display = 'none';
+    const tooltip = document.getElementById('qfd-tooltip');
+    if (tooltip) tooltip.style.display = 'none';
 }
 
 function openInfluenceModal(cell) {
@@ -154,10 +133,9 @@ function openInfluenceModal(cell) {
     if (!modal || !info) return;
 
     currentInfluenceCell = cell;
-    currentInfluenceI = parseInt(cell.dataset.i);
-    currentInfluenceJ = parseInt(cell.dataset.j);
+    currentInfluenceI = parseInt(cell.dataset.i, 10);
+    currentInfluenceJ = parseInt(cell.dataset.j, 10);
 
-    // Destaca visualmente a célula ativa, alternando borda padrão/verde
     document.querySelectorAll('.influence-cell.active-a, .influence-cell.active-b').forEach(c => {
         c.classList.remove('active-a', 'active-b');
     });
@@ -166,7 +144,6 @@ function openInfluenceModal(cell) {
 
     const clienteId = cell.dataset.cliente;
     const projetoId = cell.dataset.projeto;
-
     const rc = requisitosCliente[currentInfluenceI];
     const rp = requisitosProjeto[currentInfluenceJ];
     const cellValue = parseInt((cell.textContent || '').trim(), 10);
@@ -178,10 +155,8 @@ function openInfluenceModal(cell) {
         <small>Valor atual: <strong>${currentVal}</strong> (pressione <kbd>Enter</kbd> para salvar e ir para a próxima célula)</small>
     `;
 
-    // Exibe modal centralizado
     modal.style.display = 'flex';
 
-    // Fecha no ESC
     const escHandler = (e) => {
         if (e.key === 'Escape') {
             closeInfluenceModal();
@@ -214,15 +189,11 @@ function setInfluence(value) {
     const projetoId = currentInfluenceCell.dataset.projeto;
 
     qfdDB.setMatrizQFD(clienteId, projetoId, value);
-
-    // Atualiza a célula imediatamente sem recarregar a página
     currentInfluenceCell.textContent = value === 0 ? '' : String(value);
 
-    // Atualiza contagem de relações feitas e barra
     relacoesFeitas = qfdDB.getMatrizQFDCompleta().length;
     updateStatus();
 
-    // Vai para próxima célula ao pressionar Enter (ou ao clicar e escolher, avançamos também)
     const next = getNextInfluenceCell(currentInfluenceI, currentInfluenceJ);
     if (!next) {
         closeInfluenceModal();
@@ -234,8 +205,6 @@ function setInfluence(value) {
         closeInfluenceModal();
         return;
     }
-
-    // Abre automaticamente a próxima
     openInfluenceModal(nextCell);
 }
 
@@ -255,12 +224,12 @@ function updateStatus() {
 }
 
 function getCorrelationSymbol(corr) {
-    const symbols = { '++': '++', '+': '+', '-': '-', '--': '--' };
+    const symbols = { '++': '++', '+': '+', '-': '-', '--': '--', '0': '0' };
     return symbols[corr] || '';
 }
 
 function getCorrelationLabel(corr) {
-    const labels = { '++': 'Forte Positiva', '+': 'Positiva', '-': 'Negativa', '--': 'Forte Negativa' };
+    const labels = { '++': 'Forte Positiva', '+': 'Positiva', '-': 'Negativa', '--': 'Forte Negativa', '0': 'Neutra' };
     return labels[corr] || 'Neutra';
 }
 
@@ -277,13 +246,9 @@ function escapeHtml(text) {
 function setupGlobalEvents() {
     const btnToggleRoof = document.getElementById('btn-toggle-roof');
     if (btnToggleRoof) {
-        btnToggleRoof.onclick = () => {
-            const roof = document.getElementById('qfd-roof-container');
-            roof.style.display = roof.style.display === 'none' ? 'block' : 'none';
-        };
+        btnToggleRoof.onclick = () => toggleRoof();
     }
 
-    // Fecha modal de influência ao clicar fora do conteúdo
     const influenceModal = document.getElementById('influence-modal');
     if (influenceModal) {
         influenceModal.addEventListener('click', (e) => {
@@ -291,14 +256,10 @@ function setupGlobalEvents() {
         });
     }
 
-    // Enter: salva o valor atualmente "selecionado" (atalhos 0/1/3/9)
     document.addEventListener('keydown', (e) => {
         const modalOpen = influenceModal && influenceModal.style.display === 'flex';
         if (!modalOpen) return;
 
-        // Enter salva repetindo o último valor escolhido? Preferimos atalhos diretos:
-        // 0, 1, 3, 9 definem e avançam; Enter sozinho não muda nada sem uma escolha.
-        // Para cumprir o requisito "Enter avança sempre", usamos Enter para repetir o valor atual da célula.
         if (e.key === 'Enter') {
             e.preventDefault();
             if (!currentInfluenceCell) return;
@@ -309,7 +270,6 @@ function setupGlobalEvents() {
             return;
         }
 
-        // Atalhos: 0 / 1 / 3 / 9 definem diretamente
         if (e.key === '0') { e.preventDefault(); setInfluence(0); }
         if (e.key === '1') { e.preventDefault(); setInfluence(1); }
         if (e.key === '3') { e.preventDefault(); setInfluence(3); }
@@ -318,11 +278,11 @@ function setupGlobalEvents() {
 }
 
 function toggleRoof() {
-    const roof = document.getElementById('qfd-roof-container');
+    const rows = document.querySelectorAll('.qfd-roof-row');
     const btn = document.getElementById('btn-toggle-roof');
-    if (!roof) return;
-    const hidden = roof.style.display === 'none';
-    roof.style.display = hidden ? 'block' : 'none';
+    if (!rows.length) return;
+    const hidden = rows[0].style.display === 'none';
+    rows.forEach(r => { r.style.display = hidden ? '' : 'none'; });
     if (btn) {
         btn.innerHTML = hidden
             ? '<i class="fas fa-compress-alt"></i> Recolher Telhado'
@@ -331,13 +291,13 @@ function toggleRoof() {
 }
 
 function toggleDirections() {
-    // A matriz atual não possui linha separada de direção; mantemos compatibilidade do botão.
+    const sentidos = document.querySelectorAll('.rp-sentido');
     const btn = document.getElementById('btn-toggle-directions');
-    if (btn) {
-        const showing = btn.dataset.showing !== 'false';
-        btn.dataset.showing = showing ? 'false' : 'true';
-        btn.innerHTML = showing
-            ? '<i class="fas fa-eye"></i> Mostrar Sentidos'
-            : '<i class="fas fa-eye-slash"></i> Ocultar Sentidos';
-    }
+    if (!sentidos.length || !btn) return;
+    const showing = btn.dataset.showing !== 'false';
+    sentidos.forEach(el => { el.style.visibility = showing ? 'hidden' : 'visible'; });
+    btn.dataset.showing = showing ? 'false' : 'true';
+    btn.innerHTML = showing
+        ? '<i class="fas fa-eye"></i> Mostrar Sentidos'
+        : '<i class="fas fa-eye-slash"></i> Ocultar Sentidos';
 }
