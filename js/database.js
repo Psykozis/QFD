@@ -42,6 +42,7 @@ class QFDDatabase {
             comparacaoCliente: [],
             correlacaoProjeto: [],
             matrizQFD: [],
+            especificacoesProjeto: [],
             metadata: {
                 created: new Date().toISOString(),
                 lastModified: new Date().toISOString(),
@@ -198,6 +199,8 @@ class QFDDatabase {
         };
         
         data.requisitosProjeto.push(novoRequisito);
+        this._ensureEspecificacoesArray(data);
+        this._syncEspecificacoesEntries(data);
         this.saveData(data);
         return novoRequisito;
     }
@@ -229,7 +232,12 @@ class QFDDatabase {
         
         // Remove relações na matriz QFD
         data.matrizQFD = data.matrizQFD.filter(rel => rel.requisitoProjeto !== id);
-        
+
+        this._ensureEspecificacoesArray(data);
+        data.especificacoesProjeto = data.especificacoesProjeto.filter(
+            esp => esp.requisitoProjetoId !== id
+        );
+
         this.saveData(data);
     }
 
@@ -562,8 +570,199 @@ class QFDDatabase {
         this.initializeDatabase();
     }
 
+    // ========================================================================
+    // SEÇÃO: ESPECIFICAÇÕES DE REQUISITOS DE PROJETO
+    // ========================================================================
+
+    _ensureEspecificacoesArray(data) {
+        if (!data.especificacoesProjeto) {
+            data.especificacoesProjeto = [];
+        }
+    }
+
+    /**
+     * Gera texto de aspectos indesejáveis a partir de correlações fortemente negativas (--)
+     */
+    buildAspectosIndesejaveisFromRoof(requisitoProjetoId) {
+        const data = this.loadData();
+        const requisitos = data.requisitosProjeto || [];
+        const conflitos = [];
+
+        (data.correlacaoProjeto || []).forEach(corr => {
+            if (corr.correlacao !== '--') return;
+            let otherId = null;
+            if (corr.requisito1 === requisitoProjetoId) otherId = corr.requisito2;
+            else if (corr.requisito2 === requisitoProjetoId) otherId = corr.requisito1;
+            if (!otherId) return;
+
+            const idx = requisitos.findIndex(r => r.id === otherId);
+            const other = requisitos[idx];
+            if (other) {
+                conflitos.push(`RP${idx + 1}: ${other.descricao} (correlação --)`);
+            }
+        });
+
+        return conflitos.join('\n');
+    }
+
+    _syncEspecificacoesEntries(data) {
+        this._ensureEspecificacoesArray(data);
+        const ids = (data.requisitosProjeto || []).map(r => r.id);
+
+        data.especificacoesProjeto = data.especificacoesProjeto.filter(
+            esp => ids.includes(esp.requisitoProjetoId)
+        );
+
+        ids.forEach(id => {
+            let esp = data.especificacoesProjeto.find(e => e.requisitoProjetoId === id);
+            if (!esp) {
+                esp = {
+                    requisitoProjetoId: id,
+                    unidadeMedida: '',
+                    valorUnitario: '',
+                    aspectosIndesejaveis: this.buildAspectosIndesejaveisFromRoof(id),
+                    aspectosAutoGerado: true,
+                    updated: new Date().toISOString()
+                };
+                data.especificacoesProjeto.push(esp);
+            }
+        });
+    }
+
+    getEspecificacoesProjeto() {
+        const data = this.loadData();
+        this._syncEspecificacoesEntries(data);
+        this.saveData(data);
+        return data.especificacoesProjeto;
+    }
+
+    /**
+     * Requisitos de projeto ordenados por importância QFD, com dados de especificação
+     */
+    getEspecificacoesOrdenadas() {
+        if (typeof this.calculateImportanciaProjeto === 'function') {
+            this.calculateImportanciaProjeto();
+        }
+        const requisitos = this.getRequisitosProjeto();
+        const especificacoes = this.getEspecificacoesProjeto();
+        const ordenados = [...requisitos].sort(
+            (a, b) => (b.importanciaAbsoluta || 0) - (a.importanciaAbsoluta || 0)
+        );
+
+        return ordenados.map((req, rank) => {
+            const esp = especificacoes.find(e => e.requisitoProjetoId === req.id) || {};
+            const numOriginal = requisitos.findIndex(r => r.id === req.id) + 1;
+            return {
+                requisito: req,
+                rank: rank + 1,
+                numeroOriginal: numOriginal,
+                unidadeMedida: esp.unidadeMedida || '',
+                valorUnitario: esp.valorUnitario || '',
+                aspectosIndesejaveis: esp.aspectosIndesejaveis || '',
+                aspectosAutoGerado: esp.aspectosAutoGerado !== false
+            };
+        });
+    }
+
+    updateEspecificacao(requisitoProjetoId, fields) {
+        const data = this.loadData();
+        this._syncEspecificacoesEntries(data);
+        const index = data.especificacoesProjeto.findIndex(
+            e => e.requisitoProjetoId === requisitoProjetoId
+        );
+        if (index === -1) return null;
+
+        const current = data.especificacoesProjeto[index];
+        if (fields.aspectosIndesejaveis !== undefined &&
+            fields.aspectosIndesejaveis !== current.aspectosIndesejaveis) {
+            fields.aspectosAutoGerado = false;
+        }
+
+        data.especificacoesProjeto[index] = {
+            ...current,
+            ...fields,
+            updated: new Date().toISOString()
+        };
+        this.saveData(data);
+        return data.especificacoesProjeto[index];
+    }
+
+    refreshAspectosIndesejaveisFromRoof(onlyAuto = true) {
+        const data = this.loadData();
+        this._syncEspecificacoesEntries(data);
+        data.especificacoesProjeto.forEach(esp => {
+            if (!onlyAuto || esp.aspectosAutoGerado !== false) {
+                esp.aspectosIndesejaveis = this.buildAspectosIndesejaveisFromRoof(esp.requisitoProjetoId);
+                esp.aspectosAutoGerado = true;
+                esp.updated = new Date().toISOString();
+            }
+        });
+        this.saveData(data);
+    }
+
+    getEspecificacoesStats() {
+        const lista = this.getEspecificacoesOrdenadas();
+        const total = lista.length;
+        if (total === 0) {
+            return { total: 0, completed: 0, percent: 0 };
+        }
+        const completed = lista.filter(row =>
+            String(row.unidadeMedida || '').trim() !== '' &&
+            String(row.valorUnitario || '').trim() !== ''
+        ).length;
+        return {
+            total,
+            completed,
+            percent: Math.round((completed / total) * 100)
+        };
+    }
+
+    importEspecificacoesJson(jsonData) {
+        try {
+            const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+            const lista = parsed.especificacoesProjeto || parsed;
+            if (!Array.isArray(lista)) return false;
+
+            const data = this.loadData();
+            this._syncEspecificacoesEntries(data);
+
+            lista.forEach(item => {
+                const id = item.requisitoProjetoId;
+                if (!id) return;
+                const index = data.especificacoesProjeto.findIndex(e => e.requisitoProjetoId === id);
+                if (index === -1) return;
+                data.especificacoesProjeto[index] = {
+                    ...data.especificacoesProjeto[index],
+                    unidadeMedida: item.unidadeMedida ?? data.especificacoesProjeto[index].unidadeMedida,
+                    valorUnitario: item.valorUnitario ?? data.especificacoesProjeto[index].valorUnitario,
+                    aspectosIndesejaveis: item.aspectosIndesejaveis ?? data.especificacoesProjeto[index].aspectosIndesejaveis,
+                    aspectosAutoGerado: item.aspectosAutoGerado ?? false,
+                    updated: new Date().toISOString()
+                };
+            });
+
+            this.saveData(data);
+            return true;
+        } catch (error) {
+            console.error('Erro ao importar especificações:', error);
+            return false;
+        }
+    }
+
+    exportEspecificacoesJson() {
+        const data = this.loadData();
+        return {
+            especificacoesProjeto: data.especificacoesProjeto || [],
+            exportedAt: new Date().toISOString()
+        };
+    }
+
     // Exporta dados para JSON
     exportData() {
+        const data = this.loadData();
+        this._ensureEspecificacoesArray(data);
+        this._syncEspecificacoesEntries(data);
+        this.saveData(data);
         return this.loadData();
     }
 
@@ -571,6 +770,8 @@ class QFDDatabase {
     importData(jsonData) {
         try {
             const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+            this._ensureEspecificacoesArray(data);
+            this._syncEspecificacoesEntries(data);
             this.saveData(data);
             return true;
         } catch (error) {
@@ -593,12 +794,17 @@ class QFDDatabase {
     getProjectStats() {
         const data = this.loadData();
         
+        const espStats = this.getEspecificacoesStats();
+
         return {
             requisitosCliente: data.requisitosCliente.length,
             requisitosProjeto: data.requisitosProjeto.length,
             comparacoesCliente: data.comparacaoCliente.length,
             correlacoesProjeto: data.correlacaoProjeto.length,
             relacoesQFD: data.matrizQFD.length,
+            especificacoesTotal: espStats.total,
+            especificacoesCompletas: espStats.completed,
+            especificacoesPercent: espStats.percent,
             lastModified: data.metadata.lastModified
         };
     }
@@ -642,6 +848,14 @@ class QFDDatabase {
             
             if (!reqClienteExists || !reqProjetoExists) {
                 errors.push(`Relação QFD com requisito inexistente: ${rel.requisitoCliente} - ${rel.requisitoProjeto}`);
+            }
+        });
+
+        this._ensureEspecificacoesArray(data);
+        data.especificacoesProjeto.forEach(esp => {
+            const exists = data.requisitosProjeto.some(req => req.id === esp.requisitoProjetoId);
+            if (!exists) {
+                errors.push(`Especificação com requisito de projeto inexistente: ${esp.requisitoProjetoId}`);
             }
         });
         
@@ -780,6 +994,17 @@ function exportPageData(type) {
             exportContent += `${rel.requisitoCliente},${rel.requisitoProjeto},${rel.influencia}\n`;
         });
         fileName = 'matriz-qfd.csv';
+    } else if (type === 'especificacoes') {
+        const blob = new Blob([JSON.stringify(qfdDB.exportEspecificacoesJson(), null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `especificacoes-projeto-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
     }
 
     const blob = new Blob([exportContent], { type: 'text/csv' });

@@ -2402,3 +2402,70 @@ body {
 .analysis-item.hidden {
     display: none !important;
 }
+
+/* Página de especificações */
+.especificacoes-table-wrapper {
+    overflow-x: auto;
+    padding: 0 1rem 1rem;
+}
+
+.especificacoes-table .spec-req-cell {
+    text-align: left;
+    min-width: 220px;
+}
+
+.especificacoes-table .spec-rank {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    margin-right: 0.35rem;
+}
+
+.especificacoes-table .spec-desc {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.especificacoes-table .spec-meta {
+    display: block;
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.especificacoes-table .spec-input,
+.especificacoes-table .spec-textarea {
+    width: 100%;
+    min-width: 120px;
+    font-size: 0.9rem;
+}
+
+.especificacoes-table tr.spec-row-complete {
+    box-shadow: inset 3px 0 0 #16a34a;
+}
+
+.spec-aspectos-cell {
+    text-align: left;
+    font-size: 0.85rem;
+    max-width: 280px;
+}
+
+.spec-toast {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.spec-toast-success { background: #16a34a; }
+.spec-toast-danger { background: #dc2626; }
+.spec-toast-info { background: #667eea; }

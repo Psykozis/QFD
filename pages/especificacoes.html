@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Especificações - Sistema QFD</title>
+    <link rel="preload" href="../css/style.css" as="style">
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-clipboard-list"></i> Especificações de Projeto</h1>
+            <p>Quadro de especificações técnicas hierarquizadas pelo QFD</p>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="../index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="nav-dropdown">
+                    <a href="#" class="dropdown-toggle"><i class="fas fa-list"></i> Menu <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
+                    <div class="dropdown-menu">
+                        <a href="requisitos-cliente.html"><i class="fas fa-users"></i> Requisitos Cliente</a>
+                        <a href="comparacao-cliente.html"><i class="fas fa-balance-scale"></i> Comparação Cliente</a>
+                        <a href="requisitos-projeto.html"><i class="fas fa-project-diagram"></i> Requisitos Projeto</a>
+                        <a href="correlacao-projeto.html"><i class="fas fa-network-wired"></i> Correlação Projeto</a>
+                        <a href="matriz-qfd.html"><i class="fas fa-table"></i> Matriz QFD</a>
+                        <a href="especificacoes.html"><i class="fas fa-clipboard-list"></i> Especificações</a>
+                        <a href="relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a>
+                    </div>
+                </li>
+                <li class="nav-dropdown">
+                    <a href="#" class="dropdown-toggle"><i class="fas fa-database"></i> Backup & Export <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
+                    <div class="dropdown-menu">
+                        <a href="#" onclick="exportProjectData()"><i class="fas fa-download"></i> Exportar Backup (JSON)</a>
+                        <a href="#" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Importar Backup (JSON)</a>
+                        <hr>
+                        <a href="#" onclick="exportEspecificacoesJson()"><i class="fas fa-file-export"></i> Exportar Especificações (JSON)</a>
+                        <a href="#" onclick="document.getElementById('import-especificacoes-json').click()"><i class="fas fa-file-import"></i> Importar Especificações (JSON)</a>
+                    </div>
+                </li>
+                <li class="nav-spacer"></li>
+                <li>
+                    <div class="nav-page-actions">
+                        <a href="matriz-qfd.html" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                        <a href="relatorio.html" class="btn btn-primary">
+                            Avançar <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </li>
+            </ul>
+            <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
+            <input type="file" id="import-especificacoes-json" style="display: none;" onchange="importEspecificacoesJson(event)" accept=".json">
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h2>Quadro de Especificações dos Requisitos de Projeto</h2>
+                <p>Requisitos ordenados pela hierarquia do QFD. Preencha unidade e valor unitário. Os aspectos indesejáveis são pré-preenchidos com correlações fortemente negativas (<strong>--</strong>) do telhado.</p>
+            </div>
+
+            <div class="card status-card">
+                <div class="status-info">
+                    <div class="status-item">
+                        <div class="status-icon"><i class="fas fa-list-ol"></i></div>
+                        <div class="status-content">
+                            <h4 id="total-requisitos">0 Requisitos</h4>
+                            <p>Ordenados pelo QFD</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon"><i class="fas fa-check-double"></i></div>
+                        <div class="status-content">
+                            <h4 id="especificacoes-preenchidas">0 / 0</h4>
+                            <p>Linhas com unidade e valor</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon"><i class="fas fa-percentage"></i></div>
+                        <div class="status-content">
+                            <h4 id="progresso-percentual">0%</h4>
+                            <p>Completude</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div id="insufficient-data" class="card alert-card" style="display: none;">
+                <div class="alert-content">
+                    <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="alert-text">
+                        <h3>Sem requisitos de projeto</h3>
+                        <p>Cadastre requisitos de projeto e complete a matriz QFD antes de definir especificações.</p>
+                        <div class="alert-actions">
+                            <a href="requisitos-projeto.html" class="btn btn-primary">Requisitos de Projeto</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="especificacoes-section" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-table"></i> Especificações
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="refreshAspectosFromRoof()" style="margin-left: 1rem;">
+                            <i class="fas fa-sync"></i> Atualizar aspectos do telhado
+                        </button>
+                    </h3>
+                </div>
+
+                <div class="tercios-legend comparacao-tercios-legend" style="margin: 0 1rem 1rem;">
+                    <span class="tercio-item tercio-superior">Terço superior (maior importância QFD)</span>
+                    <span class="tercio-item tercio-medio">Terço médio</span>
+                    <span class="tercio-item tercio-inferior">Terço inferior</span>
+                </div>
+
+                <div class="especificacoes-table-wrapper">
+                    <table class="report-table especificacoes-table">
+                        <thead>
+                            <tr>
+                                <th>Requisito de Projeto (hierarquia QFD)</th>
+                                <th>Unidade de mensuração</th>
+                                <th>Valor unitário</th>
+                                <th>Aspectos indesejáveis</th>
+                            </tr>
+                        </thead>
+                        <tbody id="especificacoes-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+        </div>
+    </footer>
+
+    <script src="../js/database.js"></script>
+    <script src="../js/especificacoes.js"></script>
+</body>
+</html>

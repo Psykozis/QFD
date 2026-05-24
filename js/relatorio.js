@@ -85,6 +85,7 @@ function generatePreview() {
     if (isSectionChecked('section-project-req')) html += generateProjectReqs();
     if (isSectionChecked('section-roof')) html += generateRoof();
     if (isSectionChecked('section-qfd-matrix')) html += generateMatrix();
+    if (isSectionChecked('section-especificacoes')) html += generateEspecificacoes();
     html += generateComparisonsSection();
 
     html += '</div>';
@@ -227,6 +228,42 @@ function generateMatrix() {
         html += `<td class="report-has-tip" data-report-tip="Peso de RC${idx + 1}: ${((rc.peso || 0) * 100).toFixed(1)}%">${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
     });
     return html + '</tbody></table></div></div>';
+}
+
+function generateEspecificacoes() {
+    const lista = qfdDB.getEspecificacoesOrdenadas();
+    if (!lista.length) {
+        return '<div class="report-section"><h3>Especificações de Projeto</h3><p>Nenhum requisito de projeto cadastrado.</p></div>';
+    }
+
+    const total = lista.length;
+    const t1 = Math.ceil(total / 3);
+    const t2 = Math.ceil((2 * total) / 3);
+
+    let html = '<div class="report-section"><h3>Especificações dos Requisitos de Projeto</h3>';
+    html += '<p class="report-hint">Requisitos ordenados pela hierarquia do QFD (maior importância relativa primeiro).</p>';
+    html += '<table class="report-table especificacoes-report-table"><thead><tr>';
+    html += '<th>#</th><th>Requisito</th><th>Unidade</th><th>Valor unit.</th><th>Aspectos indesejáveis</th>';
+    html += '</tr></thead><tbody>';
+
+    lista.forEach((row, index) => {
+        let tercioClass = 'tercio-inferior';
+        if (index < t1) tercioClass = 'tercio-superior';
+        else if (index < t2) tercioClass = 'tercio-medio';
+
+        const tip = `RP${row.numeroOriginal}: ${row.requisito.descricao}`;
+        const aspectos = row.aspectosIndesejaveis || '—';
+
+        html += `<tr class="${tercioClass} report-has-tip" data-report-tip="${escapeAttr(tip)}">
+            <td>${row.rank}</td>
+            <td><strong>RP${row.numeroOriginal}</strong> — ${escapeHtml(row.requisito.descricao)}</td>
+            <td>${escapeHtml(row.unidadeMedida || '—')}</td>
+            <td>${escapeHtml(row.valorUnitario || '—')}</td>
+            <td class="spec-aspectos-cell">${escapeHtml(aspectos).replace(/\n/g, '<br>')}</td>
+        </tr>`;
+    });
+
+    return html + '</tbody></table></div>';
 }
 
 /** Comparações pareadas do cliente (Diagrama de Mudge) */

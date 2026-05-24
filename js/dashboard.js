@@ -97,6 +97,8 @@ function updateDashboard() {
     const progressQFD = totalRelacoesQFD > 0 ? 
         Math.round((stats.relacoesQFD / totalRelacoesQFD) * 100) : 0;
     updateProgressCard('qfd', progressQFD, '% completo');
+
+    updateProgressCard('especificacoes', stats.especificacoesPercent || 0, '% completo');
     
     // Atualiza status do relatório
     const canGenerateReport = stats.requisitosCliente > 0 && stats.requisitosProjeto > 0 && 

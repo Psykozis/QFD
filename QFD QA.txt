@@ -2,39 +2,16 @@
 ==========================================================================================
 ver depois
 
-comparacao-cliente
-dividir por cores os três terços de importância
-a distribuição de importância, ao fim da página não está sendo preenchida
+criar uma página no final, num arquivo novo chamado "especificacoes" tanto no js quanto no html
 
-correlacao-projeto
-Quando se clica para alterar, ele não está alterando no projeto, nem indo para o próximo ao apertar enter
-nem os atalhos para forte positivo *, positivo +, negativo -, forte negativo /, e enter para salvar e avançar para o próximo 
-
-no cabeçalho onde aparecem as setas e os números, o fundo dos números estão grandes demais e as setas ficam sem espaço
-
-nas analises das correlações, quando se clica em "sem correlação"
-aparece apenas o número de requisitos sem correlações, mas não quais
-seria importante -apenas nessa aba- apresenntar eles.
-
-
-matriz-qfd
-o telhado segue com problema, aqui ele pode ser apenas um objeto único sem interação, toda vez que se clica nele, retorna para a página do telhado.
-atualmente a próxima coluna está desalinhanda com a primeira, sem apresentar os requisitos nem o sentido da melhoria
-
-na matriz do QFD, atualmente mudamos para que os requsiitos de projeto ficassem em pé, apenas com RPn, é de interesse que ao passar o mouse por cima, tenha um balão que diga o que ele é
-
-no relatório
-o azul e o verde que representam terço médio e alto, estão muito parecidos, troque um por vermelho
-a coluna de imp absoluta, deve ser a relativa e não a absoluta
-ao invés de down up e none, devem ser setar e para o none um asterisco
-no pdf gerado, todos os rp e rc devem apresentar um balão ao passar o mouse apresentando o que eles representam
-e as comparações da mesma forma 
-
-
-criar uma página
 quadro de especificaçoes dos requisitos do projeto
+
 nesse quadro deve conter 
 na primeira coluna os requisitos do projeto hierarquizados pelo QFD
 na segunda coluna unidade de mensuração a serem preenchidas
-na terceira coluna valor unidtario a ser preenchido
+na terceira coluna valor unitario a ser preenchido
 na quarta coluna aspectos indesejáveis a ser preenchido (pré preenchido com o telhado do qfd fortemente negativo)
+
+essa pagina deve ser totalmente integrada no projeto como um todo, deve também exportar e receber dados via json,
+deve ser exibida na relatório, e deve ser integrada em todas as páginas, inclusive o percentual de conclusão, 
+como todoas as páginas são
