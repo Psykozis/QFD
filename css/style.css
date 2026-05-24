@@ -2438,9 +2438,27 @@ body {
 
 .especificacoes-table .spec-input,
 .especificacoes-table .spec-textarea {
+    display: block;
     width: 100%;
-    min-width: 120px;
+    min-width: 140px;
     font-size: 0.9rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.especificacoes-table .spec-textarea {
+    min-height: 72px;
+    resize: vertical;
+}
+
+.especificacoes-table .spec-input:focus,
+.especificacoes-table .spec-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
 .especificacoes-table tr.spec-row-complete {

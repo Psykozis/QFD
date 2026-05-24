@@ -701,14 +701,15 @@ class QFDDatabase {
     }
 
     getEspecificacoesStats() {
-        const lista = this.getEspecificacoesOrdenadas();
-        const total = lista.length;
+        const data = this.loadData();
+        this._syncEspecificacoesEntries(data);
+        const total = (data.requisitosProjeto || []).length;
         if (total === 0) {
             return { total: 0, completed: 0, percent: 0 };
         }
-        const completed = lista.filter(row =>
-            String(row.unidadeMedida || '').trim() !== '' &&
-            String(row.valorUnitario || '').trim() !== ''
+        const completed = (data.especificacoesProjeto || []).filter(esp =>
+            String(esp.unidadeMedida || '').trim() !== '' &&
+            String(esp.valorUnitario || '').trim() !== ''
         ).length;
         return {
             total,

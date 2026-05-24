@@ -5,33 +5,49 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    loadPage();
     setupDropdownMenu();
+    loadPage();
 });
 
 function setupDropdownMenu() {
-    const toggle = document.querySelector('.dropdown-toggle');
-    const menu = document.querySelector('.dropdown-menu') || document.querySelector('.dropdown-content');
-    if (toggle && menu) {
+    document.querySelectorAll('.nav-dropdown .dropdown-toggle').forEach(toggle => {
         toggle.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopPropagation();
+            const menu = this.nextElementSibling;
+            if (!menu) return;
+
+            document.querySelectorAll('.dropdown-menu.show, .dropdown-content.show').forEach(open => {
+                if (open !== menu) open.classList.remove('show');
+            });
             menu.classList.toggle('show');
         });
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.nav-dropdown') && !e.target.closest('li:has(.dropdown-content)')) {
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.nav-dropdown')) {
+            document.querySelectorAll('.dropdown-menu.show, .dropdown-content.show').forEach(menu => {
                 menu.classList.remove('show');
-            }
-        });
-    }
+            });
+        }
+    });
 }
 
 function loadPage() {
-    qfdDB.refreshAspectosIndesejaveisFromRoof(true);
-    const lista = qfdDB.getEspecificacoesOrdenadas();
-    const stats = qfdDB.getEspecificacoesStats();
-
-    updateStatus(stats, lista.length);
-    renderTable(lista);
+    try {
+        qfdDB.getEspecificacoesProjeto();
+        const lista = qfdDB.getEspecificacoesOrdenadas();
+        const stats = qfdDB.getEspecificacoesStats();
+        updateStatus(stats, lista.length);
+        renderTable(lista);
+    } catch (err) {
+        console.error('Erro ao carregar especificações:', err);
+        const tbody = document.getElementById('especificacoes-tbody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="4">Erro ao carregar dados. Recarregue a página.</td></tr>';
+        }
+        showToast('Erro ao carregar especificações.', 'danger');
+    }
 }
 
 function updateStatus(stats, totalReq) {
@@ -62,8 +78,12 @@ function renderTable(lista) {
     const tbody = document.getElementById('especificacoes-tbody');
     if (!tbody) return;
 
-    if (lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4">Cadastre requisitos de projeto para preencher as especificações.</td></tr>';
+    tbody.innerHTML = '';
+
+    if (!lista.length) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="4">Cadastre requisitos de projeto para preencher as especificações.</td>';
+        tbody.appendChild(tr);
         return;
     }
 
@@ -71,52 +91,79 @@ function renderTable(lista) {
     const t1 = Math.ceil(total / 3);
     const t2 = Math.ceil((2 * total) / 3);
 
-    tbody.innerHTML = lista.map((row, index) => {
+    lista.forEach((row, index) => {
         const req = row.requisito;
         let tercioClass = 'tercio-inferior';
         if (index < t1) tercioClass = 'tercio-superior';
         else if (index < t2) tercioClass = 'tercio-medio';
 
         const impPct = req.pesoRelativo != null ? (req.pesoRelativo * 100).toFixed(1) + '%' : '-';
-        const completo = String(row.unidadeMedida).trim() && String(row.valorUnitario).trim();
+        const completo = String(row.unidadeMedida || '').trim() && String(row.valorUnitario || '').trim();
 
-        return `
-            <tr class="${tercioClass} ${completo ? 'spec-row-complete' : ''}" data-req-id="${req.id}">
-                <td class="spec-req-cell">
-                    <span class="spec-rank">#${row.rank}</span>
-                    <strong>RP${row.numeroOriginal}</strong>
-                    <span class="spec-desc">${escapeHtml(req.descricao)}</span>
-                    <small class="spec-meta">Imp. rel.: ${impPct}</small>
-                </td>
-                <td>
-                    <input type="text" class="form-control spec-input" data-field="unidadeMedida"
-                        value="${escapeHtml(row.unidadeMedida)}" placeholder="Ex.: mm, kg, %"
-                        onchange="saveField('${req.id}', 'unidadeMedida', this.value)">
-                </td>
-                <td>
-                    <input type="text" class="form-control spec-input" data-field="valorUnitario"
-                        value="${escapeHtml(row.valorUnitario)}" placeholder="Ex.: 10,5"
-                        onchange="saveField('${req.id}', 'valorUnitario', this.value)">
-                </td>
-                <td>
-                    <textarea class="form-control spec-textarea" rows="2" data-field="aspectosIndesejaveis"
-                        placeholder="Conflitos do telhado QFD (--) aparecem aqui"
-                        onchange="saveField('${req.id}', 'aspectosIndesejaveis', this.value)">${escapeHtml(row.aspectosIndesejaveis)}</textarea>
-                </td>
-            </tr>
-        `;
-    }).join('');
+        const tr = document.createElement('tr');
+        tr.className = `${tercioClass}${completo ? ' spec-row-complete' : ''}`;
+        tr.dataset.reqId = req.id;
+
+        const tdReq = document.createElement('td');
+        tdReq.className = 'spec-req-cell';
+        tdReq.innerHTML = `
+            <span class="spec-rank">#${row.rank}</span>
+            <strong>RP${row.numeroOriginal}</strong>
+            <span class="spec-desc"></span>
+            <small class="spec-meta">Imp. rel.: ${impPct}</small>`;
+        tdReq.querySelector('.spec-desc').textContent = req.descricao;
+
+        const tdUnidade = document.createElement('td');
+        const inputUnidade = document.createElement('input');
+        inputUnidade.type = 'text';
+        inputUnidade.className = 'form-control spec-input';
+        inputUnidade.dataset.field = 'unidadeMedida';
+        inputUnidade.placeholder = 'Ex.: mm, kg, %';
+        inputUnidade.value = row.unidadeMedida || '';
+        inputUnidade.addEventListener('change', () => saveField(req.id, 'unidadeMedida', inputUnidade.value));
+        inputUnidade.addEventListener('blur', () => saveField(req.id, 'unidadeMedida', inputUnidade.value));
+        tdUnidade.appendChild(inputUnidade);
+
+        const tdValor = document.createElement('td');
+        const inputValor = document.createElement('input');
+        inputValor.type = 'text';
+        inputValor.className = 'form-control spec-input';
+        inputValor.dataset.field = 'valorUnitario';
+        inputValor.placeholder = 'Ex.: 10,5';
+        inputValor.value = row.valorUnitario || '';
+        inputValor.addEventListener('change', () => saveField(req.id, 'valorUnitario', inputValor.value));
+        inputValor.addEventListener('blur', () => saveField(req.id, 'valorUnitario', inputValor.value));
+        tdValor.appendChild(inputValor);
+
+        const tdAspectos = document.createElement('td');
+        const textarea = document.createElement('textarea');
+        textarea.className = 'form-control spec-textarea';
+        textarea.dataset.field = 'aspectosIndesejaveis';
+        textarea.rows = 3;
+        textarea.placeholder = 'Conflitos do telhado QFD (--) aparecem aqui';
+        textarea.value = row.aspectosIndesejaveis || '';
+        textarea.addEventListener('change', () => saveField(req.id, 'aspectosIndesejaveis', textarea.value));
+        textarea.addEventListener('blur', () => saveField(req.id, 'aspectosIndesejaveis', textarea.value));
+        tdAspectos.appendChild(textarea);
+
+        tr.appendChild(tdReq);
+        tr.appendChild(tdUnidade);
+        tr.appendChild(tdValor);
+        tr.appendChild(tdAspectos);
+        tbody.appendChild(tr);
+    });
 }
 
 function saveField(requisitoProjetoId, field, value) {
     qfdDB.updateEspecificacao(requisitoProjetoId, { [field]: value });
     const stats = qfdDB.getEspecificacoesStats();
     updateStatus(stats, stats.total);
+
     const row = document.querySelector(`tr[data-req-id="${requisitoProjetoId}"]`);
     if (row) {
         const unidade = row.querySelector('[data-field="unidadeMedida"]')?.value || '';
         const valor = row.querySelector('[data-field="valorUnitario"]')?.value || '';
-        row.classList.toggle('spec-row-complete', unidade.trim() && valor.trim());
+        row.classList.toggle('spec-row-complete', unidade.trim() !== '' && valor.trim() !== '');
     }
 }
 
@@ -156,18 +203,10 @@ function showToast(message, type) {
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'spec-toast';
-        toast.className = 'spec-toast';
         document.body.appendChild(toast);
     }
     toast.className = `spec-toast spec-toast-${type || 'info'}`;
     toast.textContent = message;
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 2800);
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
