@@ -15,3 +15,11 @@ na quarta coluna aspectos indesejáveis a ser preenchido (pré preenchido com o 
 essa pagina deve ser totalmente integrada no projeto como um todo, deve também exportar e receber dados via json,
 deve ser exibida na relatório, e deve ser integrada em todas as páginas, inclusive o percentual de conclusão, 
 como todoas as páginas são
+
+=====================================================================================================
+
+O relatório quebrou após a adição das páginas de especificação, antes estava bom
+
+a página de especificacoes não está com os quadros solicitados a serem preenchidos
+os botões de menu também não funcionam nela
+

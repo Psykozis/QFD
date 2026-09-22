@@ -114,7 +114,8 @@ function generateComparisonMatrix() {
     matrixHTML += '<div class="matrix-cell matrix-corner">Req.</div>';
     
     for (let i = 0; i < requisitos.length; i++) {
-        const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}`;
+        const obsText = requisitos[i].observacao ? `<br><em class='tooltip-obs'>${escapeHtml(requisitos[i].observacao)}</em>` : '';
+        const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}${obsText}`;
         matrixHTML += `<div class="matrix-cell matrix-header-cell" data-tooltip="${tooltipText}">
             <div class="header-content">
                 <span class="req-number">${i + 1}</span>
@@ -131,7 +132,8 @@ function generateComparisonMatrix() {
     // Linhas
     for (let i = 0; i < requisitos.length; i++) {
         matrixHTML += '<div class="matrix-row">';
-        const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}`;
+        const rowObsText = requisitos[i].observacao ? `<br><em class='tooltip-obs'>${escapeHtml(requisitos[i].observacao)}</em>` : '';
+        const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}${rowObsText}`;
         matrixHTML += `<div class="matrix-cell matrix-row-header" data-tooltip="${tooltipText}">
             <div class="row-header-content">
                 <span class="req-number">${i + 1}</span>
@@ -142,7 +144,9 @@ function generateComparisonMatrix() {
         for (let j = 0; j < requisitos.length; j++) {
             const req1 = requisitos[i];
             const req2 = requisitos[j];
-            const cellTooltip = `Comparação entre:<br><strong>Req ${i + 1}:</strong> ${escapeHtml(truncateText(req1.descricao, 50))}<br><strong>Req ${j + 1}:</strong> ${escapeHtml(truncateText(req2.descricao, 50))}`;
+            const obs1 = req1.observacao ? `<br><em class='tooltip-obs'>${escapeHtml(truncateText(req1.observacao, 80))}</em>` : '';
+            const obs2 = req2.observacao ? `<br><em class='tooltip-obs'>${escapeHtml(truncateText(req2.observacao, 80))}</em>` : '';
+            const cellTooltip = `Comparação entre:<br><strong>Req ${i + 1}:</strong> ${escapeHtml(truncateText(req1.descricao, 50))}${obs1}<br><strong>Req ${j + 1}:</strong> ${escapeHtml(truncateText(req2.descricao, 50))}${obs2}`;
 
             if (i === j) {
                 matrixHTML += `<div class="matrix-cell matrix-diagonal" data-tooltip="${cellTooltip}">-</div>`;
@@ -360,6 +364,7 @@ function openComparisonModal(cell) {
                             <span class="req-label">Requisito A</span>
                         </div>
                         <div class="req-description">${escapeHtml(req1.descricao)}</div>
+                        ${req1.observacao ? `<div class="req-obs-modal"><i class="fas fa-comment-dots"></i> ${escapeHtml(req1.observacao)}</div>` : ''}
                     </div>
                     <div class="vs-divider">VS</div>
                     <div class="requirement-option ${storedComparison && storedComparison.requisito1 === req2Id ? 'selected' : ''}" data-req="${req2Id}" data-index="${j}">
@@ -368,6 +373,7 @@ function openComparisonModal(cell) {
                             <span class="req-label">Requisito B</span>
                         </div>
                         <div class="req-description">${escapeHtml(req2.descricao)}</div>
+                        ${req2.observacao ? `<div class="req-obs-modal"><i class="fas fa-comment-dots"></i> ${escapeHtml(req2.observacao)}</div>` : ''}
                     </div>
                 </div>
                 <div class="importance-levels" id="importance-levels" style="${storedComparison ? 'display:block' : 'display:none'}">

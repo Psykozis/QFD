@@ -167,11 +167,13 @@ function generateDictionary() {
     html += '<p class="report-hint"><em>Passe o mouse sobre RC, RP e células no preview para ver descrições completas.</em></p>';
     html += '<h4>Requisitos de Cliente (RC)</h4><ul class="report-dict-list">';
     requisitosCliente.forEach((r, i) => {
-        html += `<li><strong>RC${i + 1}</strong> — ${escapeHtml(r.descricao)}</li>`;
+        const obs = r.observacao ? ` <em class="report-obs">— ${escapeHtml(r.observacao)}</em>` : '';
+        html += `<li><strong>RC${i + 1}</strong> — ${escapeHtml(r.descricao)}${obs}</li>`;
     });
     html += '</ul><h4>Requisitos de Projeto (RP)</h4><ul class="report-dict-list">';
     requisitosProjeto.forEach((r, i) => {
-        html += `<li><strong>RP${i + 1}</strong> ${getSentidoSymbol(r.sentidoMelhoria)} — ${escapeHtml(r.descricao)}</li>`;
+        const obs = r.observacao ? ` <em class="report-obs">— ${escapeHtml(r.observacao)}</em>` : '';
+        html += `<li><strong>RP${i + 1}</strong> ${getSentidoSymbol(r.sentidoMelhoria)} — ${escapeHtml(r.descricao)}${obs}</li>`;
     });
     return html + '</ul></div>';
 }
@@ -183,7 +185,8 @@ function generateSummary() {
 function generateClientReqs() {
     let html = '<div class="report-section"><h3>Requisitos do Cliente</h3><table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Peso</th></tr></thead><tbody>';
     requisitosCliente.forEach((r, i) => {
-        const tip = `RC${i + 1}: ${r.descricao}`;
+        const obsTip = r.observacao ? ` | ${r.observacao}` : '';
+        const tip = `RC${i + 1}: ${r.descricao}${obsTip}`;
         html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(tip)}">
             <td>RC${i + 1}</td>
             <td>${escapeHtml(r.descricao)}</td>
@@ -226,7 +229,8 @@ function generateProjectReqs() {
         const rpNum = requisitosProjeto.findIndex(x => x.id === r.id) + 1;
         const impRel = r.pesoRelativo != null ? (r.pesoRelativo * 100).toFixed(1) + '%' : '-';
 
-        html += `<tr class="${tercioClass} report-has-tip" data-report-tip="${escapeAttr(`RP${rpNum}: ${r.descricao}`)}">
+        const rpObsTip = r.observacao ? ` | ${r.observacao}` : '';
+        html += `<tr class="${tercioClass} report-has-tip" data-report-tip="${escapeAttr(`RP${rpNum}: ${r.descricao}${rpObsTip}`)}">
             <td>RP${rpNum}</td>
             <td>${escapeHtml(r.descricao)}</td>
             <td>${getSentidoSymbol(r.sentidoMelhoria)}</td>

@@ -104,9 +104,10 @@ function generateRoofMatrix() {
     roofHTML += '<div class="roof-header">';
     for (let i = 0; i < requisitos.length; i++) {
         const req = requisitos[i];
+        const obsHdr = req.observacao ? `<br><em class='tooltip-obs'>${escapeHtml(req.observacao)}</em>` : '';
         roofHTML += `<div class="roof-header-cell" 
-            title="Requisito ${i + 1}: ${escapeHtml(req.descricao)} | Sentido: ${getSentidoLabel(req.sentidoMelhoria)} ${getSentidoSymbol(req.sentidoMelhoria)}"
-            data-tooltip="Requisito ${i + 1}: ${escapeHtml(req.descricao)}<br>Sentido: ${getSentidoLabel(req.sentidoMelhoria)} ${getSentidoSymbol(req.sentidoMelhoria)}<br>Dificuldade: ${req.dificuldadeTecnica}">
+            title="Requisito ${i + 1}: ${escapeHtml(req.descricao)}"
+            data-tooltip="Requisito ${i + 1}: ${escapeHtml(req.descricao)}${obsHdr}<br>Sentido: ${getSentidoLabel(req.sentidoMelhoria)} ${getSentidoSymbol(req.sentidoMelhoria)}<br>Dificuldade: ${req.dificuldadeTecnica}">
             <span class="req-number">${i + 1}</span>
             <span class="req-direction">${getSentidoSymbol(req.sentidoMelhoria)}</span>
         </div>`;
@@ -130,9 +131,11 @@ function generateRoofMatrix() {
             const req1 = requisitos[i];
             const req2 = requisitos[j];
             
+            const cellObs1 = req1.observacao ? `<br><em class='tooltip-obs'>${escapeHtml(req1.observacao.substring(0, 80))}${req1.observacao.length > 80 ? '...' : ''}</em>` : '';
+            const cellObs2 = req2.observacao ? `<br><em class='tooltip-obs'>${escapeHtml(req2.observacao.substring(0, 80))}${req2.observacao.length > 80 ? '...' : ''}</em>` : '';
             const tooltipText = `Correlação entre:<br>
-                <strong>Req ${i + 1}:</strong> ${escapeHtml(req1.descricao.substring(0, 50))}${req1.descricao.length > 50 ? '...' : ''}<br>
-                <strong>Req ${j + 1}:</strong> ${escapeHtml(req2.descricao.substring(0, 50))}${req2.descricao.length > 50 ? '...' : ''}<br>
+                <strong>Req ${i + 1}:</strong> ${escapeHtml(req1.descricao.substring(0, 50))}${req1.descricao.length > 50 ? '...' : ''}${cellObs1}<br>
+                <strong>Req ${j + 1}:</strong> ${escapeHtml(req2.descricao.substring(0, 50))}${req2.descricao.length > 50 ? '...' : ''}${cellObs2}<br>
                 <em>Clique para definir correlação</em>`;
             
             roofHTML += `<div class="roof-cell ${isCompleted ? 'completed' : ''}" 
@@ -283,6 +286,7 @@ function openCorrelationPopup(cell) {
                                 ${getSentidoSymbol(req1.sentidoMelhoria)}
                             </span>
                         </div>
+                        ${req1.observacao ? `<div class="req-obs-modal"><i class="fas fa-comment-dots"></i> ${escapeHtml(req1.observacao)}</div>` : ''}
                     </div>
                     <div class="correlation-vs">↔</div>
                     <div class="req-compact">
@@ -293,6 +297,7 @@ function openCorrelationPopup(cell) {
                                 ${getSentidoSymbol(req2.sentidoMelhoria)}
                             </span>
                         </div>
+                        ${req2.observacao ? `<div class="req-obs-modal"><i class="fas fa-comment-dots"></i> ${escapeHtml(req2.observacao)}</div>` : ''}
                     </div>
                 </div>
                 

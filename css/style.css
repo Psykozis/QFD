@@ -2487,3 +2487,70 @@ body {
 .spec-toast-success { background: #16a34a; }
 .spec-toast-danger { background: #dc2626; }
 .spec-toast-info { background: #667eea; }
+
+/* ========================================================================
+   OBSERVAÇÕES / TEXTO EXPLICATIVO - Balão flutuante e modais
+   ======================================================================== */
+
+/* Tooltip flutuante: texto de observação em itálico */
+.tooltip-obs {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.82em;
+    color: #b8c0ff;
+    font-style: italic;
+    line-height: 1.35;
+}
+
+/* Observação dentro de modais (comparação, correlação, matriz QFD) */
+.req-obs-modal {
+    font-size: 0.82rem;
+    color: #5a6fd6;
+    background: #f0f2ff;
+    border-left: 3px solid #667eea;
+    padding: 0.35rem 0.6rem;
+    margin: 0.35rem 0 0.1rem;
+    border-radius: 0 4px 4px 0;
+    line-height: 1.35;
+}
+.req-obs-modal i {
+    margin-right: 0.25rem;
+    opacity: 0.7;
+}
+
+/* Observação no relatório PDF */
+.report-obs {
+    display: inline;
+    font-size: 0.88em;
+    color: #5a6fd6;
+    font-style: italic;
+}
+
+/* Preview de observação na tabela de especificações */
+.spec-obs-preview {
+    font-size: 0.82rem;
+    color: #5a6fd6;
+    background: #f0f2ff;
+    border-left: 3px solid #667eea;
+    padding: 0.3rem 0.6rem;
+    margin: 0.25rem 0;
+    border-radius: 0 4px 4px 0;
+    line-height: 1.35;
+}
+.spec-obs-preview i {
+    margin-right: 0.25rem;
+    opacity: 0.7;
+}
+
+/* Print: exibir observações normalmente */
+@media print {
+    .req-obs-modal,
+    .spec-obs-preview {
+        background: none;
+        border-left: 2px solid #999;
+        color: #333;
+    }
+    .report-obs {
+        color: #333;
+    }
+}

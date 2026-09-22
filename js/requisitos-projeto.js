@@ -133,6 +133,7 @@ function loadRequisitos() {
                     <div class="requisito-description" id="desc-${requisito.id}">
                         ${escapeHtml(requisito.descricao)}
                     </div>
+                    ${requisito.observacao ? `<div class="requisito-observacao-preview"><i class="fas fa-comment-dots"></i> ${escapeHtml(requisito.observacao)}</div>` : ''}
                     <div class="requisito-attributes">
                         <div class="attribute-item">
                             <span class="attribute-label">Sentido:</span>
@@ -171,6 +172,10 @@ function loadRequisitos() {
                     <div class="form-group">
                         <label>Descrição:</label>
                         <textarea class="form-control" id="edit-desc-${requisito.id}" rows="3">${escapeHtml(requisito.descricao)}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-comment-dots"></i> Texto explicativo (aparece como balão ao passar o mouse nas correlações e matriz):</label>
+                        <textarea class="form-control" id="edit-obs-${requisito.id}" rows="2" placeholder="Ex.: Mede a resistência térmica do material em °C por hora...">${escapeHtml(requisito.observacao || '')}</textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -263,6 +268,8 @@ function saveEdit(id) {
     const novaDescricao = textarea.value.trim();
     const novoSentido = sentidoSelect.value;
     const novaDificuldade = parseInt(dificuldadeSelect.value);
+    const obsTextarea = document.getElementById(`edit-obs-${id}`);
+    const novaObservacao = obsTextarea ? obsTextarea.value.trim() : '';
     
     if (!novaDescricao) {
         showAlert('A descrição não pode estar vazia.', 'warning');
@@ -277,6 +284,7 @@ function saveEdit(id) {
     try {
         const updated = qfdDB.updateRequisitoProjeto(id, {
             descricao: novaDescricao,
+            observacao: novaObservacao,
             sentidoMelhoria: novoSentido,
             dificuldadeTecnica: novaDificuldade
         });
@@ -632,6 +640,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 font-weight: 600;
                 color: #333;
                 margin-bottom: 0.25rem;
+            }
+            
+            .requisito-observacao-preview {
+                font-size: 0.85rem;
+                color: #5a6fd6;
+                background: #f0f2ff;
+                border-left: 3px solid #667eea;
+                padding: 0.4rem 0.7rem;
+                margin: 0.3rem 0;
+                border-radius: 0 4px 4px 0;
+                line-height: 1.4;
             }
             
             @media (max-width: 768px) {

@@ -171,6 +171,7 @@ function loadRequisitos() {
                     <div class="requisito-description" id="desc-${requisito.id}">
                         ${escapeHtml(requisito.descricao)}
                     </div>
+                    ${requisito.observacao ? `<div class="requisito-observacao-preview"><i class="fas fa-comment-dots"></i> ${escapeHtml(requisito.observacao)}</div>` : ''}
                     <div class="requisito-meta">
                         <small class="text-muted">
                             <i class="fas fa-calendar"></i> 
@@ -190,7 +191,14 @@ function loadRequisitos() {
                 </div>
             </div>
             <div class="requisito-edit-form" id="edit-form-${requisito.id}" style="display: none;">
-                <textarea class="form-control" id="edit-desc-${requisito.id}" rows="3">${escapeHtml(requisito.descricao)}</textarea>
+                <div class="form-group">
+                    <label>Descrição:</label>
+                    <textarea class="form-control" id="edit-desc-${requisito.id}" rows="3">${escapeHtml(requisito.descricao)}</textarea>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-comment-dots"></i> Texto explicativo (aparece como balão ao passar o mouse nas comparações):</label>
+                    <textarea class="form-control" id="edit-obs-${requisito.id}" rows="2" placeholder="Ex.: Este requisito refere-se à facilidade de uso para idosos acima de 65 anos...">${escapeHtml(requisito.observacao || '')}</textarea>
+                </div>
                 <div class="edit-actions">
                     <button class="btn btn-sm btn-success" onclick="saveEdit('${requisito.id}')">
                         <i class="fas fa-check"></i> Salvar
@@ -237,6 +245,8 @@ function saveEdit(id) {
     if (!textarea) return;
     
     const novaDescricao = textarea.value.trim();
+    const obsTextarea = document.getElementById(`edit-obs-${id}`);
+    const novaObservacao = obsTextarea ? obsTextarea.value.trim() : '';
     
     if (!novaDescricao) {
         showAlert('A descrição não pode estar vazia.', 'warning');
@@ -249,7 +259,7 @@ function saveEdit(id) {
     }
     
     try {
-        const updated = qfdDB.updateRequisitoCliente(id, { descricao: novaDescricao });
+        const updated = qfdDB.updateRequisitoCliente(id, { descricao: novaDescricao, observacao: novaObservacao });
         
         if (updated) {
             showAlert('Requisito atualizado com sucesso!', 'success');
@@ -597,6 +607,17 @@ document.addEventListener('DOMContentLoaded', function() {
             .requisito-meta {
                 font-size: 0.875rem;
                 color: #6c757d;
+            }
+            
+            .requisito-observacao-preview {
+                font-size: 0.85rem;
+                color: #5a6fd6;
+                background: #f0f2ff;
+                border-left: 3px solid #667eea;
+                padding: 0.4rem 0.7rem;
+                margin: 0.3rem 0;
+                border-radius: 0 4px 4px 0;
+                line-height: 1.4;
             }
             
             .requisito-actions {

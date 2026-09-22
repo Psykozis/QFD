@@ -104,14 +104,17 @@ function renderTable(lista) {
         tr.className = `${tercioClass}${completo ? ' spec-row-complete' : ''}`;
         tr.dataset.reqId = req.id;
 
+        const reqObs = req.observacao || '';
         const tdReq = document.createElement('td');
         tdReq.className = 'spec-req-cell';
         tdReq.innerHTML = `
             <span class="spec-rank">#${row.rank}</span>
             <strong>RP${row.numeroOriginal}</strong>
             <span class="spec-desc"></span>
+            ${reqObs ? `<div class="spec-obs-preview"><i class="fas fa-comment-dots"></i> <span></span></div>` : ''}
             <small class="spec-meta">Imp. rel.: ${impPct}</small>`;
         tdReq.querySelector('.spec-desc').textContent = req.descricao;
+        if (reqObs) tdReq.querySelector('.spec-obs-preview span').textContent = reqObs;
 
         const tdUnidade = document.createElement('td');
         const inputUnidade = document.createElement('input');

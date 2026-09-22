@@ -109,6 +109,7 @@ class QFDDatabase {
         const novoRequisito = {
             id: this.generateUUID(),
             descricao: descricao.trim(),
+            observacao: '',
             importancia: 0,
             peso: 0,
             created: new Date().toISOString()
@@ -190,6 +191,7 @@ class QFDDatabase {
         const novoRequisito = {
             id: this.generateUUID(),
             descricao: descricao.trim(),
+            observacao: '',
             sentidoMelhoria: sentidoMelhoria, // 'up', 'down', 'none'
             dificuldadeTecnica: dificuldadeTecnica,
             importanciaAbsoluta: 0,
@@ -620,6 +622,7 @@ class QFDDatabase {
                     requisitoProjetoId: id,
                     unidadeMedida: '',
                     valorUnitario: '',
+                    observacao: '',
                     aspectosIndesejaveis: this.buildAspectosIndesejaveisFromRoof(id),
                     aspectosAutoGerado: true,
                     updated: new Date().toISOString()

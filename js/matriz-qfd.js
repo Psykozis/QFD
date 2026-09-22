@@ -82,7 +82,8 @@ function generateQFDMatrix() {
     // Cabeçalho: RP vertical + sentido
     html += '<tr><th class="row-header">Requisitos</th>';
     requisitosProjeto.forEach((rp, i) => {
-        const tip = `RP${i + 1}: ${rp.descricao}`;
+        const rpObs = rp.observacao ? `\n${rp.observacao}` : '';
+        const tip = `RP${i + 1}: ${rp.descricao}${rpObs}`;
         html += `<th class="req-number-cell" data-tooltip="${escapeHtml(tip)}">
             <span class="rp-id">RP${i + 1}</span>
             <span class="rp-sentido">${getSentidoSymbol(rp.sentidoMelhoria)}</span>
@@ -92,7 +93,8 @@ function generateQFDMatrix() {
     html += '</thead><tbody>';
 
     requisitosCliente.forEach((rc, i) => {
-        const rcTip = `RC${i + 1}: ${rc.descricao}`;
+        const rcObs = rc.observacao ? `\n${rc.observacao}` : '';
+        const rcTip = `RC${i + 1}: ${rc.descricao}${rcObs}`;
         html += `<tr><td class="row-header" data-tooltip="${escapeHtml(rcTip)}">${i + 1}. ${truncateText(rc.descricao, 30)}</td>`;
         requisitosProjeto.forEach((rp, j) => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
@@ -149,9 +151,11 @@ function openInfluenceModal(cell) {
     const cellValue = parseInt((cell.textContent || '').trim(), 10);
     const currentVal = Number.isFinite(cellValue) ? cellValue : (qfdDB.getMatrizQFD(clienteId, projetoId) || 0);
 
+    const rcObsHtml = rc?.observacao ? `<div class="req-obs-modal"><i class="fas fa-comment-dots"></i> ${escapeHtml(rc.observacao)}</div>` : '';
+    const rpObsHtml = rp?.observacao ? `<div class="req-obs-modal"><i class="fas fa-comment-dots"></i> ${escapeHtml(rp.observacao)}</div>` : '';
     info.innerHTML = `
-        <strong>RC${currentInfluenceI + 1}:</strong> ${escapeHtml(rc?.descricao || '')}<br>
-        <strong>RP${currentInfluenceJ + 1}:</strong> ${escapeHtml(rp?.descricao || '')}<br>
+        <strong>RC${currentInfluenceI + 1}:</strong> ${escapeHtml(rc?.descricao || '')}${rcObsHtml}
+        <strong>RP${currentInfluenceJ + 1}:</strong> ${escapeHtml(rp?.descricao || '')}${rpObsHtml}
         <small>Valor atual: <strong>${currentVal}</strong> (pressione <kbd>Enter</kbd> para salvar e ir para a próxima célula)</small>
     `;
 
