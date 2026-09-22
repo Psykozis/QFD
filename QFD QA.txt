@@ -2,19 +2,10 @@
 ==========================================================================================
 ver depois
 
-criar uma página no final, num arquivo novo chamado "especificacoes" tanto no js quanto no html
-
-quadro de especificaçoes dos requisitos do projeto
-
-nesse quadro deve conter 
-na primeira coluna os requisitos do projeto hierarquizados pelo QFD
-na segunda coluna unidade de mensuração a serem preenchidas
-na terceira coluna valor unitario a ser preenchido
-na quarta coluna aspectos indesejáveis a ser preenchido (pré preenchido com o telhado do qfd fortemente negativo)
-
-essa pagina deve ser totalmente integrada no projeto como um todo, deve também exportar e receber dados via json,
-deve ser exibida na relatório, e deve ser integrada em todas as páginas, inclusive o percentual de conclusão, 
-como todoas as páginas são
+quero também para cada requisito e cada especificação em suas páginas próprias, 
+que haja um campo onde seja possível adicionar um texto explicativo que 
+acompanhe elas, e apareça como um balão flutuante nas demais páginas 
+quando passado o mouse sobre eles.
 
 =====================================================================================================
 
