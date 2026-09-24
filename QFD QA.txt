@@ -1,16 +1,69 @@
+QFD - QA
+Site: https://marlonsigales.github.io/QFD/index.html
+Atualizado em 24/09/2026
+
+==========================================================================================
+ITENS DO QA ANTERIOR
+
+[RESOLVIDO] Texto explicativo em cada requisito e cada especificação, nas suas
+            páginas próprias, aparecendo como balão flutuante nas demais páginas.
+            - Requisitos de cliente e de projeto: campo no cadastro e na edição;
+              balão na comparação, correlação, matriz QFD e relatório.
+            - Especificações: coluna "Texto explicativo"; balão e texto no relatório.
+
+[RESOLVIDO] Menu da página de especificações não funcionava.
+            Os menus foram padronizados em todas as páginas (antes, o "Backup &
+            Export" não abria em algumas e o menu não funcionava em outras).
+
+[RESOLVIDO] Página de especificações sem os quadros a preencher.
+            A tabela tem unidade, valor, texto explicativo e aspectos indesejáveis.
+            Os aspectos agora vêm preenchidos pelas correlações -- do telhado
+            (antes ficavam vazios se o telhado fosse feito depois dos requisitos).
+
+[CONFIRMAR] Relatório quebrou após a adição das especificações.
+            No teste automático o relatório abre e gera a prévia sem erros,
+            incluindo a seção de especificações. Falta confirmar gerando o PDF.
+
+==========================================================================================
+ROTEIRO DE QA MANUAL (fazer no site publicado, depois do git push)
+
+Dica: antes de começar, exporte um backup (Backup & Export -> Exportar Backup).
+
+[ ] 1. Requisitos de cliente: cadastrar 3, um com texto explicativo com aspas
+       (ex.: tela de 6" ou mais). Tentar cadastrar um repetido -> deve recusar.
+[ ] 2. Comparação: passar o mouse nos requisitos -> balão com o texto explicativo,
+       sem aparecer <br>, <em> ou código.
+[ ] 3. Requisitos de projeto: cadastrar 3 com texto explicativo.
+[ ] 4. Correlação: marcar uma correlação -- entre dois requisitos; conferir balões.
+[ ] 5. Matriz QFD: preencher; conferir balões dos RC e RP (texto em linha separada).
+[ ] 6. Especificações: conferir se os aspectos indesejáveis vieram do --;
+       preencher unidade, valor e texto explicativo.
+[ ] 7. Relatório: gerar a prévia, passar o mouse nas linhas, GERAR O PDF.
+[ ] 8. Em todas as páginas: abrir e fechar os dois menus (Menu e Backup & Export).
+[ ] 9. Exportar CSV de requisitos e importar de volta -> deve ignorar os repetidos.
+[ ] 10. Exportar backup JSON, limpar os dados e importar -> projeto volta igual.
+
+Testes automáticos (35): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+
+==========================================================================================
+PRÓXIMOS PASSOS
+
+Publicar
+- Fazer git push (há commits locais ainda não enviados) e conferir o site.
+- Conferir em Settings -> Pages do repositório se o GitHub Pages está ativo.
+
+Melhorias sugeridas (detalhes no todo.md)
+- Diagrama de Mudge recarrega a página inteira a cada comparação salva.
+- Mostrar o texto explicativo da especificação também no balão da Matriz QFD.
+- Unificar o código dos balões, que ainda é diferente em cada página.
+- Limpar CSS duplicado e estilos injetados via JavaScript.
+- Rodapé ainda diz "© 2024".
+- Remover qfd_system_updated.zip (versão antiga) do repositório.
+- Uso das matrizes em celular.
+
+Baixa prioridade: acessibilidade.
+Não recomendado: IndexedDB.
 
 ==========================================================================================
 ver depois
-
-quero também para cada requisito e cada especificação em suas páginas próprias, 
-que haja um campo onde seja possível adicionar um texto explicativo que 
-acompanhe elas, e apareça como um balão flutuante nas demais páginas 
-quando passado o mouse sobre eles.
-
-=====================================================================================================
-
-O relatório quebrou após a adição das páginas de especificação, antes estava bom
-
-a página de especificacoes não está com os quadros solicitados a serem preenchidos
-os botões de menu também não funcionam nela
 

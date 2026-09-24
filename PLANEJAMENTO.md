@@ -1,5 +1,7 @@
 # Sistema QFD - Planejamento Técnico
 
+> **Documento histórico:** este é o planejamento original. A estrutura atual (página de Especificações, textos explicativos, escala 0/1/3/9 da matriz QFD, versionamento dos dados, testes) está no [README](README.md), e o acompanhamento no [todo.md](todo.md).
+
 ## Visão Geral
 Sistema web para criação de QFD (Quality Function Deployment) com banco de dados local usando LocalStorage.
 

@@ -1,8 +1,12 @@
 # Análise e Documentação do Código - Sistema QFD
 
+*Atualizado em setembro de 2026.*
+
 ## 📋 Visão Geral do Sistema
 
-O Sistema QFD (Quality Function Deployment) é uma aplicação web completa para gerenciar projetos de desenvolvimento de produtos usando a metodologia QFD. O sistema permite traduzir necessidades do cliente em características técnicas através de uma série de etapas estruturadas.
+O Sistema QFD (Quality Function Deployment) é uma aplicação web para gerenciar projetos de desenvolvimento de produtos usando a metodologia QFD. Ele traduz necessidades do cliente em características técnicas através de uma série de etapas estruturadas. Roda inteiramente no navegador, sem servidor nem build: HTML, CSS e JavaScript puro, com os dados no LocalStorage.
+
+Publicado em: https://marlonsigales.github.io/QFD/index.html
 
 ## 🏗️ Arquitetura do Sistema
 
@@ -10,208 +14,142 @@ O Sistema QFD (Quality Function Deployment) é uma aplicação web completa para
 
 ```
 QFD/
+├── index.html                   # Dashboard
 ├── js/
-│   ├── database.js          # Camada de persistência (LocalStorage)
-│   ├── dashboard.js         # Página principal com progresso
-│   ├── requisitos-cliente.js    # Gerenciamento de requisitos do cliente
-│   ├── requisitos-projeto.js    # Gerenciamento de requisitos técnicos
+│   ├── database.js              # Persistência (LocalStorage), migrações, importação/exportação
+│   ├── utils.js                 # Funções compartilhadas por todas as páginas
+│   ├── dashboard.js             # Página principal com progresso e backup automático
+│   ├── requisitos-cliente.js    # Requisitos do cliente
 │   ├── comparacao-cliente.js    # Diagrama de Mudge (hierarquização)
+│   ├── requisitos-projeto.js    # Requisitos técnicos
 │   ├── correlacao-projeto.js    # Telhado QFD (correlações)
 │   ├── matriz-qfd.js            # Matriz principal QFD
-│   └── relatorio.js             # Geração de relatórios
-├── pages/                  # Páginas HTML
-├── css/                    # Estilos
-└── index.html              # Página inicial
+│   ├── especificacoes.js        # Quadro de especificações
+│   └── relatorio.js             # Relatório e PDF
+├── pages/                       # Uma página HTML por etapa
+├── css/style.css                # Estilos
+└── tests/                       # Testes automatizados
 ```
+
+Toda página carrega `database.js` → `utils.js` → script da página. Cada script de página só vê as próprias funções mais as globais desses dois arquivos.
 
 ## 📚 Explicação dos Módulos Principais
 
 ### 1. `database.js` - Camada de Persistência
 
-**Responsabilidade:** Gerencia toda a persistência de dados usando LocalStorage do navegador.
+**Responsabilidade:** toda a leitura e gravação de dados, através da instância global `qfdDB`.
 
-**Estrutura de Dados:**
-- `requisitosCliente`: Array de requisitos do cliente
-- `requisitosProjeto`: Array de requisitos técnicos
-- `comparacaoCliente`: Comparações pareadas (Diagrama de Mudge)
-- `correlacaoProjeto`: Correlações entre requisitos técnicos
-- `matrizQFD`: Relações cliente ↔ projeto
-- `metadata`: Informações de criação/modificação
+**Estrutura de Dados** (chave `qfd_data`; detalhes no [README](README.md#estrutura-dos-dados)):
+- `requisitosCliente`, `requisitosProjeto`: requisitos, com `observacao` (texto explicativo)
+- `comparacaoCliente`: comparações pareadas (Diagrama de Mudge)
+- `correlacaoProjeto`: correlações entre requisitos técnicos
+- `matrizQFD`: relações cliente ↔ projeto
+- `especificacoesProjeto`: unidade, valor, texto explicativo e aspectos indesejáveis por requisito de projeto
+- `metadata`: criação, modificação e `schemaVersion`
 
 **Funcionalidades Principais:**
-- CRUD completo para todos os tipos de dados
-- Cálculo automático de importância e pesos
-- Validação de integridade dos dados
-- Exportação/importação JSON e CSV
-- Sistema de backup automático
+- CRUD para todos os tipos de dados
+- Cálculo de importância e pesos
+- **Versionamento:** `SCHEMA_VERSION` + `SCHEMA_MIGRATIONS` atualizam dados antigos ao carregar ou importar
+- **Recuperação de erros:** dados ilegíveis são copiados para `qfd_data_corrompido` e restaurados do backup automático; armazenamento cheio gera aviso ao usuário
+- Detecção de requisitos duplicados (`findRequisitoDuplicado`)
+- Exportação/importação JSON (com validação) e CSV (`importRequisitosCSV`)
+- Validação de integridade (`validateData`)
 
-### 2. `dashboard.js` - Painel de Controle
+### 2. `utils.js` - Funções Compartilhadas
 
-**Responsabilidade:** Exibe o progresso geral do projeto em tempo real.
+**Responsabilidade:** código usado por várias páginas, que antes estava copiado em até 6 arquivos.
+- Menu de navegação: ativado automaticamente em todas as páginas
+- `escapeHtml`, `escapeAttr` (para atributos como `data-tooltip`), `truncateText`, `formatDate`
+- `getSentidoSymbol`, `getSentidoLabel`
+- `showAlert`, `downloadFile`, `autoResizeTextarea`
+- `parseCSV`, `csvCell`
 
-**Funcionalidades:**
-- Cards de progresso para cada etapa
-- Atualização automática a cada 5 segundos
-- Sistema de backup automático
-- Validação de dados
-- Navegação entre páginas
+### 3. `dashboard.js` - Painel de Controle
 
-### 3. `requisitos-cliente.js` - Requisitos do Cliente
+**Responsabilidade:** exibe o progresso geral do projeto.
+- Cards de progresso para cada etapa, atualizados a cada 5 segundos
+- Backup automático em `qfd_backup` a cada salvamento, e restauração
 
-**Responsabilidade:** Gerencia o cadastro de necessidades do cliente.
+### 4. `requisitos-cliente.js` - Requisitos do Cliente
 
-**Funcionalidades:**
-- Cadastro de novos requisitos
-- Edição inline
-- Exclusão individual ou em massa
+- Cadastro, edição inline e exclusão (individual ou em massa)
+- Texto explicativo opcional
+- Validações: 10 a 300 caracteres, sem duplicados
 - Exportação CSV
-- Validação de dados (mínimo 10 caracteres)
 
-### 4. `requisitos-projeto.js` - Requisitos Técnicos
+### 5. `requisitos-projeto.js` - Requisitos Técnicos
 
-**Responsabilidade:** Gerencia características técnicas do projeto.
-
-**Características Especiais:**
 - Sentido de melhoria: Crescente (↑), Decrescente (↓), Nominal (*)
-- Dificuldade técnica: Escala de 1 a 5
-- Cálculo automático de importância baseado na matriz QFD
+- Dificuldade técnica: escala de 1 a 5
+- Texto explicativo e as mesmas validações dos requisitos de cliente
 
-### 5. `comparacao-cliente.js` - Diagrama de Mudge
+### 6. `comparacao-cliente.js` - Diagrama de Mudge
 
-**Responsabilidade:** Implementa comparações pareadas para hierarquizar requisitos.
+- Compara requisitos dois a dois: 1 (pouco), 3 (médio), 5 (muito mais importante)
+- Calcula a pontuação de cada requisito e normaliza os pesos (somam 1)
+- Balões com a descrição e o texto explicativo de cada requisito
 
-**Algoritmo:**
-- Compara requisitos dois a dois
-- Valores: 1 (pouco importante), 3 (moderado), 5 (muito importante)
-- Calcula pontuação total de cada requisito
-- Normaliza pesos (0 a 1)
-
-### 6. `correlacao-projeto.js` - Telhado QFD
-
-**Responsabilidade:** Gerencia correlações entre requisitos técnicos.
+### 7. `correlacao-projeto.js` - Telhado QFD
 
 **Tipos de Correlação:**
-- `++`: Sinergia muito forte
-- `+`: Sinergia moderada
-- `0`: Independentes
-- `-`: Competem entre si
-- `--`: Conflitantes
+- `++`: sinergia muito forte
+- `+`: sinergia moderada
+- `0`: independentes (não é gravado)
+- `-`: competem entre si
+- `--`: conflitantes (alimentam os aspectos indesejáveis das especificações)
 
-**Funcionalidades Extras:**
-- Análise de conflitos
-- Análise de sinergias
-- Exportação de análises
+**Extras:** análise de conflitos e sinergias, exportação.
 
-### 7. `matriz-qfd.js` - Casa da Qualidade
+### 8. `matriz-qfd.js` - Casa da Qualidade
 
-**Responsabilidade:** Matriz principal que relaciona cliente ↔ projeto.
+**Valores de Influência:** 0 (nenhuma, não é gravado), 1 (fraca), 3 (moderada), 9 (forte).
 
-**Valores de Influência:**
-- 0: Sem influência
-- 1: Influência fraca
-- 3: Influência moderada
-- 9: Influência forte
+**Cálculos:**
+- Importância absoluta de projeto = Σ (influência × peso do requisito de cliente)
+- Peso relativo normalizado e ranking
 
-**Cálculos Automáticos:**
-- Importância absoluta de projeto = Σ (influência × importância cliente)
-- Ranking de requisitos de projeto
-- Peso relativo normalizado
+### 9. `especificacoes.js` - Quadro de Especificações
 
-### 8. `relatorio.js` - Geração de Relatórios
+- Requisitos de projeto na ordem do QFD, divididos em terços
+- Unidade, valor unitário, texto explicativo e aspectos indesejáveis, salvos ao sair de cada campo
+- Aspectos indesejáveis recalculados a partir das correlações `--`, exceto os editados manualmente (`aspectosAutoGerado`)
 
-**Responsabilidade:** Gera documentação completa do projeto.
+### 10. `relatorio.js` - Relatório
 
-**Seções do Relatório:**
-- Resumo do projeto
-- Requisitos de cliente com pesos
-- Requisitos de projeto
-- Telhado de correlações
-- Matriz QFD completa
+- Seções configuráveis: dicionário, resumo, requisitos, telhado, correlações, matriz, especificações, comparações, ranking, análises, anexos
+- Prévia com balões (descrição e textos explicativos) e geração de PDF com jsPDF + html2canvas
 
-## 🔍 Pontos de Melhoria Identificados
+## 🧪 Testes
 
-### 1. **Tratamento de Erros**
-   - **Problema:** Algumas funções não tratam erros adequadamente
-   - **Sugestão:** Implementar try-catch consistente e mensagens de erro mais descritivas
-   - **Impacto:** Melhor experiência do usuário e debugging mais fácil
+`tests/testes.js` tem 35 testes (utilitários, banco de dados, migrações, erros, CSV e as 8 páginas). Rodar com `tests\rodar-testes.ps1` (Chrome/Edge headless). Ver o [README](README.md#testes).
 
-### 2. **Validação de Dados**
-   - **Problema:** Validação mínima em alguns pontos
-   - **Sugestão:** 
-     - Validar formato de UUID
-     - Validar valores de influência (0, 1, 3, 9)
-     - Validar valores de correlação ('++', '+', '0', '-', '--')
-   - **Impacto:** Previne dados inválidos no banco
+## 🔍 Pontos de Melhoria
 
-### 3. **Performance**
-   - **Problema:** `location.reload()` usado frequentemente
-   - **Sugestão:** Atualizar apenas elementos necessários via DOM
-   - **Impacto:** Interface mais responsiva
-
-### 4. **Código Duplicado**
-   - **Problema:** Funções similares repetidas em vários arquivos
-   - **Sugestão:** Criar módulo de utilitários compartilhado
-   - **Exemplos:** `escapeHtml()`, `formatDate()`, `showAlert()`, `downloadFile()`
-   - **Impacto:** Código mais limpo e manutenível
-
-### 5. **Comentários na Lógica de Comparação**
-   - **Problema:** Lógica de `getComparacaoCliente()` tem comentários confusos
-   - **Sugestão:** Refatorar para tornar mais clara a lógica de quem venceu
-   - **Impacto:** Código mais legível
-
-### 6. **LocalStorage - Limitações**
-   - **Problema:** Limite de ~5-10MB no LocalStorage
-   - **Sugestão:** 
-     - Adicionar verificação de espaço disponível
-     - Implementar compressão para dados grandes
-     - Considerar IndexedDB para projetos maiores
-   - **Impacto:** Suporta projetos maiores
-
-### 7. **Acessibilidade**
-   - **Problema:** Falta de atributos ARIA e navegação por teclado
-   - **Sugestão:** 
-     - Adicionar `aria-label` em botões
-     - Suporte completo a navegação por teclado
-     - Contraste de cores adequado
-   - **Impacto:** Sistema acessível para todos
-
-### 8. **Testes**
-   - **Problema:** Não há testes automatizados
-   - **Sugestão:** 
-     - Implementar testes unitários para funções críticas
-     - Testes de integração para fluxos principais
-   - **Impacto:** Maior confiabilidade e facilita refatoração
-
-### 9. **Documentação de API**
-   - **Problema:** Falta documentação JSDoc completa
-   - **Sugestão:** Adicionar JSDoc em todas as funções públicas
-   - **Impacto:** Facilita manutenção e uso da API
-
-### 10. **Segurança**
-   - **Problema:** `escapeHtml()` básico pode não ser suficiente
-   - **Sugestão:** 
-     - Usar biblioteca de sanitização (DOMPurify)
-     - Validar inputs do usuário mais rigorosamente
-   - **Impacto:** Previne XSS e outros ataques
-
-### 11. **Responsividade**
-   - **Problema:** Algumas páginas podem não funcionar bem em mobile
-   - **Sugestão:** Testar e melhorar layouts para telas pequenas
-   - **Impacto:** Melhor experiência mobile
-
-### 12. **Versionamento de Dados**
-   - **Problema:** Migração de dados não implementada
-   - **Sugestão:** Sistema de versionamento para atualizar estruturas antigas
-   - **Impacto:** Compatibilidade com versões anteriores
+| # | Item | Status |
+|---|------|--------|
+| 1 | Tratamento de erros | ✅ Feito: dados corrompidos, armazenamento cheio, importações inválidas |
+| 2 | Validação de dados | ✅ Feito: duplicados, limites de tamanho, backups e CSV validados |
+| 3 | Performance: `location.reload()` a cada comparação salva no Diagrama de Mudge e após importações | ⏳ Pendente: a página inteira recarrega a cada comparação |
+| 4 | Código duplicado | ✅ Feito: `utils.js`. Restam as funções de balão (`showTooltip`/`hideTooltip`), que ainda diferem por página |
+| 5 | Lógica de comparação confusa em `getComparacaoCliente()` | ⏳ Pendente |
+| 6 | Limite do LocalStorage (~5 MB) | ✅ Aviso de armazenamento cheio. IndexedDB **não recomendado**: um QFD típico ocupa poucas dezenas de KB |
+| 7 | Acessibilidade (ARIA, teclado) | ⏸️ Baixa prioridade para o uso atual |
+| 8 | Testes automatizados | ✅ Feito: `tests/` |
+| 9 | Documentação JSDoc | 🔶 Parcial: funções novas documentadas |
+| 10 | Segurança (XSS) | ✅ Textos do usuário escapados em HTML e atributos; testado com aspas e `<tag>` |
+| 11 | Responsividade | ⏳ Pendente: matrizes limitadas em celular |
+| 12 | Versionamento de dados | ✅ Feito: `schemaVersion` + migrações |
+| 13 | CSS duplicado (`.nav-dropdown`, `.dropdown-menu`, `.qfd-tooltip` definidos duas vezes) e estilos injetados via JS | ⏳ Pendente |
 
 ## ✅ Pontos Fortes do Código
 
-1. **Organização Clara:** Código bem estruturado em módulos
-2. **Comentários Explicativos:** Agora com documentação completa em português
-3. **Funcionalidade Completa:** Implementa todo o fluxo QFD
-4. **Interface Intuitiva:** UI bem pensada e funcional
-5. **Persistência Local:** Funciona offline sem servidor
-6. **Exportação/Importação:** Suporta múltiplos formatos
+1. **Organização clara:** um módulo por etapa, com persistência e utilitários compartilhados
+2. **Comentários em português**
+3. **Fluxo QFD completo**, do cliente às especificações e ao relatório
+4. **Funciona offline**, sem servidor
+5. **Dados protegidos:** versionamento, backup automático e recuperação de erros
+6. **Testes automatizados** cobrindo lógica e páginas
 
 ## 📊 Fluxo de Dados
 
@@ -226,26 +164,11 @@ QFD/
    ↓
 5. Matriz QFD (relaciona cliente ↔ projeto)
    ↓ (calcula importância de projeto)
-6. Relatório PDF
+6. Especificações (ordem do QFD + conflitos -- do telhado)
+   ↓
+7. Relatório PDF
 ```
 
-## 🎯 Recomendações Prioritárias
+## 🎯 Próximas Recomendações
 
-1. **Alta Prioridade:**
-   - Criar módulo de utilitários compartilhado
-   - Melhorar tratamento de erros
-   - Adicionar validações mais rigorosas
-
-2. **Média Prioridade:**
-   - Otimizar performance (evitar reloads)
-   - Melhorar acessibilidade
-   - Adicionar testes básicos
-
-3. **Baixa Prioridade:**
-   - Refatorar lógica de comparação
-   - Implementar versionamento de dados
-   - Considerar IndexedDB para projetos grandes
-
-## 📝 Notas Finais
-
-O código está bem estruturado e funcional. A documentação em português foi adicionada para facilitar a manutenção e compreensão. As melhorias sugeridas são incrementais e podem ser implementadas gradualmente sem quebrar funcionalidades existentes.
+Ver [todo.md](todo.md) e [QFD QA.txt](QFD%20QA.txt).
