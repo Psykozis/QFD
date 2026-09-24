@@ -185,6 +185,54 @@ function getAlertIcon(type) {
     return icons[type] || 'info-circle';
 }
 
+// ============================================================================
+// CSV
+// ============================================================================
+
+/** Formata um valor como célula CSV entre aspas (aspas internas duplicadas) */
+function csvCell(value) {
+    return `"${String(value == null ? '' : value).replace(/"/g, '""')}"`;
+}
+
+/**
+ * Lê um texto CSV e devolve as linhas como arrays de células. Suporta campos
+ * entre aspas (com vírgulas, quebras de linha e "" dentro), fim de linha
+ * Windows/Unix e separador ',' ou ';' (detectado pela primeira linha).
+ * Linhas totalmente vazias são descartadas.
+ *
+ * @param {string} text - Conteúdo do arquivo
+ * @returns {string[][]}
+ */
+function parseCSV(text) {
+    text = String(text || '').replace(/^﻿/, ''); // remove BOM do Excel
+    const firstLine = text.split(/\r?\n/, 1)[0];
+    const sep = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+
+    const rows = [];
+    let row = [], cell = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQuotes) {
+            if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+            else if (c === '"') inQuotes = false;
+            else cell += c;
+        } else if (c === '"') {
+            inQuotes = true;
+        } else if (c === sep) {
+            row.push(cell); cell = '';
+        } else if (c === '\n' || c === '\r') {
+            if (c === '\r' && text[i + 1] === '\n') i++;
+            row.push(cell); rows.push(row);
+            row = []; cell = '';
+        } else {
+            cell += c;
+        }
+    }
+    row.push(cell); rows.push(row);
+
+    return rows.filter(r => r.some(c => c.trim() !== ''));
+}
+
 /** Faz o download de um conteúdo de texto como arquivo */
 function downloadFile(content, filename, mimeType) {
     const blob = new Blob([content], { type: mimeType });

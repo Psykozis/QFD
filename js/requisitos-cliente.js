@@ -86,6 +86,12 @@ function handleSubmitRequisito(event) {
         showAlert('A descrição deve ter pelo menos 10 caracteres.', 'warning');
         return;
     }
+
+    const duplicado = qfdDB.findRequisitoDuplicado('cliente', descricao);
+    if (duplicado) {
+        showAlert(`Já existe um requisito com esta descrição: "${escapeHtml(duplicado.descricao)}".`, 'warning');
+        return;
+    }
     
     try {
         const novoRequisito = qfdDB.addRequisitoCliente(descricao, observacao);
@@ -164,11 +170,11 @@ function loadRequisitos() {
             <div class="requisito-edit-form" id="edit-form-${requisito.id}" style="display: none;">
                 <div class="form-group">
                     <label>Descrição:</label>
-                    <textarea class="form-control" id="edit-desc-${requisito.id}" rows="3">${escapeHtml(requisito.descricao)}</textarea>
+                    <textarea class="form-control" id="edit-desc-${requisito.id}" rows="3" maxlength="300">${escapeHtml(requisito.descricao)}</textarea>
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-comment-dots"></i> Texto explicativo (aparece como balão ao passar o mouse nas comparações):</label>
-                    <textarea class="form-control" id="edit-obs-${requisito.id}" rows="2" placeholder="Ex.: Este requisito refere-se à facilidade de uso para idosos acima de 65 anos...">${escapeHtml(requisito.observacao || '')}</textarea>
+                    <textarea class="form-control" id="edit-obs-${requisito.id}" rows="2" maxlength="1000" placeholder="Ex.: Este requisito refere-se à facilidade de uso para idosos acima de 65 anos...">${escapeHtml(requisito.observacao || '')}</textarea>
                 </div>
                 <div class="edit-actions">
                     <button class="btn btn-sm btn-success" onclick="saveEdit('${requisito.id}')">
@@ -226,6 +232,12 @@ function saveEdit(id) {
     
     if (novaDescricao.length < 10) {
         showAlert('A descrição deve ter pelo menos 10 caracteres.', 'warning');
+        return;
+    }
+
+    const duplicado = qfdDB.findRequisitoDuplicado('cliente', novaDescricao, id);
+    if (duplicado) {
+        showAlert(`Já existe um requisito com esta descrição: "${escapeHtml(duplicado.descricao)}".`, 'warning');
         return;
     }
     
@@ -355,7 +367,7 @@ function generateCSV(requisitos) {
     const headers = ['Número', 'Descrição', 'Importância', 'Peso (%)', 'Data de Criação'];
     const rows = requisitos.map((req, index) => [
         index + 1,
-        `"${req.descricao.replace(/"/g, '""')}"`,
+        csvCell(req.descricao),
         req.importancia.toFixed(2),
         (req.peso * 100).toFixed(2),
         formatDate(req.created)

@@ -146,7 +146,21 @@ class QFDDatabase {
      */
     saveData(data) {
         data.metadata.lastModified = new Date().toISOString();
-        localStorage.setItem(this.storageKey, JSON.stringify(data));
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(data));
+        } catch (error) {
+            if (this.isQuotaError(error)) {
+                alert('O espaço de armazenamento do navegador está cheio e a última alteração NÃO foi salva.\n\n' +
+                      'Exporte um backup (Backup & Export → Exportar Backup) e libere espaço removendo dados de outros sites.');
+            }
+            throw error;
+        }
+    }
+
+    /** Indica se o erro é de armazenamento cheio (o nome varia entre navegadores) */
+    isQuotaError(error) {
+        return error instanceof DOMException &&
+            (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED' || error.code === 22);
     }
 
     /**
@@ -159,11 +173,71 @@ class QFDDatabase {
         const raw = localStorage.getItem(this.storageKey);
         if (!raw) return null;
 
-        const data = JSON.parse(raw);
+        let data;
+        try {
+            data = JSON.parse(raw);
+            if (!data || typeof data !== 'object' || !data.metadata) throw new Error('estrutura inválida');
+        } catch (error) {
+            return this.recoverCorruptedData(raw, error);
+        }
         if (this.migrateData(data)) {
             this.saveData(data);
         }
         return data;
+    }
+
+    /**
+     * Trata dados ilegíveis no LocalStorage: guarda uma cópia do conteúdo
+     * original em 'qfd_data_corrompido', restaura o backup automático (se
+     * houver um válido) ou recomeça um projeto vazio, e avisa o usuário.
+     *
+     * @param {string} raw - Conteúdo original ilegível
+     * @param {Error} error - Erro encontrado ao ler
+     * @returns {Object} Dados recuperados
+     */
+    recoverCorruptedData(raw, error) {
+        console.error('Dados do projeto corrompidos:', error);
+        try {
+            localStorage.setItem('qfd_data_corrompido', raw);
+        } catch (e) { /* sem espaço para a cópia; segue com a recuperação */ }
+
+        let recovered = null;
+        try {
+            const backup = JSON.parse(localStorage.getItem('qfd_backup'));
+            if (backup && Array.isArray(backup.requisitosCliente) && Array.isArray(backup.requisitosProjeto)) {
+                delete backup.backup;
+                if (!backup.metadata) backup.metadata = { created: new Date().toISOString() };
+                this.migrateData(backup);
+                recovered = backup;
+            }
+        } catch (e) { /* backup ausente ou também corrompido */ }
+
+        localStorage.removeItem(this.storageKey);
+        if (recovered) {
+            this.saveData(recovered);
+            alert('Os dados do projeto estavam corrompidos e foram restaurados a partir do último backup automático.\n\n' +
+                  'Uma cópia do conteúdo original foi guardada no navegador como "qfd_data_corrompido".');
+        } else {
+            this.initializeDatabase();
+            alert('Os dados do projeto estavam corrompidos e não havia backup válido; um projeto vazio foi iniciado.\n\n' +
+                  'Se você tiver um arquivo de backup (.json), importe-o em Backup & Export → Importar Backup.');
+        }
+        return JSON.parse(localStorage.getItem(this.storageKey));
+    }
+
+    /**
+     * Procura um requisito com a mesma descrição (ignora maiúsculas e espaços extras)
+     *
+     * @param {'cliente'|'projeto'} tipo - Tipo do requisito
+     * @param {string} descricao - Descrição a verificar
+     * @param {string} [ignoreId] - ID a ignorar (o próprio requisito, ao editar)
+     * @returns {Object|null} O requisito duplicado, se existir
+     */
+    findRequisitoDuplicado(tipo, descricao, ignoreId = null) {
+        const normalizar = texto => String(texto || '').trim().replace(/\s+/g, ' ').toLowerCase();
+        const alvo = normalizar(descricao);
+        const lista = tipo === 'cliente' ? this.getRequisitosCliente() : this.getRequisitosProjeto();
+        return lista.find(req => req.id !== ignoreId && normalizar(req.descricao) === alvo) || null;
     }
 
     /**
@@ -738,6 +812,9 @@ class QFDDatabase {
         if (typeof this.calculateImportanciaProjeto === 'function') {
             this.calculateImportanciaProjeto();
         }
+        // As correlações costumam ser definidas depois dos requisitos: recalcula
+        // os aspectos indesejáveis que o usuário não editou manualmente
+        this.refreshAspectosIndesejaveisFromRoof(true);
         const requisitos = this.getRequisitosProjeto();
         const especificacoes = this.getEspecificacoesProjeto();
         const ordenados = [...requisitos].sort(
@@ -1054,30 +1131,83 @@ function importCSV(event, type) {
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        const text = e.target.result;
-        const lines = text.split('\n');
-        let count = 0;
-
-        lines.forEach(line => {
-            const content = line.trim();
-            if (content && !content.startsWith('id,') && !content.startsWith('descricao')) {
-                // Tenta extrair a descrição (assume que é a primeira coluna ou a linha toda)
-                const parts = content.split(',');
-                const descricao = parts.length > 1 ? parts[1].replace(/"/g, '') : parts[0].replace(/"/g, '');
-                
-                if (type === 'cliente') {
-                    qfdDB.addRequisitoCliente(descricao);
-                } else {
-                    qfdDB.addRequisitoProjeto(descricao);
-                }
-                count++;
-            }
-        });
-
-        alert(`${count} requisitos importados com sucesso!`);
-        location.reload();
+        try {
+            const result = importRequisitosCSV(e.target.result, type);
+            let msg = `${result.importados} requisito(s) importado(s).`;
+            if (result.duplicados) msg += `\n${result.duplicados} ignorado(s) por já existirem.`;
+            if (result.vazios) msg += `\n${result.vazios} linha(s) sem descrição ignorada(s).`;
+            alert(msg);
+            if (result.importados) location.reload();
+        } catch (error) {
+            console.error('Erro ao importar CSV:', error);
+            alert('Erro ao importar CSV: ' + error.message);
+        }
+        event.target.value = '';
     };
+    reader.onerror = () => alert('Não foi possível ler o arquivo.');
     reader.readAsText(file);
+}
+
+/**
+ * Importa requisitos de um texto CSV. Aceita os CSVs exportados pelo próprio
+ * sistema, planilhas com cabeçalho (coluna "descrição"/"descricao") e listas
+ * simples com uma descrição por linha. Separador vírgula ou ponto e vírgula.
+ * Ignora linhas vazias e descrições já cadastradas.
+ *
+ * @param {string} text - Conteúdo do arquivo
+ * @param {'cliente'|'projeto'} type - Tipo de requisito
+ * @returns {{importados: number, duplicados: number, vazios: number}}
+ */
+function importRequisitosCSV(text, type) {
+    const rows = parseCSV(text);
+    if (!rows.length) throw new Error('o arquivo está vazio.');
+
+    const norm = cell => String(cell || '').trim().toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const header = rows[0].map(norm);
+    const hasHeader = header.some(h => h.startsWith('descri'));
+
+    let colDesc = 0, colSentido = -1, colDific = -1;
+    if (hasHeader) {
+        colDesc = header.findIndex(h => h.startsWith('descri'));
+        colSentido = header.findIndex(h => h.startsWith('sentido'));
+        colDific = header.findIndex(h => h.startsWith('dificuldade'));
+        rows.shift();
+    }
+
+    const sentidos = { up: 'up', down: 'down', none: 'none', crescente: 'up', decrescente: 'down', nominal: 'none' };
+    const dificuldades = { 'muito facil': 1, 'facil': 2, 'moderada': 3, 'dificil': 4, 'muito dificil': 5 };
+    const vistos = new Set();
+    const result = { importados: 0, duplicados: 0, vazios: 0 };
+
+    rows.forEach(row => {
+        // Sem cabeçalho: 1 coluna = descrição; com mais colunas, se a 1ª
+        // parece um ID ou número, a descrição é a 2ª
+        let idx = colDesc;
+        if (!hasHeader) {
+            idx = row.length > 1 && /^([0-9a-f-]{36}|\d+)$/i.test(row[0].trim()) ? 1 : 0;
+        }
+        const descricao = String(row[idx] || '').trim().replace(/\s+/g, ' ');
+        if (!descricao) { result.vazios++; return; }
+
+        const chave = descricao.toLowerCase();
+        if (vistos.has(chave) || qfdDB.findRequisitoDuplicado(type, descricao)) {
+            result.duplicados++;
+            return;
+        }
+        vistos.add(chave);
+
+        if (type === 'cliente') {
+            qfdDB.addRequisitoCliente(descricao);
+        } else {
+            const sentido = sentidos[norm(row[colSentido])] || 'none';
+            const dificuldade = parseInt(row[colDific], 10) || dificuldades[norm(row[colDific])];
+            qfdDB.addRequisitoProjeto(descricao, sentido, dificuldade >= 1 && dificuldade <= 5 ? dificuldade : 1);
+        }
+        result.importados++;
+    });
+
+    return result;
 }
 
 /**
@@ -1093,13 +1223,13 @@ function exportPageData(type) {
     if (type === 'cliente') {
         exportContent = "id,descricao,importancia,peso\n";
         data.requisitosCliente.forEach(req => {
-            exportContent += `${req.id},"${req.descricao}",${req.importancia},${req.peso}\n`;
+            exportContent += `${req.id},${csvCell(req.descricao)},${req.importancia},${req.peso}\n`;
         });
         fileName = 'requisitos-cliente.csv';
     } else if (type === 'projeto') {
         exportContent = "id,descricao,sentido,dificuldade\n";
         data.requisitosProjeto.forEach(req => {
-            exportContent += `${req.id},"${req.descricao}",${req.sentidoMelhoria},${req.dificuldadeTecnica}\n`;
+            exportContent += `${req.id},${csvCell(req.descricao)},${req.sentidoMelhoria},${req.dificuldadeTecnica}\n`;
         });
         fileName = 'requisitos-projeto.csv';
     } else if (type === 'matriz') {

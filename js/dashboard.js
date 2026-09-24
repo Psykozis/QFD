@@ -372,7 +372,12 @@ function createAutoBackup() {
         }
     };
     
-    localStorage.setItem('qfd_backup', JSON.stringify(backup));
+    try {
+        localStorage.setItem('qfd_backup', JSON.stringify(backup));
+    } catch (error) {
+        // Sem espaço para a cópia: os dados principais já foram salvos
+        console.warn('Backup automático não salvo:', error);
+    }
 }
 
 /**

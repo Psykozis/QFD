@@ -94,6 +94,7 @@ function renderTable(lista) {
         const tdUnidade = document.createElement('td');
         const inputUnidade = document.createElement('input');
         inputUnidade.type = 'text';
+        inputUnidade.maxLength = 50;
         inputUnidade.className = 'form-control spec-input';
         inputUnidade.dataset.field = 'unidadeMedida';
         inputUnidade.placeholder = 'Ex.: mm, kg, %';
@@ -105,6 +106,7 @@ function renderTable(lista) {
         const tdValor = document.createElement('td');
         const inputValor = document.createElement('input');
         inputValor.type = 'text';
+        inputValor.maxLength = 50;
         inputValor.className = 'form-control spec-input';
         inputValor.dataset.field = 'valorUnitario';
         inputValor.placeholder = 'Ex.: 10,5';
@@ -118,6 +120,7 @@ function renderTable(lista) {
         textareaObs.className = 'form-control spec-textarea';
         textareaObs.dataset.field = 'observacao';
         textareaObs.rows = 3;
+        textareaObs.maxLength = 1000;
         textareaObs.placeholder = 'Ex.: Medido conforme norma ABNT, a 25 °C...';
         textareaObs.title = 'Aparece como balão flutuante no relatório ao passar o mouse sobre esta especificação';
         textareaObs.value = row.observacao || '';
@@ -130,6 +133,7 @@ function renderTable(lista) {
         textarea.className = 'form-control spec-textarea';
         textarea.dataset.field = 'aspectosIndesejaveis';
         textarea.rows = 3;
+        textarea.maxLength = 2000;
         textarea.placeholder = 'Conflitos do telhado QFD (--) aparecem aqui';
         textarea.value = row.aspectosIndesejaveis || '';
         textarea.addEventListener('change', () => saveField(req.id, 'aspectosIndesejaveis', textarea.value));
