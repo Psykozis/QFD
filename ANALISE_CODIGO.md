@@ -25,6 +25,7 @@ QFD/
 │   ├── correlacao-projeto.js    # Telhado QFD (correlações)
 │   ├── matriz-qfd.js            # Matriz principal QFD
 │   ├── especificacoes.js        # Quadro de especificações
+│   ├── avaliacao-competitiva.js # Nosso produto x concorrentes
 │   └── relatorio.js             # Relatório e PDF
 ├── pages/                       # Uma página HTML por etapa
 ├── css/style.css                # Estilos
@@ -45,6 +46,7 @@ Toda página carrega `database.js` → `utils.js` → script da página. Cada sc
 - `correlacaoProjeto`: correlações entre requisitos técnicos
 - `matrizQFD`: relações cliente ↔ projeto
 - `especificacoesProjeto`: unidade, valor, texto explicativo e aspectos indesejáveis por requisito de projeto
+- `avaliacaoCompetitiva`: produtos (nosso e concorrentes), notas dos clientes, metas e valores técnicos
 - `metadata`: criação, modificação e `schemaVersion`
 
 **Funcionalidades Principais:**
@@ -115,14 +117,22 @@ Toda página carrega `database.js` → `utils.js` → script da página. Cada sc
 - Unidade, valor unitário, texto explicativo e aspectos indesejáveis, salvos ao sair de cada campo
 - Aspectos indesejáveis recalculados a partir das correlações `--`, exceto os editados manualmente (`aspectosAutoGerado`)
 
-### 10. `relatorio.js` - Relatório
+### 10. `avaliacao-competitiva.js` - Avaliação Competitiva
+
+- Nosso produto × até 6 concorrentes; cálculos em `qfdDB.getAnaliseCompetitiva()`
+- Notas dos clientes (1 a 5), meta, índice de melhoria, prioridade e situação frente ao melhor concorrente
+- Valores técnicos por produto; melhor concorrente pelo sentido de melhoria, comparado com a meta das especificações
+- Detecção de inconsistências (notas dos clientes × valores técnicos dos requisitos com relação forte)
+- Gráfico SVG (`buildGraficoCompetitivo` em `utils.js`), usado também no relatório
+
+### 11. `relatorio.js` - Relatório
 
 - Seções configuráveis: dicionário, resumo, requisitos, telhado, correlações, matriz, especificações, comparações, ranking, análises, anexos
 - Prévia com balões (descrição e textos explicativos) e geração de PDF com jsPDF + html2canvas
 
 ## 🧪 Testes
 
-`tests/testes.js` tem 35 testes (utilitários, banco de dados, migrações, erros, CSV e as 8 páginas). Rodar com `tests\rodar-testes.ps1` (Chrome/Edge headless). Ver o [README](README.md#testes).
+`tests/testes.js` tem 46 testes (utilitários, banco de dados, migrações, erros, CSV, avaliação competitiva e as 9 páginas). Rodar com `tests\rodar-testes.ps1` (Chrome/Edge headless). Ver o [README](README.md#testes).
 
 ## 🔍 Pontos de Melhoria
 
@@ -166,7 +176,9 @@ Toda página carrega `database.js` → `utils.js` → script da página. Cada sc
    ↓ (calcula importância de projeto)
 6. Especificações (ordem do QFD + conflitos -- do telhado)
    ↓
-7. Relatório PDF
+7. Avaliação Competitiva (notas dos clientes e valores técnicos x concorrentes)
+   ↓
+8. Relatório PDF
 ```
 
 ## 🎯 Próximas Recomendações

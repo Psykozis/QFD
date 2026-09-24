@@ -2567,3 +2567,265 @@ body {
         color: #333;
     }
 }
+
+/* ========================================================================
+   AVALIAÇÃO COMPETITIVA (nosso produto x concorrentes)
+   ======================================================================== */
+
+.competitiva-produtos {
+    padding: 0 1rem 1rem;
+}
+
+.produtos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.produto-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.produto-item .form-control {
+    flex: 1 1 220px;
+    max-width: 420px;
+}
+
+.produto-cor {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+.produto-tipo {
+    font-size: 0.8rem;
+    color: #64748b;
+    min-width: 80px;
+}
+
+.produto-tipo.produto-nosso {
+    color: #4f46e5;
+    font-weight: 700;
+}
+
+.form-concorrente {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.form-concorrente .form-control {
+    flex: 1 1 260px;
+    max-width: 420px;
+}
+
+.competitiva-hint {
+    color: #64748b;
+    font-size: 0.85rem;
+    margin: 0.5rem 0 0;
+}
+
+.competitiva-hint-top {
+    margin: 0 1rem 0.75rem;
+}
+
+.competitiva-table td,
+.competitiva-table th {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.competitiva-table th.produto-col {
+    white-space: nowrap;
+}
+
+.competitiva-table .competitiva-desc {
+    text-align: left;
+    min-width: 200px;
+}
+
+.competitiva-table .nota-select {
+    min-width: 64px;
+    padding: 0.35rem 0.4rem;
+}
+
+.competitiva-table .valor-input {
+    min-width: 90px;
+    padding: 0.35rem 0.5rem;
+}
+
+.competitiva-table .spec-rank {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+}
+
+.competitiva-quem {
+    display: block;
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+.sit-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.sit-frente { background: #dcfce7; color: #166534; }
+.sit-empate { background: #e0e7ff; color: #3730a3; }
+.sit-atras { background: #fee2e2; color: #991b1b; }
+.sit-sem-dados { color: #94a3b8; }
+
+.competitiva-grafico {
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+.grafico-competitivo-wrapper {
+    display: inline-block;
+}
+
+.grafico-competitivo {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.grafico-legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.grafico-legenda i {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.35rem;
+    vertical-align: middle;
+}
+
+.grafico-legenda i.legenda-meta {
+    border-radius: 0;
+    border: 2px solid #0f172a;
+    background: transparent;
+}
+
+.grafico-escala {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0.25rem 0 0;
+}
+
+.competitiva-resultado {
+    padding: 0 1rem 1rem;
+}
+
+.resultado-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.resultado-bloco {
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    background: #f8fafc;
+    border-left: 4px solid #94a3b8;
+}
+
+.resultado-bloco h4 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+}
+
+.resultado-bloco ul {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.resultado-bloco li {
+    margin-bottom: 0.35rem;
+    font-size: 0.9rem;
+}
+
+.resultado-bloco small {
+    color: #64748b;
+}
+
+.resultado-bloco p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.resultado-frente { border-left-color: #16a34a; }
+.resultado-atras { border-left-color: #dc2626; }
+.resultado-metas { border-left-color: #ea580c; }
+.resultado-inconsistencias { border-left-color: #ca8a04; }
+
+/* Cartão de status no topo das páginas (contadores lado a lado) */
+.status-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.status-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #eef2ff;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.status-content h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #0f172a;
+}
+
+.status-content p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.status-card .progress-bar {
+    margin-top: 1rem;
+}
+
+/* Seção de avaliação competitiva no relatório */
+.report-competitiva h4 {
+    margin-top: 1.5rem;
+}
+
+.report-competitiva .competitiva-resultado {
+    padding: 0.5rem 0 0;
+}

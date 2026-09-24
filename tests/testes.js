@@ -94,6 +94,10 @@ suite('Utilitários', () => {
     test('parseCSV detecta ponto e vírgula (Excel pt-BR)', () => {
         assertEqual(parseCSV('Descrição;Peso\nLeve, barato;1'), [['Descrição', 'Peso'], ['Leve, barato', '1']]);
     });
+    test('parseNumero: vírgula decimal, milhar, unidade e texto sem número', () => {
+        assertEqual(['1,2', '1.234,5 kg', '1,234.5', '1.500', '0.25', '≤ 20 kW', '-3', 'aprox. 7,5', 'abc', '', null].map(parseNumero),
+            [1.2, 1234.5, 1234.5, 1500, 0.25, 20, -3, 7.5, null, null, null]);
+    });
 });
 
 // ============================================================================
@@ -184,6 +188,19 @@ suite('Versionamento dos dados', () => {
         assertEqual([d.requisitosCliente[0].observacao, d.requisitosCliente[0].peso], ['', 0]);
         assert(Array.isArray(d.especificacoesProjeto), 'especificacoesProjeto ausente');
         assertEqual(d.correlacaoProjeto.length, 1, 'dados perdidos');
+        assertEqual(d.avaliacaoCompetitiva.produtos.map(p => p.id), [PRODUTO_NOSSO_ID]);
+    });
+    test('dados v2 ganham a avaliação competitiva vazia (v3) sem perder nada', () => {
+        const d = {
+            requisitosCliente: [{ id: 'c1', descricao: 'Leve', observacao: '', importancia: 0, peso: 0 }],
+            requisitosProjeto: [], comparacaoCliente: [], correlacaoProjeto: [], matrizQFD: [], especificacoesProjeto: [],
+            metadata: { created: '2026-01-01', schemaVersion: 2 }
+        };
+        assert(qfdDB.importData(d), qfdDB.lastImportError);
+        const r = qfdDB.loadData();
+        assertEqual(r.metadata.schemaVersion, SCHEMA_VERSION);
+        assertEqual(r.requisitosCliente[0].descricao, 'Leve');
+        assertEqual([r.avaliacaoCompetitiva.produtos.length, r.avaliacaoCompetitiva.notasCliente.length], [1, 0]);
     });
     test('banco novo já nasce na versão atual', () => {
         qfdDB.clearAllData();
@@ -293,6 +310,118 @@ suite('Importação de CSV', () => {
 });
 
 // ============================================================================
+// AVALIAÇÃO COMPETITIVA
+// ============================================================================
+
+/**
+ * Projeto de exemplo + 2 concorrentes com notas e valores técnicos.
+ * RP1 "Peso total (kg)" é ↓ e RP2 "Custo de produção" é ↓.
+ */
+function criarAvaliacaoExemplo() {
+    const ex = criarProjetoExemplo();
+    const { rc, rp } = ex;
+    const a = qfdDB.addConcorrente('Marca A');
+    const b = qfdDB.addConcorrente('Marca "B" <x>');
+    // RC1: nós 3, A 4, B 2 → atrás; RC2: nós 5, A 4 → à frente; RC3: nós 3, A 3 → empate
+    [[rc[0], PRODUTO_NOSSO_ID, 3], [rc[0], a.id, 4], [rc[0], b.id, 2],
+     [rc[1], PRODUTO_NOSSO_ID, 5], [rc[1], a.id, 4],
+     [rc[2], PRODUTO_NOSSO_ID, 3], [rc[2], a.id, 3]].forEach(([r, p, n]) => qfdDB.setNotaCliente(r.id, p, n));
+    qfdDB.setMetaCliente(rc[0].id, 5);
+    qfdDB.setValorTecnico(rp[0].id, a.id, '1,5 kg');
+    qfdDB.setValorTecnico(rp[0].id, b.id, '0,9');
+    qfdDB.setValorTecnico(rp[0].id, PRODUTO_NOSSO_ID, '1,4');
+    qfdDB.setValorTecnico(rp[2].id, a.id, '4');
+    return { ...ex, a, b };
+}
+
+suite('Avaliação competitiva', () => {
+    test('concorrentes: adicionar, nome repetido, renomear, limite e o nosso produto não sai', () => {
+        qfdDB.clearAllData();
+        const a = qfdDB.addConcorrente('  Marca   A ');
+        assertEqual(a.nome, 'Marca A');
+        let msg = '';
+        try { qfdDB.addConcorrente('marca a'); } catch (e) { msg = e.message; }
+        assert(/Já existe/.test(msg), 'aceitou nome repetido');
+        qfdDB.renameProdutoAvaliado(PRODUTO_NOSSO_ID, 'Protótipo v2');
+        assertEqual(qfdDB.getAvaliacaoCompetitiva().produtos.map(p => p.nome), ['Protótipo v2', 'Marca A']);
+        for (let i = 2; i <= MAX_CONCORRENTES; i++) qfdDB.addConcorrente('C' + i);
+        msg = '';
+        try { qfdDB.addConcorrente('Um a mais'); } catch (e) { msg = e.message; }
+        assert(/Limite/.test(msg), 'passou do limite');
+        assertEqual(qfdDB.removeConcorrente(PRODUTO_NOSSO_ID), false);
+    });
+    test('notas: situação, índice de melhoria e prioridade', () => {
+        const { rc } = criarAvaliacaoExemplo();
+        const an = qfdDB.getAnaliseCompetitiva();
+        const c = id => an.clientes.find(x => x.requisito.id === id);
+        assertEqual([c(rc[0].id).situacao, c(rc[1].id).situacao, c(rc[2].id).situacao], ['atras', 'frente', 'empate']);
+        assertEqual(c(rc[0].id).melhor, { valor: 4, produtos: ['Marca A'] });
+        assert(Math.abs(c(rc[0].id).indiceMelhoria - 5 / 3) < 1e-9, 'índice de melhoria');
+        const soma = an.clientes.reduce((s, x) => s + x.prioridade, 0);
+        assert(Math.abs(soma - 1) < 1e-9, `prioridades somam ${soma}`);
+        assertEqual(an.stats, { notasTotal: 9, notasPreenchidas: 7, percent: 78 });
+    });
+    test('notas fora de 1 a 5 apagam a nota', () => {
+        const { rc } = criarAvaliacaoExemplo();
+        qfdDB.setNotaCliente(rc[1].id, PRODUTO_NOSSO_ID, '');
+        qfdDB.setNotaCliente(rc[2].id, PRODUTO_NOSSO_ID, 7);
+        const an = qfdDB.getAnaliseCompetitiva();
+        assertEqual(an.clientes.filter(x => x.nossa).length, 1);
+    });
+    test('técnico: melhor concorrente pelo sentido de melhoria e meta da especificação', () => {
+        const { rp } = criarAvaliacaoExemplo();
+        const an = qfdDB.getAnaliseCompetitiva();
+        const t = id => an.tecnicos.find(x => x.requisito.id === id);
+        // RP1 ↓: melhor é 0,9 (Marca "B"); meta 1,2 kg > 0,9 → atrás
+        assertEqual(t(rp[0].id).melhor, { valor: 0.9, produtos: ['Marca "B" <x>'] });
+        assertEqual(t(rp[0].id).situacao, 'atras');
+        // RP3 é nominal: não há melhor
+        assertEqual([t(rp[2].id).melhor, t(rp[2].id).situacao], [null, 'sem-dados']);
+        qfdDB.updateEspecificacao(rp[0].id, { valorUnitario: '0,8' });
+        assertEqual(qfdDB.getAnaliseCompetitiva().tecnicos.find(x => x.requisito.id === rp[0].id).situacao, 'frente');
+    });
+    test('inconsistência: clientes preferem um produto, mas os valores técnicos fortes favorecem o outro', () => {
+        const { rc, rp, a } = criarAvaliacaoExemplo();
+        assertEqual(qfdDB.getAnaliseCompetitiva().inconsistencias.length, 0);
+        // RC1 × RP1 forte (9). Clientes: A (4) > nós (3), mas no peso (↓) nós 1,4 < A 1,5
+        qfdDB.setMatrizQFD(rc[0].id, rp[0].id, 9);
+        const inc = qfdDB.getAnaliseCompetitiva().inconsistencias;
+        assert(inc.some(i => i.numero === 1 && i.preferido === 'Marca A' && i.outro === 'Nosso produto' && i.requisitosProjeto.join() === '1'),
+            JSON.stringify(inc));
+        // Com o valor corrigido, a inconsistência some
+        qfdDB.setValorTecnico(rp[0].id, a.id, '1,3');
+        assert(!qfdDB.getAnaliseCompetitiva().inconsistencias.some(i => i.preferido === 'Marca A' && i.outro === 'Nosso produto'), 'não sumiu');
+    });
+    test('remover requisito ou concorrente apaga notas e valores ligados', () => {
+        const { rc, rp, a } = criarAvaliacaoExemplo();
+        qfdDB.removeRequisitoCliente(rc[0].id);
+        qfdDB.removeRequisitoProjeto(rp[0].id);
+        qfdDB.removeConcorrente(a.id);
+        const av = qfdDB.getAvaliacaoCompetitiva();
+        assert(!av.notasCliente.some(n => n.requisitoClienteId === rc[0].id || n.produtoId === a.id), 'nota órfã');
+        assert(!av.metasCliente.some(m => m.requisitoClienteId === rc[0].id), 'meta órfã');
+        assert(!av.valoresTecnicos.some(v => v.requisitoProjetoId === rp[0].id || v.produtoId === a.id), 'valor órfão');
+        assert(qfdDB.validateData().isValid, qfdDB.validateData().errors.join('; '));
+    });
+    test('backup exportado e importado mantém a avaliação', () => {
+        criarAvaliacaoExemplo();
+        const backup = JSON.stringify(qfdDB.exportData());
+        qfdDB.clearAllData();
+        assert(qfdDB.importData(backup), qfdDB.lastImportError);
+        assertEqual(qfdDB.getAvaliacaoCompetitiva().produtos.length, 3);
+        assertEqual(qfdDB.getAnaliseCompetitiva().stats.notasPreenchidas, 7);
+    });
+    test('gráfico: SVG com os produtos e nomes escapados', () => {
+        criarAvaliacaoExemplo();
+        const html = buildGraficoCompetitivo(qfdDB.getAnaliseCompetitiva());
+        assert(html.includes('<svg') && html.includes('<circle'), 'sem SVG');
+        assert(html.includes('Marca "B" &lt;x&gt;') && !html.includes('<x>'), 'nome não escapado');
+        qfdDB.clearAllData();
+        assertEqual(buildGraficoCompetitivo(qfdDB.getAnaliseCompetitiva()), '');
+    });
+});
+
+// ============================================================================
 // PÁGINAS (abertas em iframe; só no modo headless — ver rodar-testes.ps1)
 // ============================================================================
 
@@ -304,7 +433,15 @@ const PAGINAS = [
     { arquivo: '../pages/correlacao-projeto.html', funcao: 'generateRoofMatrix', balao: 'Obs RP1' },
     { arquivo: '../pages/matriz-qfd.html', funcao: 'setupMatrix', balao: 'Obs RP1' },
     { arquivo: '../pages/especificacoes.html', funcao: 'renderTable', texto: 'Custo de produção' },
-    { arquivo: '../pages/relatorio.html', funcao: 'generatePreview' }
+    {
+        arquivo: '../pages/avaliacao-competitiva.html', funcao: 'updateComputed', preparar: criarAvaliacaoExemplo,
+        texto: 'Marca "B" <x>', seletores: ['#grafico-clientes svg circle', '#clientes-tbody .sit-atras', '#tecnicos-tbody .valor-input']
+    },
+    {
+        arquivo: '../pages/relatorio.html', funcao: 'generatePreview', preparar: criarAvaliacaoExemplo,
+        texto: 'Resultado da comparação',
+        seletores: ['#report-content .grafico-competitivo', '#report-content .resultado-atras li', '#report-content .resultado-metas li']
+    }
 ];
 
 function carregarPagina(arquivo) {
@@ -320,6 +457,7 @@ function carregarPagina(arquivo) {
 
 function testarPagina(pagina) {
     return async () => {
+        if (pagina.preparar) pagina.preparar();
         const iframe = await carregarPagina(pagina.arquivo);
         try {
             const win = iframe.contentWindow, doc = iframe.contentDocument;
@@ -330,6 +468,9 @@ function testarPagina(pagina) {
             if (pagina.texto) {
                 assert(doc.body.textContent.includes(pagina.texto), `"${pagina.texto}" não aparece na página`);
             }
+            (pagina.seletores || []).forEach(sel => {
+                assert(doc.querySelector(sel), `elemento "${sel}" não encontrado`);
+            });
 
             const toggles = [...doc.querySelectorAll('.nav-dropdown .dropdown-toggle')];
             assertEqual(toggles.length, 2, 'quantidade de menus');

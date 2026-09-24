@@ -14,6 +14,7 @@
  * - correlacaoProjeto: Array de correlações entre requisitos de projeto
  * - matrizQFD: Array de relações entre requisitos cliente e projeto
  * - especificacoesProjeto: Especificações (unidade, valor, texto explicativo) por requisito de projeto
+ * - avaliacaoCompetitiva: Produtos avaliados (nosso e concorrentes), notas dos clientes e valores técnicos
  * - metadata: Informações sobre criação, modificação e versão da estrutura (schemaVersion)
  *
  * @class QFDDatabase
@@ -24,7 +25,23 @@
  * Ao mudar a estrutura, incremente este número e adicione a migração
  * correspondente em SCHEMA_MIGRATIONS.
  */
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
+
+/** ID fixo do nosso produto na avaliação competitiva */
+const PRODUTO_NOSSO_ID = 'nosso';
+
+/** Limite de concorrentes na avaliação competitiva (a tabela fica ilegível com mais) */
+const MAX_CONCORRENTES = 6;
+
+/** Estrutura inicial da avaliação competitiva: só o nosso produto, sem notas */
+function criarAvaliacaoCompetitivaVazia() {
+    return {
+        produtos: [{ id: PRODUTO_NOSSO_ID, nome: 'Nosso produto', tipo: 'nosso' }],
+        notasCliente: [],     // { requisitoClienteId, produtoId, nota (1 a 5) }
+        metasCliente: [],     // { requisitoClienteId, meta (1 a 5) }
+        valoresTecnicos: []   // { requisitoProjetoId, produtoId, valor (texto) }
+    };
+}
 
 /**
  * Migrações da estrutura dos dados. A chave é a versão de destino: a função
@@ -58,6 +75,13 @@ const SCHEMA_MIGRATIONS = {
         data.especificacoesProjeto.forEach(esp => {
             if (typeof esp.observacao !== 'string') esp.observacao = '';
         });
+    },
+
+    // v3: avaliação competitiva (nosso produto x concorrentes)
+    3(data) {
+        if (!data.avaliacaoCompetitiva || typeof data.avaliacaoCompetitiva !== 'object') {
+            data.avaliacaoCompetitiva = criarAvaliacaoCompetitivaVazia();
+        }
     }
 };
 
@@ -87,6 +111,7 @@ class QFDDatabase {
             correlacaoProjeto: [],
             matrizQFD: [],
             especificacoesProjeto: [],
+            avaliacaoCompetitiva: criarAvaliacaoCompetitivaVazia(),
             metadata: {
                 created: new Date().toISOString(),
                 lastModified: new Date().toISOString(),
@@ -312,7 +337,12 @@ class QFDDatabase {
         
         // Remove relações na matriz QFD
         data.matrizQFD = data.matrizQFD.filter(rel => rel.requisitoCliente !== id);
-        
+
+        // Remove notas e metas da avaliação competitiva
+        const av = this._ensureAvaliacao(data);
+        av.notasCliente = av.notasCliente.filter(n => n.requisitoClienteId !== id);
+        av.metasCliente = av.metasCliente.filter(m => m.requisitoClienteId !== id);
+
         this.saveData(data);
     }
 
@@ -405,6 +435,9 @@ class QFDDatabase {
         data.especificacoesProjeto = data.especificacoesProjeto.filter(
             esp => esp.requisitoProjetoId !== id
         );
+
+        const av = this._ensureAvaliacao(data);
+        av.valoresTecnicos = av.valoresTecnicos.filter(v => v.requisitoProjetoId !== id);
 
         this.saveData(data);
     }
@@ -932,6 +965,281 @@ class QFDDatabase {
         };
     }
 
+    // ========================================================================
+    // SEÇÃO: AVALIAÇÃO COMPETITIVA (NOSSO PRODUTO x CONCORRENTES)
+    // ========================================================================
+    //
+    // Avaliação competitiva da Casa da Qualidade (Pahl & Beitz, Fig. 3.4):
+    // - avaliação dos clientes: nota de 1 (pior) a 5 (melhor) de cada produto
+    //   em cada requisito de cliente, e a meta de nota do nosso produto;
+    // - avaliação técnica: valor medido de cada produto em cada requisito de
+    //   projeto, comparado com a meta das especificações.
+
+    /** Garante a estrutura da avaliação competitiva em data e a retorna */
+    _ensureAvaliacao(data) {
+        let av = data.avaliacaoCompetitiva;
+        if (!av || typeof av !== 'object' || Array.isArray(av)) {
+            av = data.avaliacaoCompetitiva = criarAvaliacaoCompetitivaVazia();
+        }
+        ['produtos', 'notasCliente', 'metasCliente', 'valoresTecnicos'].forEach(key => {
+            if (!Array.isArray(av[key])) av[key] = [];
+        });
+        if (!av.produtos.some(p => p.id === PRODUTO_NOSSO_ID)) {
+            av.produtos.unshift(criarAvaliacaoCompetitivaVazia().produtos[0]);
+        }
+        return av;
+    }
+
+    getAvaliacaoCompetitiva() {
+        return this._ensureAvaliacao(this.loadData());
+    }
+
+    /** Normaliza e valida o nome de um produto avaliado */
+    _nomeProduto(av, nome, ignoreId = null) {
+        const texto = String(nome || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+        if (!texto) throw new Error('Informe o nome do produto.');
+        if (av.produtos.some(p => p.id !== ignoreId && p.nome.toLowerCase() === texto.toLowerCase())) {
+            throw new Error(`Já existe um produto chamado "${texto}".`);
+        }
+        return texto;
+    }
+
+    /**
+     * Adiciona um concorrente
+     *
+     * @param {string} nome - Nome do concorrente ou do produto dele
+     * @returns {Object} Produto criado
+     * @throws {Error} Nome vazio, repetido ou limite de concorrentes atingido
+     */
+    addConcorrente(nome) {
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        if (av.produtos.filter(p => p.tipo !== 'nosso').length >= MAX_CONCORRENTES) {
+            throw new Error(`Limite de ${MAX_CONCORRENTES} concorrentes atingido.`);
+        }
+        const produto = {
+            id: this.generateUUID(),
+            nome: this._nomeProduto(av, nome),
+            tipo: 'concorrente',
+            created: new Date().toISOString()
+        };
+        av.produtos.push(produto);
+        this.saveData(data);
+        return produto;
+    }
+
+    /** Renomeia um produto avaliado (inclusive o nosso) */
+    renameProdutoAvaliado(id, nome) {
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        const produto = av.produtos.find(p => p.id === id);
+        if (!produto) return null;
+        produto.nome = this._nomeProduto(av, nome, id);
+        this.saveData(data);
+        return produto;
+    }
+
+    /** Remove um concorrente e todas as notas e valores dele (o nosso produto não pode ser removido) */
+    removeConcorrente(id) {
+        if (id === PRODUTO_NOSSO_ID) return false;
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        av.produtos = av.produtos.filter(p => p.id !== id);
+        av.notasCliente = av.notasCliente.filter(n => n.produtoId !== id);
+        av.valoresTecnicos = av.valoresTecnicos.filter(v => v.produtoId !== id);
+        this.saveData(data);
+        return true;
+    }
+
+    /**
+     * Define a nota (1 a 5) dos clientes para um produto num requisito de
+     * cliente. Qualquer outro valor apaga a nota.
+     */
+    setNotaCliente(requisitoClienteId, produtoId, nota) {
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        av.notasCliente = av.notasCliente.filter(
+            n => !(n.requisitoClienteId === requisitoClienteId && n.produtoId === produtoId)
+        );
+        const valor = Number(nota);
+        if (Number.isInteger(valor) && valor >= 1 && valor <= 5) {
+            av.notasCliente.push({ requisitoClienteId, produtoId, nota: valor });
+        }
+        this.saveData(data);
+    }
+
+    /** Define a meta de nota (1 a 5) do nosso produto num requisito de cliente */
+    setMetaCliente(requisitoClienteId, meta) {
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        av.metasCliente = av.metasCliente.filter(m => m.requisitoClienteId !== requisitoClienteId);
+        const valor = Number(meta);
+        if (Number.isInteger(valor) && valor >= 1 && valor <= 5) {
+            av.metasCliente.push({ requisitoClienteId, meta: valor });
+        }
+        this.saveData(data);
+    }
+
+    /** Define o valor técnico medido de um produto num requisito de projeto (texto vazio apaga) */
+    setValorTecnico(requisitoProjetoId, produtoId, valor) {
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        av.valoresTecnicos = av.valoresTecnicos.filter(
+            v => !(v.requisitoProjetoId === requisitoProjetoId && v.produtoId === produtoId)
+        );
+        const texto = String(valor ?? '').trim().slice(0, 50);
+        if (texto) {
+            av.valoresTecnicos.push({ requisitoProjetoId, produtoId, valor: texto });
+        }
+        this.saveData(data);
+    }
+
+    /**
+     * Calcula a análise competitiva completa
+     *
+     * @returns {Object}
+     *   - produtos, concorrentes
+     *   - clientes: por requisito de cliente (ordem de cadastro): notas por
+     *     produto, nossa nota, melhor concorrente, meta, índice de melhoria
+     *     (meta / nossa nota), prioridade (peso × índice, normalizada) e
+     *     situação ('frente' | 'empate' | 'atras' | 'sem-dados')
+     *   - tecnicos: por requisito de projeto (ordem do QFD): valores por
+     *     produto, meta da especificação, melhor concorrente (conforme o
+     *     sentido de melhoria) e situação da meta frente a ele
+     *   - inconsistencias: requisitos em que os clientes preferem um produto
+     *     mas todos os valores técnicos fortemente relacionados (9 na matriz)
+     *     favorecem o outro
+     *   - stats: notas preenchidas
+     */
+    getAnaliseCompetitiva() {
+        this.calculateImportanciaProjeto();
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        const produtos = av.produtos;
+        const concorrentes = produtos.filter(p => p.tipo !== 'nosso');
+        const rcs = data.requisitosCliente || [];
+        const rps = data.requisitosProjeto || [];
+
+        const notaDe = (rcId, pId) => {
+            const n = av.notasCliente.find(x => x.requisitoClienteId === rcId && x.produtoId === pId);
+            return n ? n.nota : null;
+        };
+        const valorDe = (rpId, pId) => {
+            const v = av.valoresTecnicos.find(x => x.requisitoProjetoId === rpId && x.produtoId === pId);
+            return v ? v.valor : '';
+        };
+        // a é melhor que b no sentido de melhoria do requisito?
+        const ehMelhor = (sentido, a, b) => (sentido === 'up' ? a > b : a < b);
+        const comparar = (sentido, nosso, melhor) =>
+            nosso === melhor ? 'empate' : (ehMelhor(sentido, nosso, melhor) ? 'frente' : 'atras');
+
+        const clientes = rcs.map((req, i) => {
+            const notas = {};
+            produtos.forEach(p => { notas[p.id] = notaDe(req.id, p.id); });
+
+            let melhor = null;
+            concorrentes.forEach(p => {
+                const n = notas[p.id];
+                if (!n) return;
+                if (!melhor || n > melhor.valor) melhor = { valor: n, produtos: [p.nome] };
+                else if (n === melhor.valor) melhor.produtos.push(p.nome);
+            });
+
+            const nossa = notas[PRODUTO_NOSSO_ID];
+            const metaObj = av.metasCliente.find(m => m.requisitoClienteId === req.id);
+            const meta = metaObj ? metaObj.meta : null;
+            return {
+                requisito: req,
+                numero: i + 1,
+                peso: req.peso || 0,
+                notas,
+                nossa,
+                melhor,
+                meta,
+                indiceMelhoria: meta && nossa ? meta / nossa : null,
+                situacao: nossa && melhor ? comparar('up', nossa, melhor.valor) : 'sem-dados'
+            };
+        });
+
+        const brutos = clientes.map(c => c.peso * (c.indiceMelhoria || 1));
+        const somaBrutos = brutos.reduce((a, b) => a + b, 0);
+        clientes.forEach((c, i) => { c.prioridade = somaBrutos > 0 ? brutos[i] / somaBrutos : 0; });
+
+        const especificacoes = data.especificacoesProjeto || [];
+        const ordenados = [...rps].sort((a, b) => (b.importanciaAbsoluta || 0) - (a.importanciaAbsoluta || 0));
+        const tecnicos = ordenados.map((req, rank) => {
+            const esp = especificacoes.find(e => e.requisitoProjetoId === req.id) || {};
+            const valores = {};
+            produtos.forEach(p => { valores[p.id] = valorDe(req.id, p.id); });
+
+            let melhor = null;
+            if (req.sentidoMelhoria === 'up' || req.sentidoMelhoria === 'down') {
+                concorrentes.forEach(p => {
+                    const n = parseNumero(valores[p.id]);
+                    if (n === null) return;
+                    if (!melhor || ehMelhor(req.sentidoMelhoria, n, melhor.valor)) melhor = { valor: n, produtos: [p.nome] };
+                    else if (n === melhor.valor) melhor.produtos.push(p.nome);
+                });
+            }
+
+            const meta = parseNumero(esp.valorUnitario);
+            return {
+                requisito: req,
+                numero: rps.findIndex(r => r.id === req.id) + 1,
+                rank: rank + 1,
+                unidade: esp.unidadeMedida || '',
+                meta: esp.valorUnitario || '',
+                valores,
+                melhor,
+                situacao: melhor && meta !== null ? comparar(req.sentidoMelhoria, meta, melhor.valor) : 'sem-dados'
+            };
+        });
+
+        const inconsistencias = [];
+        clientes.forEach(c => {
+            const fortes = (data.matrizQFD || [])
+                .filter(m => m.requisitoCliente === c.requisito.id && m.influencia >= 9)
+                .map(m => rps.find(r => r.id === m.requisitoProjeto))
+                .filter(rp => rp && (rp.sentidoMelhoria === 'up' || rp.sentidoMelhoria === 'down'));
+            if (!fortes.length) return;
+
+            for (let a = 0; a < produtos.length; a++) {
+                for (let b = a + 1; b < produtos.length; b++) {
+                    const na = c.notas[produtos[a].id], nb = c.notas[produtos[b].id];
+                    if (!na || !nb || na === nb) continue;
+                    const [preferido, outro] = na > nb ? [produtos[a], produtos[b]] : [produtos[b], produtos[a]];
+                    const comparados = fortes
+                        .map(rp => ({ rp, vp: parseNumero(valorDe(rp.id, preferido.id)), vo: parseNumero(valorDe(rp.id, outro.id)) }))
+                        .filter(x => x.vp !== null && x.vo !== null && x.vp !== x.vo);
+                    if (comparados.length && comparados.every(x => ehMelhor(x.rp.sentidoMelhoria, x.vo, x.vp))) {
+                        inconsistencias.push({
+                            numero: c.numero,
+                            requisito: c.requisito,
+                            preferido: preferido.nome,
+                            outro: outro.nome,
+                            requisitosProjeto: comparados.map(x => rps.indexOf(x.rp) + 1)
+                        });
+                    }
+                }
+            }
+        });
+
+        const total = rcs.length * produtos.length;
+        const preenchidas = clientes.reduce((s, c) => s + produtos.filter(p => c.notas[p.id]).length, 0);
+        return {
+            produtos,
+            concorrentes,
+            clientes,
+            tecnicos,
+            inconsistencias,
+            stats: {
+                notasTotal: total,
+                notasPreenchidas: preenchidas,
+                percent: total > 0 ? Math.round((preenchidas / total) * 100) : 0
+            }
+        };
+    }
+
     // Exporta dados para JSON
     exportData() {
         const data = this.loadData();
@@ -962,6 +1270,7 @@ class QFDDatabase {
             this.migrateData(data);
             this._ensureEspecificacoesArray(data);
             this._syncEspecificacoesEntries(data);
+            this._ensureAvaliacao(data);
             this.saveData(data);
             return true;
         } catch (error) {
@@ -987,7 +1296,16 @@ class QFDDatabase {
         
         const espStats = this.getEspecificacoesStats();
 
+        const av = this._ensureAvaliacao(data);
+        const notasTotal = data.requisitosCliente.length * av.produtos.length;
+        const notasValidas = av.notasCliente.filter(n =>
+            data.requisitosCliente.some(r => r.id === n.requisitoClienteId) &&
+            av.produtos.some(p => p.id === n.produtoId)
+        ).length;
+
         return {
+            concorrentes: av.produtos.length - 1,
+            competitivaPercent: notasTotal > 0 ? Math.round((notasValidas / notasTotal) * 100) : 0,
             requisitosCliente: data.requisitosCliente.length,
             requisitosProjeto: data.requisitosProjeto.length,
             comparacoesCliente: data.comparacaoCliente.length,
@@ -1049,7 +1367,20 @@ class QFDDatabase {
                 errors.push(`Especificação com requisito de projeto inexistente: ${esp.requisitoProjetoId}`);
             }
         });
-        
+
+        const av = this._ensureAvaliacao(data);
+        const produtoExiste = id => av.produtos.some(p => p.id === id);
+        av.notasCliente.forEach(n => {
+            if (!produtoExiste(n.produtoId) || !data.requisitosCliente.some(r => r.id === n.requisitoClienteId)) {
+                errors.push(`Nota da avaliação competitiva com produto ou requisito inexistente: ${n.produtoId} - ${n.requisitoClienteId}`);
+            }
+        });
+        av.valoresTecnicos.forEach(v => {
+            if (!produtoExiste(v.produtoId) || !data.requisitosProjeto.some(r => r.id === v.requisitoProjetoId)) {
+                errors.push(`Valor técnico com produto ou requisito inexistente: ${v.produtoId} - ${v.requisitoProjetoId}`);
+            }
+        });
+
         return {
             isValid: errors.length === 0,
             errors

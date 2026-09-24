@@ -28,7 +28,8 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
 | 4 | Correlação Projeto | Telhado da casa: correlações `++`, `+`, `0`, `-` e `--` entre requisitos de projeto |
 | 5 | Matriz QFD | Relação cliente × projeto (0, 1, 3 ou 9); importância absoluta, relativa e peso |
 | 6 | Especificações | Requisitos de projeto na ordem do QFD, com unidade, valor, texto explicativo e aspectos indesejáveis (vindos das correlações `--`) |
-| 7 | Relatório PDF | Relatório configurável com as seções escolhidas, prévia e geração de PDF |
+| 7 | Avaliação Competitiva | Depois do QFD: notas dos clientes (1 a 5) para o nosso produto e os concorrentes, meta, índice de melhoria e prioridade; valores técnicos medidos de cada produto comparados com as metas das especificações; gráfico, pontos fortes, pontos a melhorar e inconsistências |
+| 8 | Relatório PDF | Relatório configurável com as seções escolhidas, prévia e geração de PDF |
 
 **Textos explicativos:** o texto cadastrado em cada requisito aparece num balão ao passar o mouse sobre ele na comparação, na correlação, na matriz e no relatório. O texto das especificações aparece no relatório.
 
@@ -37,6 +38,11 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
 - **Peso do requisito de cliente:** pontuação no Diagrama de Mudge, normalizada para somar 100%.
 - **Importância absoluta do requisito de projeto:** `IA(j) = Σ peso_cliente(i) × influência(i,j)`.
 - **Peso relativo:** `PR(j) = IA(j) / Σ IA`. O ranking ordena por importância absoluta e divide os requisitos em terços (superior, médio, inferior).
+- **Avaliação competitiva:**
+  - *Situação* de cada requisito de cliente: nossa nota comparada com a maior nota entre os concorrentes (à frente, empatado ou atrás).
+  - *Índice de melhoria* = meta ÷ nossa nota; *prioridade* = peso × índice de melhoria (1 se não houver meta), normalizada para somar 100%.
+  - *Melhor concorrente técnico*: maior valor se o sentido é ↑, menor se é ↓; requisitos nominais (\*) não são comparados. A meta da especificação é comparada com esse valor.
+  - *Inconsistência*: os clientes dão nota maior a um produto, mas todos os requisitos de projeto com relação forte (9) com aquele requisito têm valores técnicos melhores no outro produto. Indica erro de medição, de nota ou um requisito de projeto faltando.
 
 ## Backup, importação e exportação
 
@@ -55,7 +61,7 @@ QFD/
 ├── css/style.css               # Estilos
 ├── js/
 │   ├── database.js             # Banco de dados (LocalStorage), migrações, importação/exportação
-│   ├── utils.js                # Funções compartilhadas: menu, alertas, escape de HTML, CSV
+│   ├── utils.js                # Funções compartilhadas: menu, alertas, escape de HTML, CSV, números, gráfico competitivo
 │   ├── dashboard.js
 │   ├── requisitos-cliente.js
 │   ├── comparacao-cliente.js
@@ -63,6 +69,7 @@ QFD/
 │   ├── correlacao-projeto.js
 │   ├── matriz-qfd.js
 │   ├── especificacoes.js
+│   ├── avaliacao-competitiva.js
 │   └── relatorio.js            # Relatório e PDF (jsPDF + html2canvas)
 ├── pages/                      # Uma página HTML por etapa
 └── tests/
@@ -89,6 +96,12 @@ Tudo fica numa única chave do LocalStorage, `qfd_data`:
   matrizQFD:         [{ requisitoCliente, requisitoProjeto, influencia, created }], // 1, 3 ou 9
   especificacoesProjeto: [{ requisitoProjetoId, unidadeMedida, valorUnitario, observacao,
                             aspectosIndesejaveis, aspectosAutoGerado, updated }],
+  avaliacaoCompetitiva: {
+    produtos:        [{ id, nome, tipo }],          // tipo 'nosso' (id 'nosso') ou 'concorrente'; até 6 concorrentes
+    notasCliente:    [{ requisitoClienteId, produtoId, nota }],   // 1 a 5
+    metasCliente:    [{ requisitoClienteId, meta }],              // 1 a 5
+    valoresTecnicos: [{ requisitoProjetoId, produtoId, valor }]   // texto, ex.: "1,5 kg"
+  },
   metadata: { created, lastModified, schemaVersion }
 }
 ```
@@ -97,11 +110,11 @@ Outras chaves: `qfd_backup` (backup automático) e `qfd_data_corrompido` (cópia
 
 ### Versão da estrutura (migrações)
 
-`metadata.schemaVersion` guarda a versão da estrutura (atual: **2**). Ao abrir qualquer página ou importar um backup, dados de versões anteriores são atualizados pelas funções de `SCHEMA_MIGRATIONS` em `database.js`.
+`metadata.schemaVersion` guarda a versão da estrutura (atual: **3**; a versão 3 acrescentou `avaliacaoCompetitiva`). Ao abrir qualquer página ou importar um backup, dados de versões anteriores são atualizados pelas funções de `SCHEMA_MIGRATIONS` em `database.js`.
 
 Para mudar a estrutura dos dados:
 1. Aumente `SCHEMA_VERSION`.
-2. Acrescente em `SCHEMA_MIGRATIONS` a função da nova versão (ex.: `3(data) { ... }`), que recebe os dados da versão anterior e os ajusta.
+2. Acrescente em `SCHEMA_MIGRATIONS` a função da nova versão (ex.: `4(data) { ... }`), que recebe os dados da versão anterior e os ajusta.
 3. Acrescente um teste em `tests/testes.js`.
 
 ## Validações e tratamento de erros
@@ -117,7 +130,7 @@ Para mudar a estrutura dos dados:
 powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 ```
 
-Roda todos os testes no Chrome ou Edge sem abrir janela, com um perfil temporário (não mexe nos seus dados), e retorna código 1 se algo falhar. Cobre utilitários, cálculos, especificações, migrações, importação de backup e CSV, recuperação de erros e, em cada página, o carregamento, os menus e os balões.
+Roda todos os testes no Chrome ou Edge sem abrir janela, com um perfil temporário (não mexe nos seus dados), e retorna código 1 se algo falhar. Cobre utilitários, cálculos, especificações, avaliação competitiva, migrações, importação de backup e CSV, recuperação de erros e, em cada página, o carregamento, os menus e os balões.
 
 Também é possível abrir `tests/testes.html` direto no navegador: os testes de lógica rodam e os de páginas são pulados. Os dados do projeto são guardados antes e restaurados depois.
 
@@ -126,6 +139,8 @@ Para acrescentar um teste: `test('nome', () => { ... })` dentro de uma `suite()`
 ## Histórico de mudanças
 
 ### Setembro/2026
+- **Página de Avaliação Competitiva** (depois das Especificações): nosso produto × concorrentes na visão dos clientes e nos valores técnicos, com gráfico, resultado e seção no relatório. Estrutura dos dados na versão 3.
+- **Cartão de status** das páginas agora aparece com os contadores lado a lado (estava sem estilo).
 - **Textos explicativos** em requisitos de cliente, de projeto e especificações, exibidos em balões nas demais páginas e no relatório.
 - **Página de Especificações** integrada ao relatório; aspectos indesejáveis agora são preenchidos automaticamente a partir das correlações `--` (antes ficavam vazios quando o telhado era feito depois dos requisitos).
 - **Menus corrigidos:** o dropdown "Backup & Export" não abria em algumas páginas e o menu não funcionava em outras; agora todos usam o mesmo código (`utils.js`).

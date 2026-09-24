@@ -38,12 +38,20 @@ Dica: antes de começar, exporte um backup (Backup & Export -> Exportar Backup).
 [ ] 5. Matriz QFD: preencher; conferir balões dos RC e RP (texto em linha separada).
 [ ] 6. Especificações: conferir se os aspectos indesejáveis vieram do --;
        preencher unidade, valor e texto explicativo.
-[ ] 7. Relatório: gerar a prévia, passar o mouse nas linhas, GERAR O PDF.
+[ ] 6b. Avaliação Competitiva: adicionar 2 concorrentes (tentar um nome repetido
+       -> deve recusar), dar notas 1 a 5 e metas, conferir situação (à frente /
+       atrás), índice, prioridade e o gráfico. Preencher valores técnicos
+       (ex.: "1,5 kg") e conferir o melhor concorrente em requisitos ↑ e ↓.
+       Forçar uma inconsistência: relação 9 na matriz + notas e valores
+       contraditórios -> deve aparecer em "Inconsistências". Exportar o CSV e
+       abrir no Excel (acentos corretos). Remover um concorrente.
+[ ] 7. Relatório: gerar a prévia (com a seção Avaliação Competitiva: tabelas, gráfico e resultado),
+       passar o mouse nas linhas, GERAR O PDF e ver se o gráfico saiu no PDF.
 [ ] 8. Em todas as páginas: abrir e fechar os dois menus (Menu e Backup & Export).
 [ ] 9. Exportar CSV de requisitos e importar de volta -> deve ignorar os repetidos.
 [ ] 10. Exportar backup JSON, limpar os dados e importar -> projeto volta igual.
 
-Testes automáticos (35): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+Testes automáticos (46): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 
 ==========================================================================================
 PRÓXIMOS PASSOS
@@ -63,6 +71,624 @@ Melhorias sugeridas (detalhes no todo.md)
 
 Baixa prioridade: acessibilidade.
 Não recomendado: IndexedDB.
+
+Projeto informacional completo (Pahl & Beitz): 16 itens, prompts P01-P16 abaixo.
+
+==========================================================================================
+PROMPTS PARA DESENVOLVIMENTO - PROJETO INFORMACIONAL (Pahl & Beitz)
+
+Como usar:
+- Copie o bloco inteiro de UM prompt (de "=== Pxx" até "=== fim Pxx") e cole numa
+  conversa nova com o Claude, com a pasta do projeto aberta.
+- Faça um prompt por vez, na ordem sugerida: P01, P02, P03, P04, P05, P06, depois
+  os de prioridade média e baixa. P01 a P04 mudam a estrutura dos dados; não
+  junte dois deles numa mesma sessão.
+- Depois de cada um: rodar os testes, fazer o QA manual do item e o commit.
+- Referência: Pahl, Beitz, Feldhusen, Grote - Engineering Design, 3ª ed.
+  (Springer, 2007). As seções citadas estão em cada prompt.
+
+------------------------------------------------------------------------------------------
+=== P01 - Exigência ou Desejo (prioridade ALTA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente a
+classificação de requisitos como Exigência ou Desejo, conforme Pahl & Beitz,
+Engineering Design, Seção 5.2.1: exigências são requisitos que devem ser
+cumpridos em qualquer circunstância (se não forem, a solução é inaceitável);
+desejos devem ser atendidos quando possível e são classificados como de
+importância alta, média ou baixa.
+
+O que fazer:
+- Requisitos de projeto e especificações ganham o campo tipo: "E" (exigência)
+  ou "D" (desejo). Desejos ganham importanciaDesejo: "alta" | "media" | "baixa".
+- Cadastro e edição em pages/requisitos-projeto.html e pages/especificacoes.html
+  (onde fizer mais sentido; evite duplicar o dado nos dois lugares).
+- Mostrar "E" ou "D (alta)" nas listas, na tabela de Especificações e no relatório.
+- Dados antigos: migrar todos como "E" (exigência) e avisar isso no README.
+- Filtro na página de Especificações: todas / só exigências / só desejos.
+
+Critérios de aceite:
+- Um projeto antigo (backup JSON anterior) importa sem erro e fica com tudo "E".
+- O relatório mostra a coluna E/D e a importância dos desejos.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar testes em tests/testes.js e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P01).
+=== fim P01
+
+------------------------------------------------------------------------------------------
+=== P02 - Metas com valor e tolerância (prioridade ALTA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), melhore as metas da
+página de Especificações conforme Pahl & Beitz, Engineering Design, Seções 2.1.2
+e 5.2.1: nenhum requisito está completo sem os aspectos quantitativos e
+qualitativos. Exemplos do livro: "80 bar ± 5 bar", "P > 20 kW", "L < 400 mm".
+
+O que fazer:
+- Hoje cada especificação tem "unidade" e "valor" (texto livre). Substituir por:
+  tipoMeta: "=" | ">=" | "<=" | "faixa"
+  valor (número), valorMax (só para faixa), tolerancia (± número, opcional),
+  unidade (texto).
+- Sugerir o tipoMeta pelo sentido de melhoria do requisito de projeto
+  (↑ sugere ">=", ↓ sugere "<=", * sugere "=" com tolerância), sem impor.
+- Mostrar a meta formatada: "≥ 20 kW", "80 ± 5 bar", "10 a 12 mm".
+- Validar: valor numérico (aceitar vírgula decimal), valorMax > valor na faixa.
+- Migração: tentar converter o texto antigo de valorUnitario em número; se não
+  der, manter o texto original num campo observacao/metaTexto e marcar a linha
+  como "revisar meta".
+- "Completude" das especificações passa a exigir meta válida + unidade.
+
+Critérios de aceite:
+- Especificação antiga "1,2" vira tipo "=", valor 1.2; texto "aprox. 3" fica
+  marcado para revisar, sem perder o texto.
+- Relatório e export JSON mostram a meta formatada.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar testes em tests/testes.js e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P02).
+=== fim P02
+
+------------------------------------------------------------------------------------------
+=== P03 - Origem, responsável e revisões da lista (prioridade ALTA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente a
+rastreabilidade da lista de requisitos conforme Pahl & Beitz, Engineering
+Design, Fig. 5.2 e Seção 5.3.1: a lista registra usuário, projeto, data de
+emissão, número da versão e "substitui a emissão de"; cada requisito tem
+responsável e data de alteração; e é importante registrar a ORIGEM de cada
+requisito, para voltar a quem o propôs e entender o motivo. A lista é
+"provisória mas vinculante": muda durante o projeto.
+
+O que fazer:
+- Requisitos de cliente e de projeto ganham: origem ("cliente", "norma",
+  "legislação", "empresa", "cenário", "outro" + texto livre), responsavel
+  (texto), criado/alterado (datas já existem em parte; padronizar).
+- Histórico por requisito: cada edição grava {data, campo, valorAnterior,
+  valorNovo}. Mostrar o histórico num botão "Histórico" no item.
+- "Emitir revisão": botão (Dashboard ou Especificações) que congela uma cópia
+  da lista de requisitos com número sequencial (Rev. 1, Rev. 2...), data,
+  responsável e comentário. Guardar as revisões no próprio projeto.
+- Relatório: cabeçalho com "Revisão N de <data>, substitui Rev. N-1", e uma
+  seção opcional "Alterações desde a revisão anterior" (diferenças).
+- Cuidado com o tamanho: limitar o histórico (ex.: últimas 50 alterações por
+  item) e avisar se o armazenamento estiver perto do limite.
+
+Critérios de aceite:
+- Editar um requisito gera entrada no histórico; emitir revisão incrementa o
+  número; o relatório mostra as diferenças entre as duas últimas revisões.
+- Backup antigo importa com origem "outro" e sem histórico.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar testes em tests/testes.js e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P03).
+=== fim P03
+
+------------------------------------------------------------------------------------------
+=== P04 - Categorias do checklist e painel de cobertura (prioridade ALTA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente o
+checklist de requisitos de Pahl & Beitz, Engineering Design, Fig. 5.3, cujas
+categorias são: Geometria, Cinemática, Forças, Energia, Material, Sinais,
+Segurança, Ergonomia, Produção, Controle de qualidade, Montagem, Transporte,
+Operação, Manutenção, Reciclagem, Custos, Prazos. A Fig. 5.3 traz exemplos para
+cada uma (ex.: Transporte = limitações de içamento, gabarito, meio de transporte).
+
+O que fazer:
+- Requisitos de projeto ganham o campo categoria (uma das 17).
+- Ao cadastrar, mostrar a lista de categorias com os exemplos do livro como dica.
+- Painel de cobertura (no Dashboard e em Requisitos de Projeto): quantos
+  requisitos há em cada categoria; categorias vazias aparecem em destaque, com
+  a pergunta "Há algum requisito de <categoria> para este produto?" e a opção
+  "Não se aplica" (com justificativa), para o aviso não ficar para sempre.
+- Relatório: lista de requisitos/especificações agrupada por categoria, e
+  a tabela de cobertura com as categorias marcadas como "não se aplica".
+- Migração: requisitos antigos ficam com categoria "sem categoria" até o
+  usuário classificar; o painel mostra quantos faltam.
+- Importação CSV: aceitar uma coluna "categoria" se existir.
+
+Critérios de aceite:
+- Um projeto sem requisitos de Transporte mostra o aviso; marcar "não se aplica"
+  remove o aviso e aparece no relatório.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar testes em tests/testes.js e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P04).
+=== fim P04
+
+------------------------------------------------------------------------------------------
+=== P05 - Análise da concorrência (QUASE PRONTO: falta a ligação com as Especificações)
+
+A página pages/avaliacao-competitiva.html (js/avaliacao-competitiva.js) já faz
+a avaliação competitiva completa (notas dos clientes, valores técnicos, gráfico,
+inconsistências, seção no relatório). Os cálculos estão em
+qfdDB.getAnaliseCompetitiva() (js/database.js); cada item de "tecnicos" traz
+"melhor" = { valor, produtos } do melhor concorrente, pelo sentido de melhoria.
+
+Falta, no sistema QFD desta pasta (HTML/CSS/JS puro, sem build):
+- Na página de Especificações (js/especificacoes.js), mostrar abaixo do campo
+  "Valor unitário" o melhor valor dos concorrentes (ex.: "Melhor concorrente:
+  0,9 kg — Marca B"), só quando houver, usando getAnaliseCompetitiva().
+- Botão "Usar como meta" ao lado, que copia esse valor (formatado com vírgula
+  decimal) para o valor unitário e salva.
+- Indicar na linha se a meta atual está abaixo do melhor concorrente (mesma
+  situação "Atrás" da página de avaliação competitiva).
+
+Critérios de aceite:
+- Com 2 concorrentes avaliados, as Especificações mostram o melhor valor
+  correto para requisitos ↑ e ↓, e nada para requisitos nominais (*).
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Não muda a estrutura dos dados (não precisa de migração).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Acrescentar testes em tests/testes.js (a página de Especificações já está nos
+  testes de páginas) e rodar:
+  powershell -ExecutionPolicy Bypass -File testsodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (P05 concluído).
+=== fim P05
+
+------------------------------------------------------------------------------------------
+=== P06 - Definição do projeto (prioridade ALTA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie a página
+"Definição do projeto", baseada na proposta de produto de Pahl & Beitz,
+Engineering Design, Seção 3.1.4, passo 6: a proposta descreve as funções
+pretendidas, traz a lista preliminar de requisitos formulada de forma neutra
+(sem prender a uma solução), e indica custo-alvo ou orçamento ligado às metas
+da empresa (volume de produção, extensão da linha, fornecedores). Custos e
+prazos também são categorias da Fig. 5.3.
+
+O que fazer:
+- Nova página pages/definicao-projeto.html (+ js), primeira etapa do menu e do
+  Dashboard: nome do projeto, cliente/mercado-alvo, problema a resolver,
+  funções pretendidas (lista), custo-alvo por unidade e orçamento de
+  desenvolvimento (com moeda), volume de produção previsto, prazos/marcos
+  (data + descrição), equipe (nome + papel), premissas e restrições gerais.
+- O relatório usa esses dados na capa e numa seção "Definição do projeto"; os
+  campos de título/empresa/responsável do relatório vêm preenchidos daqui.
+- Dashboard mostra o progresso desta etapa como as outras.
+- Aviso na página se alguma função pretendida parece descrever uma solução
+  (ex.: contém nomes de componentes); é só uma dica, não bloqueia.
+
+Critérios de aceite:
+- Preencher a definição e abrir o relatório: capa e seção preenchidas sem
+  digitar de novo.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Nova página: carregar database.js, utils.js e o script da página, nessa
+  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
+  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P06).
+=== fim P06
+
+------------------------------------------------------------------------------------------
+=== P07 - Cenários do ciclo de vida (prioridade MÉDIA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um assistente de
+cenários conforme Pahl & Beitz, Engineering Design, Seção 5.2.4 (e o ciclo de
+vida da Fig. 1.2): percorre-se a vida do produto, da produção ao descarte, e em
+cada fase pergunta-se (1) o que pode acontecer com o produto (em que estado
+pode estar, como pode ser tratado e usado, quem pode usá-lo ou ter contato,
+onde pode ser usado) e (2) como o produto deve reagir (tolerância a falhas,
+como evitar situações perigosas). As respostas viram requisitos.
+
+O que fazer:
+- Nova página pages/cenarios.html (+ js), no menu antes de Requisitos de Projeto.
+- Fases: produção, montagem, transporte, armazenagem, instalação, uso,
+  manutenção, reciclagem/descarte (permitir fase personalizada).
+- Para cada fase: lista de cenários com os campos "o que pode acontecer" e
+  "como o produto deve reagir".
+- Botão "Gerar requisito" em cada cenário: abre o cadastro de requisito de
+  projeto (ou de cliente) preenchido, com origem "cenário" e ligação ao cenário
+  (se P03/P04 já existirem, preencher origem e sugerir categoria pela fase).
+- Relatório: seção "Cenários do ciclo de vida" com os requisitos gerados.
+
+Critérios de aceite:
+- Um cenário gera um requisito ligado a ele; apagar o requisito não apaga o
+  cenário, e o cenário mostra que ficou sem requisito.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Nova página: carregar database.js, utils.js e o script da página, nessa
+  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
+  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P07).
+=== fim P07
+
+------------------------------------------------------------------------------------------
+=== P08 - Tipos de requisito do cliente (prioridade MÉDIA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), classifique os
+requisitos de cliente conforme Pahl & Beitz, Engineering Design, Seção 5.2.3
+(segundo Kramer):
+- Básicos: implícitos, o cliente não diz, mas o fracasso ou sucesso do produto
+  depende deles (ex.: menor consumo num produto sucessor).
+- De desempenho técnico: explícitos, concretos, usados para comparar produtos.
+- De atratividade: implícitos, diferenciam o produto; o cliente em geral não
+  paga mais por eles.
+
+O que fazer:
+- Requisitos de cliente ganham tipoCliente: "basico" | "desempenho" |
+  "atratividade" (padrão "desempenho" na migração).
+- Seleção no cadastro/edição com explicação curta de cada tipo.
+- Avisos: requisito básico sem nenhuma relação na Matriz QFD; requisito básico
+  cujos requisitos de projeto ligados são todos "desejo" (se P01 existir).
+- Mostrar o tipo na Comparação, na Matriz (ícone ou letra) e no relatório.
+- Filtro por tipo na lista de requisitos de cliente.
+
+Critérios de aceite:
+- Um requisito básico sem relação na matriz aparece no aviso do Dashboard e do
+  relatório.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar testes em tests/testes.js e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P08).
+=== fim P08
+
+------------------------------------------------------------------------------------------
+=== P09 - Árvore de requisitos do cliente (prioridade MÉDIA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), permita desdobrar
+requisitos do cliente em níveis, conforme Pahl & Beitz, Engineering Design,
+Seção 5.2.4 (três passos de Kramer: declaração -> desenvolvimento ->
+refinamento; exemplo: "manutenção simples" -> "intervalo longo de manutenção"
+-> "intervalo de manutenção de pelo menos 5 000 horas de operação"), e na
+árvore de objetivos com pesos da Seção 3.3.2 (Figs. 3.28 e 3.29).
+
+O que fazer:
+- Requisitos de cliente ganham parentId (null = nível mais alto).
+- Página de Requisitos de Cliente em árvore: adicionar filho, recolher/expandir,
+  mover para outro pai. Proibir ciclos.
+- Só as FOLHAS entram na Comparação (Mudge) e na Matriz QFD. Requisitos pais
+  aparecem agrupando as folhas (cabeçalho de grupo) na Matriz e no relatório.
+- Opcional nesta mesma tarefa: modo de pesos por árvore de objetivos (peso de
+  cada filho dentro do pai, somando 1; peso final = produto dos pesos até a
+  raiz, como na Fig. 3.29), como alternativa ao Mudge. O usuário escolhe o modo;
+  os pesos finais alimentam a Matriz do mesmo jeito.
+- Migração: todos os requisitos existentes viram raízes sem filhos (folhas),
+  então nada muda para projetos antigos.
+
+Critérios de aceite:
+- Um pai com 2 filhos: só os filhos aparecem no Mudge e na Matriz; os pesos
+  continuam somando 100%.
+- No modo árvore de objetivos, o exemplo da Fig. 3.29 dá os mesmos pesos finais.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar testes em tests/testes.js e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P09).
+=== fim P09
+
+------------------------------------------------------------------------------------------
+=== P10 - Caderno de ideias de solução (prioridade MÉDIA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um caderno de
+ideias conforme Pahl & Beitz, Engineering Design, Seção 5.4: durante o
+levantamento dos requisitos surgem funções e ideias de solução; elas devem ser
+registradas para uso posterior na busca sistemática de soluções, mas NÃO devem
+entrar na lista de requisitos (para não enviesá-la). A análise de falhas de
+produtos existentes também é fonte de requisitos, que devem ser formulados de
+forma neutra.
+
+O que fazer:
+- Nova página pages/ideias.html (+ js): ideias com título, descrição, autor,
+  data, requisitos relacionados (cliente e/ou projeto) e status ("nova",
+  "promissora", "descartada").
+- Botão "Registrar ideia" acessível nas páginas de requisitos (abre um cadastro
+  rápido já ligado ao requisito em edição).
+- Registro de falhas conhecidas (de produtos anteriores/concorrentes): falha,
+  causa, e botão "Criar requisito neutro a partir desta falha".
+- Relatório: anexo "Ideias de solução registradas" e "Falhas analisadas".
+
+Critérios de aceite:
+- Uma ideia ligada a um requisito aparece no requisito (contador) e no anexo do
+  relatório; não aparece em nenhuma tabela de requisitos.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Nova página: carregar database.js, utils.js e o script da página, nessa
+  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
+  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P10).
+=== fim P10
+
+------------------------------------------------------------------------------------------
+=== P11 - Requisitos de restrição (prioridade BAIXA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente
+requisitos de restrição conforme Pahl & Beitz, Engineering Design, Seção 5.1:
+a lista de requisitos responde a três perguntas: que objetivos a solução deve
+atingir, que propriedades deve ter e que propriedades NÃO deve ter. A Seção
+2.1.7 distingue ainda restrições específicas da tarefa e restrições gerais
+(estado da técnica), que valem mesmo sem serem ditas.
+
+O que fazer:
+- Requisitos de projeto ganham natureza: "objetivo" | "propriedade" |
+  "restricao" (o que o produto não deve ter/fazer), e, para restrições,
+  abrangencia: "especifica" | "geral".
+- Restrições aparecem em destaque (ícone e cor) nas listas, nas
+  Especificações e numa seção própria do relatório ("O produto não deve...").
+- Restrições podem não ter sentido de melhoria nem entrar na Matriz; tratar
+  isso sem quebrar os cálculos (excluir do peso relativo, se for o caso, e
+  explicar na interface).
+
+Critérios de aceite:
+- Uma restrição aparece na seção própria do relatório e não distorce os pesos
+  relativos dos demais requisitos de projeto.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar testes em tests/testes.js e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P11).
+=== fim P11
+
+------------------------------------------------------------------------------------------
+=== P12 - Listas parciais por departamento (prioridade BAIXA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente listas
+parciais de requisitos conforme Pahl & Beitz, Engineering Design, Seção 5.3.2
+e Fig. 5.6: cada área (cliente/vendas, produção, distribuição, desenvolvimento,
+projeto) prepara sua lista parcial, e a lista do produto é a compilação delas;
+cabe à gerência do projeto garantir que as listas parciais cubram tudo e sejam
+compatíveis entre si.
+
+O que fazer:
+- Requisitos (cliente e projeto) ganham departamento (lista editável de
+  departamentos do projeto).
+- Filtro por departamento em todas as listas e nas Especificações.
+- Exportar/importar a lista parcial de um departamento (JSON ou CSV), para que
+  cada área preencha a sua e depois se junte ao projeto; na importação,
+  detectar duplicados e possíveis conflitos (mesmo requisito com metas
+  diferentes) e mostrar para decisão.
+- Relatório: opção de agrupar por departamento e resumo de quantos requisitos
+  cada área contribuiu.
+
+Critérios de aceite:
+- Importar a lista parcial de "Produção" com um requisito já existente mostra
+  o conflito em vez de duplicar.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js
+  (parseCSV já existe lá).
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar testes em tests/testes.js e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P12).
+=== fim P12
+
+------------------------------------------------------------------------------------------
+=== P13 - Estado da técnica e referências (prioridade BAIXA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie o registro do
+estado da técnica conforme Pahl & Beitz, Engineering Design, Seção 3.1.4
+("Determinar o estado da técnica": produtos da empresa, tecnologias, conceitos
+e produtos na literatura e em patentes, produtos dos concorrentes, normas,
+diretrizes e regulamentos) e Seção 5.2.3.
+
+O que fazer:
+- Nova página pages/referencias.html (+ js): referências com tipo ("patente",
+  "norma", "regulamento", "artigo/livro", "produto", "site", "outro"), título,
+  identificação (nº da patente/norma), link, data de consulta e resumo.
+- Ligar referências a requisitos (muitos-para-muitos). No requisito, mostrar as
+  referências ligadas; se P03 existir, uma referência do tipo norma/regulamento
+  pode ser escolhida como origem do requisito.
+- Relatório: seção "Estado da técnica e referências", com a lista e os
+  requisitos que cada uma originou.
+- Links mostrados como texto + link (sem buscar nada na internet).
+
+Critérios de aceite:
+- Uma norma ligada a dois requisitos aparece nos dois e no relatório.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Nova página: carregar database.js, utils.js e o script da página, nessa
+  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
+  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P13).
+=== fim P13
+
+------------------------------------------------------------------------------------------
+=== P14 - Módulo de planejamento do produto (prioridade BAIXA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um módulo
+opcional de planejamento do produto conforme Pahl & Beitz, Engineering Design,
+Seção 3.1 e Fig. 3.2 (analisar a situação -> formular estratégias de busca ->
+encontrar ideias de produto -> selecionar -> definir o produto). Ferramentas
+do livro a implementar, cada uma como uma aba da página:
+- Fase do ciclo de vida do produto atual (Fig. 3.1): planejamento,
+  desenvolvimento, introdução, crescimento/maturidade, saturação, declínio.
+- Matriz produto-mercado (Fig. 3.3): produtos existentes/novos x mercados
+  existentes/novos, com os quadrantes I a IV (IV = maior risco).
+- Matriz de portfólio 3x3 (Fig. 3.5): dois fatores escolhidos pelo usuário
+  (ex.: atratividade do mercado x posição tecnológica), zonas de oportunidade,
+  alerta e perigo.
+- Matriz necessidade-competência (Fig. 3.6): necessidades dos clientes x
+  competências da empresa, marcando os campos de busca preferidos.
+- Seleção de ideias de produto com os critérios da Tabela 3.1 (metas da
+  empresa >= 50%, competências da empresa >= 30%, mercado e outros >= 20%),
+  primeiro com sim/não e depois com notas e pesos.
+- A ideia escolhida pode ser enviada para a "Definição do projeto" (P06), se
+  existir.
+
+Critérios de aceite:
+- Os pesos da Tabela 3.1 são validados (somam 100% e respeitam os mínimos) e a
+  ideia com maior nota aparece em destaque.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Nova página: carregar database.js, utils.js e o script da página, nessa
+  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
+- Gráficos em SVG simples, sem biblioteca externa.
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
+  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P14).
+=== fim P14
+
+------------------------------------------------------------------------------------------
+=== P15 - Fechamento: abstração e função global (prioridade BAIXA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie o assistente de
+fechamento do projeto informacional, que prepara a entrada do projeto
+conceitual conforme Pahl & Beitz, Engineering Design:
+- Seção 6.2.3: abstrair a lista de requisitos em 5 passos: (1) eliminar
+  preferências pessoais; (2) omitir requisitos sem relação direta com a função
+  e as restrições essenciais; (3) transformar dados quantitativos em
+  qualitativos e reduzir a declarações essenciais; (4) generalizar; (5)
+  formular o problema de forma neutra em relação à solução (exemplo do livro,
+  Tabela 6.1: medidor de combustível).
+- Seção 6.2.2: ampliar a formulação do problema passo a passo (exemplo de
+  Krick, Figs. 6.2 e 6.3).
+- Seção 6.3.1 e Fig. 2.2: função global como caixa-preta, com entradas e
+  saídas de energia, material e sinais.
+
+O que fazer:
+- Nova página pages/fechamento.html (+ js), última etapa antes do Relatório.
+- Passo a passo: mostra as exigências (P01, se existir) e pede ao usuário,
+  para cada passo, que marque/reescreva; guarda o resultado de cada passo.
+- Formulações progressivamente mais amplas do problema (lista ordenada), com a
+  escolhida marcada.
+- Editor da função global: nome da função (verbo + substantivo) e listas de
+  entradas/saídas por tipo (energia, material, sinal); desenho da caixa-preta
+  em SVG (setas contínuas para energia, duplas para material, tracejadas para
+  sinal, como na Fig. 2.4).
+- Relatório: seção "Formulação do problema e função global".
+
+Critérios de aceite:
+- O relatório mostra a caixa-preta com as entradas e saídas cadastradas e a
+  formulação final do problema.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Nova página: carregar database.js, utils.js e o script da página, nessa
+  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
+  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P15).
+=== fim P15
+
+------------------------------------------------------------------------------------------
+=== P16 - Usar a dificuldade técnica (prioridade MÉDIA)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), os requisitos de
+projeto já têm o campo dificuldadeTecnica (1 a 5), cadastrado em
+js/requisitos-projeto.js, mas ele não aparece na Matriz QFD, nas
+Especificações nem no relatório. Na Casa da Qualidade, a dificuldade técnica
+fica abaixo da importância de cada requisito de projeto e ajuda a decidir
+prioridades e riscos.
+
+O que fazer:
+- Matriz QFD: linha "Dificuldade técnica" abaixo da pontuação/percentual de
+  cada requisito de projeto.
+- Especificações: coluna com a dificuldade e destaque para requisitos de
+  importância alta (terço superior) com dificuldade 4-5 ("atenção: importante
+  e difícil").
+- Relatório: incluir a dificuldade na tabela de requisitos de projeto, na
+  matriz e uma lista "Requisitos críticos" (terço superior + dificuldade >= 4).
+- Não mudar o cálculo dos pesos; é informação complementar.
+
+Critérios de aceite:
+- Um requisito do terço superior com dificuldade 5 aparece como crítico nas
+  Especificações e no relatório.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Não muda a estrutura dos dados (não precisa de migração).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Acrescentar testes em tests/testes.js e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P16).
+=== fim P16
 
 ==========================================================================================
 ver depois

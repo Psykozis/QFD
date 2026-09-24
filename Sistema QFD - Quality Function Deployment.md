@@ -46,8 +46,15 @@ Os requisitos de projeto aparecem na ordem de importância do QFD, divididos em 
 - **Texto explicativo (opcional):** aparece no relatório.
 - **Aspectos indesejáveis:** vêm preenchidos com os conflitos **--** do telhado. Se você editar o texto, sua versão é mantida.
 
-### 7. Relatório PDF
-Preencha título, empresa, responsável e descrição, escolha as seções e gere a prévia e o PDF. Seções disponíveis: dicionário de requisitos, resumo, requisitos de cliente, requisitos de projeto, telhado, análise de correlações, matriz QFD, especificações, comparações, ranking, análises e anexos. Na prévia, passe o mouse sobre RC, RP e células para ver as descrições e os textos explicativos.
+### 7. Avaliação Competitiva
+Depois do QFD, compare o produto com os concorrentes:
+- **Produtos avaliados:** cadastre até 6 concorrentes. "Nosso produto" pode ser renomeado (ex.: "Protótipo v2").
+- **Avaliação dos clientes:** peça aos clientes uma nota de **1 (pior)** a **5 (melhor)** para cada produto em cada requisito, e defina a **meta** de nota do nosso produto. O sistema mostra se estamos **à frente, empatados ou atrás** do melhor concorrente, o **índice de melhoria** (meta ÷ nossa nota) e a **prioridade** (peso do requisito × índice de melhoria): onde melhorar rende mais para o cliente. Um gráfico mostra o perfil de cada produto.
+- **Avaliação técnica:** registre o valor medido de cada produto nos requisitos de projeto (ex.: "1,5 kg"). O sistema aponta o melhor concorrente (maior valor para ↑, menor para ↓) e se a meta das Especificações fica acima ou abaixo dele.
+- **Resultado:** pontos fortes, pontos a melhorar, metas abaixo do concorrente e **inconsistências**: casos em que os clientes preferem um produto, mas os valores técnicos (dos requisitos com relação forte na matriz) favorecem o outro. Isso costuma indicar erro de medição ou um requisito de projeto que ficou de fora.
+
+### 8. Relatório PDF
+Preencha título, empresa, responsável e descrição, escolha as seções e gere a prévia e o PDF. Seções disponíveis: dicionário de requisitos, resumo, requisitos de cliente, requisitos de projeto, telhado, análise de correlações, matriz QFD, especificações, avaliação competitiva, comparações, ranking, análises e anexos. Na prévia, passe o mouse sobre RC, RP e células para ver as descrições e os textos explicativos.
 
 ## 💾 Salvando e levando o projeto
 
@@ -86,6 +93,7 @@ Ao final você terá:
 - ✅ Requisitos técnicos priorizados pela voz do cliente
 - ✅ Conflitos e sinergias técnicas identificados
 - ✅ Especificações com metas mensuráveis
+- ✅ Comparação com os concorrentes, na visão dos clientes e nos valores técnicos
 - ✅ Relatório profissional para apresentação
 
 ## 🌐 Compatibilidade

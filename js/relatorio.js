@@ -140,6 +140,7 @@ function generatePreview() {
         if (isSectionChecked('section-correlations')) html += safeSection('Correlações', generateCorrelationsAnalysis);
         if (isSectionChecked('section-qfd-matrix')) html += safeSection('Matriz QFD', generateMatrix);
         if (isSectionChecked('section-especificacoes')) html += safeSection('Especificações', generateEspecificacoes);
+        if (isSectionChecked('section-competitiva')) html += safeSection('Avaliação Competitiva', generateAvaliacaoCompetitiva);
         if (isSectionChecked('section-ranking')) html += safeSection('Ranking', generateRankingSection);
         if (isSectionChecked('section-analysis')) html += safeSection('Análises', generateAnalysisSection);
         if (isSectionChecked('section-comparisons')) html += safeSection('Comparações', generateComparisonsSection);
@@ -346,6 +347,69 @@ function generateEspecificacoes() {
     });
 
     return html + '</tbody></table></div>';
+}
+
+function generateAvaliacaoCompetitiva() {
+    const analise = qfdDB.getAnaliseCompetitiva();
+    let html = '<div class="report-section report-competitiva"><h3>Avaliação Competitiva</h3>';
+    if (!analise.concorrentes.length) {
+        return html + '<p>Nenhum concorrente cadastrado na avaliação competitiva.</p></div>';
+    }
+
+    const corDe = i => CORES_PRODUTOS[i % CORES_PRODUTOS.length];
+    const cabecalhoProdutos = analise.produtos
+        .map((p, i) => `<th><span class="produto-cor" style="background:${corDe(i)}"></span> ${escapeHtml(p.nome)}</th>`).join('');
+    const situacao = s => {
+        const info = getSituacaoCompetitiva(s);
+        return `<span class="sit-badge ${info.classe}">${info.texto}</span>`;
+    };
+
+    html += `<p class="report-hint">Comparação do produto com ${analise.concorrentes.length} concorrente(s): `
+        + `${analise.produtos.map(p => `<strong>${escapeHtml(p.nome)}</strong>`).join(', ')}. `
+        + `Notas dos clientes preenchidas: ${analise.stats.notasPreenchidas} de ${analise.stats.notasTotal} (${analise.stats.percent}%).</p>`;
+
+    html += '<h4>Avaliação dos clientes (1 = pior, 5 = melhor)</h4>';
+    html += '<p class="report-hint">Índice de melhoria = meta ÷ nossa nota. Prioridade = peso × índice de melhoria, normalizada.</p>';
+    html += `<table class="report-table competitiva-table"><thead><tr><th>RC</th><th>Requisito de cliente</th><th>Peso</th>${cabecalhoProdutos}<th>Meta</th><th>Índice de melhoria</th><th>Prioridade</th><th>Situação</th></tr></thead><tbody>`;
+    [...analise.clientes].sort((a, b) => (b.peso - a.peso) || (a.numero - b.numero)).forEach(c => {
+        html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RC${c.numero}`, c.requisito))}">
+            <td><strong>RC${c.numero}</strong></td>
+            <td class="competitiva-desc">${escapeHtml(c.requisito.descricao)}</td>
+            <td>${(c.peso * 100).toFixed(1)}%</td>
+            ${analise.produtos.map(p => `<td>${c.notas[p.id] || '—'}</td>`).join('')}
+            <td>${c.meta || '—'}</td>
+            <td>${c.indiceMelhoria ? c.indiceMelhoria.toFixed(2) : '—'}</td>
+            <td>${(c.prioridade * 100).toFixed(1)}%</td>
+            <td>${situacao(c.situacao)}</td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    html += buildGraficoCompetitivo(analise);
+
+    if (analise.tecnicos.length) {
+        html += '<h4>Avaliação técnica</h4>';
+        html += '<p class="report-hint">Requisitos de projeto na ordem do QFD. Melhor concorrente: maior valor para ↑, menor para ↓ (nominais * não são comparados).</p>';
+        html += `<table class="report-table competitiva-table"><thead><tr><th>#</th><th>Requisito de projeto</th><th>Sentido</th><th>Meta</th>${cabecalhoProdutos}<th>Melhor concorrente</th><th>Meta × melhor concorrente</th></tr></thead><tbody>`;
+        analise.tecnicos.forEach(t => {
+            const melhor = t.melhor
+                ? `${escapeHtml(`${formatarNumero(t.melhor.valor)} ${t.unidade}`.trim())}<small class="competitiva-quem">${escapeHtml(t.melhor.produtos.join(', '))}</small>`
+                : (t.requisito.sentidoMelhoria === 'none' ? 'nominal' : '—');
+            html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${t.numero}`, t.requisito))}">
+                <td>${t.rank}</td>
+                <td class="competitiva-desc"><strong>RP${t.numero}</strong> — ${escapeHtml(t.requisito.descricao)}</td>
+                <td>${getSentidoSymbol(t.requisito.sentidoMelhoria)}</td>
+                <td>${escapeHtml(t.meta ? `${t.meta} ${t.unidade}`.trim() : '—')}</td>
+                ${analise.produtos.map(p => `<td>${escapeHtml(t.valores[p.id] || '—')}</td>`).join('')}
+                <td>${melhor}</td>
+                <td>${situacao(t.situacao)}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+    }
+
+    html += '<h4>Resultado da comparação</h4>';
+    html += `<div class="competitiva-resultado">${buildResultadoHtml(analise)}</div>`;
+    return html + '</div>';
 }
 
 function generateRankingSection() {
