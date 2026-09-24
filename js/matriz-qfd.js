@@ -40,11 +40,6 @@ function setupMatrix() {
     }
 }
 
-function getSentidoSymbol(sentido) {
-    const symbols = { up: '↑', down: '↓', none: '*' };
-    return symbols[sentido] || '?';
-}
-
 /** Telhado + matriz em uma única tabela para alinhamento perfeito das colunas RP */
 function generateQFDMatrix() {
     const matrixContainer = document.getElementById('qfd-matrix');
@@ -235,27 +230,6 @@ function getCorrelationSymbol(corr) {
 function getCorrelationLabel(corr) {
     const labels = { '++': 'Forte Positiva', '+': 'Positiva', '-': 'Negativa', '--': 'Forte Negativa', '0': 'Neutra' };
     return labels[corr] || 'Neutra';
-}
-
-function truncateText(text, limit) {
-    return text.length > limit ? text.substring(0, limit) + '...' : text;
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-/** Escapa texto para uso dentro de um atributo HTML (ex.: data-tooltip) */
-function escapeAttr(text) {
-    return String(text == null ? '' : text)
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\r?\n/g, '&#10;');
 }
 
 function setupGlobalEvents() {

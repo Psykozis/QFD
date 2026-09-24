@@ -200,15 +200,6 @@ function reqTip(label, req) {
     return `${label}: ${req ? req.descricao : ''}${obs}`;
 }
 
-function getSentidoSymbol(sentido) {
-    const key = String(sentido || '').toLowerCase();
-    const symbols = {
-        up: '↑', down: '↓', none: '*',
-        crescente: '↑', decrescente: '↓', nominal: '*'
-    };
-    return symbols[key] || '-';
-}
-
 function generateProjectReqs() {
     const ordenados = [...requisitosProjeto].sort((a, b) => (b.importanciaAbsoluta || 0) - (a.importanciaAbsoluta || 0));
     const total = ordenados.length;
@@ -442,29 +433,6 @@ function moveReportTooltip(e, tipEl) {
     let top = e.clientY + pad;
     tipEl.style.left = left + 'px';
     tipEl.style.top = top + 'px';
-}
-
-function truncateText(text, limit) {
-    if (!text) return '';
-    return text.length > limit ? text.substring(0, limit) + '...' : text;
-}
-
-function escapeHtml(text) {
-    if (text == null) return '';
-    const div = document.createElement('div');
-    div.textContent = String(text);
-    return div.innerHTML;
-}
-
-function escapeAttr(text) {
-    if (text == null) return '';
-    return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\r?\n/g, '&#10;');
 }
 
 function printReport() {

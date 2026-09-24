@@ -215,24 +215,6 @@ function loadRequisitos() {
     listaContainer.innerHTML = requisitosHTML;
 }
 
-function getSentidoSymbol(sentido) {
-    const symbols = {
-        'up': '↑',
-        'down': '↓',
-        'none': '*'
-    };
-    return symbols[sentido] || '?';
-}
-
-function getSentidoLabel(sentido) {
-    const labels = {
-        'up': 'Crescente',
-        'down': 'Decrescente',
-        'none': 'Nominal'
-    };
-    return labels[sentido] || 'Indefinido';
-}
-
 function getDificuldadeLabel(dificuldade) {
     const labels = {
         1: 'Muito Fácil',
@@ -399,19 +381,6 @@ function generateCSV(requisitos) {
     return [headers, ...rows].map(row => row.join(',')).join('\n');
 }
 
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
 function updateNavigationState() {
     const requisitos = qfdDB.getRequisitosProjeto();
     const btnProximo = document.getElementById('btn-proximo');
@@ -425,69 +394,6 @@ function updateNavigationState() {
             btnProximo.title = 'Continuar para a correlação entre requisitos';
         }
     }
-}
-
-function autoResizeTextarea(event) {
-    const textarea = event.target;
-    textarea.style.height = 'auto';
-    textarea.style.height = textarea.scrollHeight + 'px';
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function showAlert(message, type = 'info') {
-    // Remove alertas existentes
-    const existingAlerts = document.querySelectorAll('.alert');
-    existingAlerts.forEach(alert => alert.remove());
-    
-    // Cria novo alerta
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
-    alert.innerHTML = `
-        <i class="fas fa-${getAlertIcon(type)}"></i>
-        ${message}
-        <button class="alert-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    
-    // Insere no início do main-content
-    const mainContent = document.querySelector('.main-content .container');
-    if (mainContent) {
-        mainContent.insertBefore(alert, mainContent.firstChild);
-    }
-    
-    // Remove automaticamente após 5 segundos
-    setTimeout(() => {
-        if (alert.parentElement) {
-            alert.remove();
-        }
-    }, 5000);
-}
-
-function getAlertIcon(type) {
-    const icons = {
-        success: 'check-circle',
-        warning: 'exclamation-triangle',
-        danger: 'exclamation-circle',
-        info: 'info-circle'
-    };
-    return icons[type] || 'info-circle';
 }
 
 // Adiciona estilos específicos da página

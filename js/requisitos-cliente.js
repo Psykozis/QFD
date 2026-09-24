@@ -58,37 +58,6 @@ function setupEventListeners() {
         });
     }
 
-    setupDropdownMenu();
-}
-
-/**
- * Configura o comportamento do menu dropdown de navegação
- */
-function setupDropdownMenu() {
-    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-    
-    dropdownToggles.forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            const menu = this.nextElementSibling;
-            if (menu) {
-                // Fecha outros menus abertos
-                document.querySelectorAll('.dropdown-menu.show').forEach(openMenu => {
-                    if (openMenu !== menu) openMenu.classList.remove('show');
-                });
-                menu.classList.toggle('show');
-            }
-        });
-    });
-    
-    // Fechar dropdown ao clicar fora
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.nav-dropdown')) {
-            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                menu.classList.remove('show');
-            });
-        }
-    });
 }
 
 // ========================================================================
@@ -396,26 +365,6 @@ function generateCSV(requisitos) {
 }
 
 /**
- * Faz o download de um arquivo no navegador
- * 
- * @param {string} content - Conteúdo do arquivo
- * @param {string} filename - Nome do arquivo
- * @param {string} mimeType - Tipo MIME do arquivo
- */
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-/**
  * Atualiza o estado do botão de navegação "Próximo"
  * Desabilita se não houver pelo menos 2 requisitos cadastrados
  */
@@ -432,121 +381,6 @@ function updateNavigationState() {
             btnProximo.title = 'Continuar para a comparação dos requisitos';
         }
     }
-}
-
-/**
- * Ajusta automaticamente a altura do textarea conforme o conteúdo
- * 
- * @param {Event} event - Evento de input do textarea
- */
-function autoResizeTextarea(event) {
-    const textarea = event.target;
-    textarea.style.height = 'auto';
-    textarea.style.height = textarea.scrollHeight + 'px';
-}
-
-/**
- * Formata uma data ISO para o formato brasileiro
- * 
- * @param {string} dateString - Data em formato ISO
- * @returns {string} Data formatada (dd/mm/aaaa hh:mm)
- */
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-/**
- * Exibe uma mensagem de alerta na interface
- * Remove alertas anteriores e cria um novo
- * 
- * @param {string} message - Mensagem a ser exibida
- * @param {string} type - Tipo do alerta: 'success', 'warning', 'danger', 'info'
- */
-function showAlert(message, type = 'info') {
-    // Remove alertas existentes
-    const existingAlerts = document.querySelectorAll('.alert');
-    existingAlerts.forEach(alert => alert.remove());
-    
-    // Cria novo alerta
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
-    alert.innerHTML = `
-        <i class="fas fa-${getAlertIcon(type)}"></i>
-        ${message}
-        <button class="alert-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    
-    // Adiciona estilos do botão de fechar se não existirem
-    if (!document.getElementById('alert-close-styles')) {
-        const styles = document.createElement('style');
-        styles.id = 'alert-close-styles';
-        styles.textContent = `
-            .alert {
-                position: relative;
-                padding-right: 3rem;
-            }
-            .alert-close {
-                position: absolute;
-                top: 50%;
-                right: 1rem;
-                transform: translateY(-50%);
-                background: none;
-                border: none;
-                color: inherit;
-                cursor: pointer;
-                opacity: 0.7;
-                transition: opacity 0.3s ease;
-            }
-            .alert-close:hover {
-                opacity: 1;
-            }
-        `;
-        document.head.appendChild(styles);
-    }
-    
-    // Insere no início do main-content
-    const mainContent = document.querySelector('.main-content .container');
-    if (mainContent) {
-        mainContent.insertBefore(alert, mainContent.firstChild);
-    }
-    
-    // Remove automaticamente após 5 segundos
-    setTimeout(() => {
-        if (alert.parentElement) {
-            alert.remove();
-        }
-    }, 5000);
-}
-
-/**
- * Retorna o ícone apropriado para cada tipo de alerta
- * 
- * @param {string} type - Tipo do alerta
- * @returns {string} Nome do ícone FontAwesome
- */
-function getAlertIcon(type) {
-    const icons = {
-        success: 'check-circle',
-        warning: 'exclamation-triangle',
-        danger: 'exclamation-circle',
-        info: 'info-circle'
-    };
-    return icons[type] || 'info-circle';
 }
 
 // ========================================================================

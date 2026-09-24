@@ -35,27 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadRequisitos();
     setupCorrelation();
     updateStatus();
-    setupDropdownMenu();
 });
-
-function setupDropdownMenu() {
-    const dropdownToggle = document.querySelector('.dropdown-toggle');
-    const dropdownMenu = document.querySelector('.dropdown-menu');
-    
-    if (dropdownToggle && dropdownMenu) {
-        dropdownToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            dropdownMenu.classList.toggle('show');
-        });
-        
-        // Fechar dropdown ao clicar fora
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.nav-dropdown')) {
-                dropdownMenu.classList.remove('show');
-            }
-        });
-    }
-}
 
 function loadRequisitos() {
     requisitos = qfdDB.getRequisitosProjeto();
@@ -231,16 +211,6 @@ function hideTooltip() {
     if (tooltip) {
         tooltip.remove();
     }
-}
-
-function getSentidoSymbol(sentido) {
-    const symbols = { 'up': '↑', 'down': '↓', 'none': '*' };
-    return symbols[sentido] || '?';
-}
-
-function getSentidoLabel(sentido) {
-    const labels = { 'up': 'Crescente', 'down': 'Decrescente', 'none': 'Nominal' };
-    return labels[sentido] || 'Indefinido';
 }
 
 function getCorrelationDisplay(correlation) {
@@ -799,76 +769,6 @@ function generateAnalysisCSV(correlacoes) {
     });
     
     return [headers, ...rows].map(row => row.join(',')).join('\n');
-}
-
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-/** Escapa texto para uso dentro de um atributo HTML (ex.: data-tooltip) */
-function escapeAttr(text) {
-    return String(text == null ? '' : text)
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\r?\n/g, '&#10;');
-}
-
-function showAlert(message, type = 'info') {
-    // Remove alertas existentes
-    const existingAlerts = document.querySelectorAll('.alert');
-    existingAlerts.forEach(alert => alert.remove());
-    
-    // Cria novo alerta
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
-    alert.innerHTML = `
-        <i class="fas fa-${getAlertIcon(type)}"></i>
-        ${message}
-        <button class="alert-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    
-    // Insere no início do main-content
-    const mainContent = document.querySelector('.main-content .container');
-    if (mainContent) {
-        mainContent.insertBefore(alert, mainContent.firstChild);
-    }
-    
-    // Remove automaticamente após 5 segundos
-    setTimeout(() => {
-        if (alert.parentElement) {
-            alert.remove();
-        }
-    }, 5000);
-}
-
-function getAlertIcon(type) {
-    const icons = {
-        success: 'check-circle',
-        warning: 'exclamation-triangle',
-        danger: 'exclamation-circle',
-        info: 'info-circle'
-    };
-    return icons[type] || 'info-circle';
 }
 
 function addPopupStyles() {

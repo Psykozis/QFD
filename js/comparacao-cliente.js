@@ -35,26 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadRequisitos();
     setupComparison();
     updateStatus();
-    setupDropdownMenu();
 });
-
-function setupDropdownMenu() {
-    const dropdownToggle = document.querySelector('.dropdown-toggle');
-    const dropdownMenu = document.querySelector('.dropdown-menu');
-    
-    if (dropdownToggle && dropdownMenu) {
-        dropdownToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            dropdownMenu.classList.toggle('show');
-        });
-        
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.nav-dropdown')) {
-                dropdownMenu.classList.remove('show');
-            }
-        });
-    }
-}
 
 function loadRequisitos() {
     requisitos = qfdDB.getRequisitosCliente();
@@ -524,27 +505,6 @@ function updateStatus() {
 
     const fillEl = document.getElementById('progress-fill');
     if (fillEl) fillEl.style.width = `${progresso}%`;
-}
-
-function truncateText(text, limit) {
-    return text.length > limit ? text.substring(0, limit) + '...' : text;
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-/** Escapa texto para uso dentro de um atributo HTML (ex.: data-tooltip) */
-function escapeAttr(text) {
-    return String(text == null ? '' : text)
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\r?\n/g, '&#10;');
 }
 
 function getTercioClass(rankIndex, total) {

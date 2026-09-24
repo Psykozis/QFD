@@ -5,33 +5,8 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    setupDropdownMenu();
     loadPage();
 });
-
-function setupDropdownMenu() {
-    document.querySelectorAll('.nav-dropdown .dropdown-toggle').forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const menu = this.nextElementSibling;
-            if (!menu) return;
-
-            document.querySelectorAll('.dropdown-menu.show, .dropdown-content.show').forEach(open => {
-                if (open !== menu) open.classList.remove('show');
-            });
-            menu.classList.toggle('show');
-        });
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.nav-dropdown')) {
-            document.querySelectorAll('.dropdown-menu.show, .dropdown-content.show').forEach(menu => {
-                menu.classList.remove('show');
-            });
-        }
-    });
-}
 
 function loadPage() {
     try {
