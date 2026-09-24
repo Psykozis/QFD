@@ -361,7 +361,9 @@ document.addEventListener('DOMContentLoaded', function() {
  * Armazena no LocalStorage com prefixo 'qfd_backup'
  */
 function createAutoBackup() {
-    const data = qfdDB.exportData();
+    // loadData (e não exportData): exportData chama saveData, que dispararia
+    // este backup de novo em loop infinito
+    const data = qfdDB.loadData();
     const backup = {
         ...data,
         backup: {

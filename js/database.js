@@ -13,10 +13,54 @@
  * - comparacaoCliente: Array de comparações pareadas entre requisitos cliente
  * - correlacaoProjeto: Array de correlações entre requisitos de projeto
  * - matrizQFD: Array de relações entre requisitos cliente e projeto
- * - metadata: Informações sobre criação e modificação do projeto
- * 
+ * - especificacoesProjeto: Especificações (unidade, valor, texto explicativo) por requisito de projeto
+ * - metadata: Informações sobre criação, modificação e versão da estrutura (schemaVersion)
+ *
  * @class QFDDatabase
  */
+
+/**
+ * Versão atual da estrutura dos dados salvos.
+ * Ao mudar a estrutura, incremente este número e adicione a migração
+ * correspondente em SCHEMA_MIGRATIONS.
+ */
+const SCHEMA_VERSION = 2;
+
+/**
+ * Migrações da estrutura dos dados. A chave é a versão de destino: a função
+ * recebe dados na versão (chave - 1) e os altera para a versão (chave).
+ * Dados sem schemaVersion são tratados como versão 1.
+ */
+const SCHEMA_MIGRATIONS = {
+    // v2: texto explicativo (observacao), especificações de projeto e
+    // sentido de melhoria padronizado em 'up' | 'down' | 'none'
+    2(data) {
+        const sentidos = { crescente: 'up', decrescente: 'down', nominal: 'none' };
+
+        ['requisitosCliente', 'requisitosProjeto', 'comparacaoCliente',
+         'correlacaoProjeto', 'matrizQFD', 'especificacoesProjeto'].forEach(key => {
+            if (!Array.isArray(data[key])) data[key] = [];
+        });
+
+        data.requisitosCliente.forEach(req => {
+            if (typeof req.observacao !== 'string') req.observacao = '';
+            if (typeof req.importancia !== 'number') req.importancia = 0;
+            if (typeof req.peso !== 'number') req.peso = 0;
+        });
+
+        data.requisitosProjeto.forEach(req => {
+            if (typeof req.observacao !== 'string') req.observacao = '';
+            const sentido = String(req.sentidoMelhoria || '').toLowerCase();
+            req.sentidoMelhoria = sentidos[sentido] || (['up', 'down', 'none'].includes(sentido) ? sentido : 'none');
+            req.dificuldadeTecnica = Number(req.dificuldadeTecnica) || 1;
+        });
+
+        data.especificacoesProjeto.forEach(esp => {
+            if (typeof esp.observacao !== 'string') esp.observacao = '';
+        });
+    }
+};
+
 class QFDDatabase {
     /**
      * Construtor da classe QFDDatabase
@@ -46,13 +90,52 @@ class QFDDatabase {
             metadata: {
                 created: new Date().toISOString(),
                 lastModified: new Date().toISOString(),
-                version: '1.0'
+                schemaVersion: SCHEMA_VERSION
             }
         };
 
         if (!localStorage.getItem(this.storageKey)) {
             this.saveData(defaultData);
+        } else {
+            this.loadData(); // aplica migrações pendentes já na abertura da página
         }
+    }
+
+    /**
+     * Versão da estrutura de um conjunto de dados (1 se não houver schemaVersion)
+     *
+     * @param {Object} data - Dados do projeto
+     * @returns {number}
+     */
+    getSchemaVersion(data) {
+        const version = data && data.metadata && Number(data.metadata.schemaVersion);
+        return version > 0 ? version : 1;
+    }
+
+    /**
+     * Atualiza os dados para a versão atual da estrutura, aplicando as
+     * migrações pendentes em ordem. Altera o objeto recebido.
+     *
+     * @param {Object} data - Dados do projeto em qualquer versão anterior
+     * @returns {boolean} true se alguma migração foi aplicada
+     * @throws {Error} Se os dados forem de uma versão mais nova que a do sistema
+     */
+    migrateData(data) {
+        const from = this.getSchemaVersion(data);
+        if (from > SCHEMA_VERSION) {
+            throw new Error(`Dados na versão ${from}, mas o sistema suporta até a versão ${SCHEMA_VERSION}. Atualize o sistema.`);
+        }
+        if (from === SCHEMA_VERSION) return false;
+
+        if (!data.metadata || typeof data.metadata !== 'object') {
+            data.metadata = { created: new Date().toISOString() };
+        }
+        for (let version = from + 1; version <= SCHEMA_VERSION; version++) {
+            SCHEMA_MIGRATIONS[version](data);
+            data.metadata.schemaVersion = version;
+        }
+        delete data.metadata.version; // campo antigo ('1.0'), substituído por schemaVersion
+        return true;
     }
 
     /**
@@ -67,13 +150,20 @@ class QFDDatabase {
     }
 
     /**
-     * Carrega dados do LocalStorage
-     * 
+     * Carrega dados do LocalStorage, migrando-os para a versão atual da
+     * estrutura se estiverem numa versão anterior
+     *
      * @returns {Object|null} Dados do projeto ou null se não existir
      */
     loadData() {
-        const data = localStorage.getItem(this.storageKey);
-        return data ? JSON.parse(data) : null;
+        const raw = localStorage.getItem(this.storageKey);
+        if (!raw) return null;
+
+        const data = JSON.parse(raw);
+        if (this.migrateData(data)) {
+            this.saveData(data);
+        }
+        return data;
     }
 
     /**
@@ -774,15 +864,31 @@ class QFDDatabase {
         return this.loadData();
     }
 
-    // Importa dados de JSON
+    /**
+     * Importa um projeto completo de JSON (backup), migrando-o para a versão
+     * atual da estrutura. Recusa arquivos que não sejam um projeto QFD ou que
+     * venham de uma versão mais nova do sistema.
+     *
+     * @param {string|Object} jsonData - Conteúdo do backup
+     * @returns {boolean} true se importou (se false, o motivo fica em lastImportError)
+     */
     importData(jsonData) {
+        this.lastImportError = '';
         try {
             const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+            if (!data || typeof data !== 'object' || Array.isArray(data) ||
+                !Array.isArray(data.requisitosCliente) || !Array.isArray(data.requisitosProjeto)) {
+                this.lastImportError = 'O arquivo não é um backup de projeto QFD.';
+                console.error('Erro ao importar dados:', this.lastImportError);
+                return false;
+            }
+            this.migrateData(data);
             this._ensureEspecificacoesArray(data);
             this._syncEspecificacoesEntries(data);
             this.saveData(data);
             return true;
         } catch (error) {
+            this.lastImportError = error.message;
             console.error('Erro ao importar dados:', error);
             return false;
         }
@@ -920,7 +1026,7 @@ function importProjectData(event) {
                 alert('Dados importados com sucesso!');
                 location.reload();
             } else {
-                alert('Erro ao importar dados. Verifique o formato do arquivo.');
+                alert('Erro ao importar dados. ' + (qfdDB.lastImportError || 'Verifique o formato do arquivo.'));
             }
         } catch (error) {
             alert('Erro ao ler o arquivo: ' + error.message);
