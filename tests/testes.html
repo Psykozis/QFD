@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Testes - Sistema QFD</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f8f9fa; color: #212529; }
+        h1 { font-size: 1.3rem; }
+        pre { background: #fff; padding: 1rem; border-radius: 6px; border-left: 4px solid #adb5bd; white-space: pre-wrap; }
+        pre.passou { border-left-color: #2f9e44; }
+        pre.falhou { border-left-color: #e03131; }
+        .pagina-teste { position: absolute; left: -10000px; width: 1200px; height: 800px; }
+    </style>
+    <!-- Mesma ordem de carregamento das páginas do sistema -->
+    <script src="../js/database.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="testes.js"></script>
+</head>
+<body>
+    <h1>Testes do Sistema QFD</h1>
+    <p>Os dados do seu projeto são guardados antes dos testes e restaurados no final.</p>
+    <pre id="resultado">Executando...</pre>
+</body>
+</html>
