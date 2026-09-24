@@ -61,6 +61,8 @@ function handleSubmitRequisito(event) {
     const descricao = document.getElementById('descricao-requisito').value.trim();
     const sentidoMelhoria = document.getElementById('sentido-melhoria').value;
     const dificuldadeTecnica = parseInt(document.getElementById('dificuldade-tecnica').value);
+    const observacaoEl = document.getElementById('observacao-requisito');
+    const observacao = observacaoEl ? observacaoEl.value.trim() : '';
     
     if (!descricao) {
         showAlert('Por favor, insira uma descrição para o requisito.', 'warning');
@@ -83,7 +85,7 @@ function handleSubmitRequisito(event) {
     }
     
     try {
-        const novoRequisito = qfdDB.addRequisitoProjeto(descricao, sentidoMelhoria, dificuldadeTecnica);
+        const novoRequisito = qfdDB.addRequisitoProjeto(descricao, sentidoMelhoria, dificuldadeTecnica, observacao);
         
         if (novoRequisito) {
             showAlert('Requisito de projeto adicionado com sucesso!', 'success');

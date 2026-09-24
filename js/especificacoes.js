@@ -44,7 +44,7 @@ function loadPage() {
         console.error('Erro ao carregar especificações:', err);
         const tbody = document.getElementById('especificacoes-tbody');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="4">Erro ao carregar dados. Recarregue a página.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5">Erro ao carregar dados. Recarregue a página.</td></tr>';
         }
         showToast('Erro ao carregar especificações.', 'danger');
     }
@@ -82,7 +82,7 @@ function renderTable(lista) {
 
     if (!lista.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="4">Cadastre requisitos de projeto para preencher as especificações.</td>';
+        tr.innerHTML = '<td colspan="5">Cadastre requisitos de projeto para preencher as especificações.</td>';
         tbody.appendChild(tr);
         return;
     }
@@ -138,6 +138,18 @@ function renderTable(lista) {
         inputValor.addEventListener('blur', () => saveField(req.id, 'valorUnitario', inputValor.value));
         tdValor.appendChild(inputValor);
 
+        const tdObs = document.createElement('td');
+        const textareaObs = document.createElement('textarea');
+        textareaObs.className = 'form-control spec-textarea';
+        textareaObs.dataset.field = 'observacao';
+        textareaObs.rows = 3;
+        textareaObs.placeholder = 'Ex.: Medido conforme norma ABNT, a 25 °C...';
+        textareaObs.title = 'Aparece como balão flutuante no relatório ao passar o mouse sobre esta especificação';
+        textareaObs.value = row.observacao || '';
+        textareaObs.addEventListener('change', () => saveField(req.id, 'observacao', textareaObs.value.trim()));
+        textareaObs.addEventListener('blur', () => saveField(req.id, 'observacao', textareaObs.value.trim()));
+        tdObs.appendChild(textareaObs);
+
         const tdAspectos = document.createElement('td');
         const textarea = document.createElement('textarea');
         textarea.className = 'form-control spec-textarea';
@@ -152,6 +164,7 @@ function renderTable(lista) {
         tr.appendChild(tdReq);
         tr.appendChild(tdUnidade);
         tr.appendChild(tdValor);
+        tr.appendChild(tdObs);
         tr.appendChild(tdAspectos);
         tbody.appendChild(tr);
     });

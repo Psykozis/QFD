@@ -106,8 +106,7 @@ function generateRoofMatrix() {
         const req = requisitos[i];
         const obsHdr = req.observacao ? `<br><em class='tooltip-obs'>${escapeHtml(req.observacao)}</em>` : '';
         roofHTML += `<div class="roof-header-cell" 
-            title="Requisito ${i + 1}: ${escapeHtml(req.descricao)}"
-            data-tooltip="Requisito ${i + 1}: ${escapeHtml(req.descricao)}${obsHdr}<br>Sentido: ${getSentidoLabel(req.sentidoMelhoria)} ${getSentidoSymbol(req.sentidoMelhoria)}<br>Dificuldade: ${req.dificuldadeTecnica}">
+            data-tooltip="${escapeAttr(`Requisito ${i + 1}: ${escapeHtml(req.descricao)}${obsHdr}<br>Sentido: ${getSentidoLabel(req.sentidoMelhoria)} ${getSentidoSymbol(req.sentidoMelhoria)}<br>Dificuldade: ${req.dificuldadeTecnica}`)}">
             <span class="req-number">${i + 1}</span>
             <span class="req-direction">${getSentidoSymbol(req.sentidoMelhoria)}</span>
         </div>`;
@@ -143,7 +142,7 @@ function generateRoofMatrix() {
                 data-req2="${requisitos[j].id}"
                 data-i="${i}" 
                 data-j="${j}"
-                data-tooltip="${tooltipText}">
+                data-tooltip="${escapeAttr(tooltipText)}">
                 ${getCorrelationDisplay(correlation)}
             </div>`;
         }
@@ -819,6 +818,17 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/** Escapa texto para uso dentro de um atributo HTML (ex.: data-tooltip) */
+function escapeAttr(text) {
+    return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\r?\n/g, '&#10;');
 }
 
 function showAlert(message, type = 'info') {

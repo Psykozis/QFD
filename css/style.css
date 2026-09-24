@@ -745,11 +745,22 @@ body {
     opacity: 1;
 }
 
-/* Matriz QFD usa tooltip JS (#qfd-tooltip), não o pseudo-elemento global */
+/* Matriz QFD, comparação e telhado usam tooltip JS, não o pseudo-elemento global
+   (o conteúdo do atributo contém HTML e apareceria cru num segundo balão) */
 .qfd-table [data-tooltip]::before,
-.qfd-table [data-tooltip]::after {
+.qfd-table [data-tooltip]::after,
+.matrix-table [data-tooltip]::before,
+.matrix-table [data-tooltip]::after,
+.roof-table [data-tooltip]::before,
+.roof-table .roof-header-cell[data-tooltip]::after {
     display: none !important;
     content: none !important;
+}
+
+/* Células do telhado usam ::after como realce de hover; remove a seta do tooltip global */
+.roof-table .roof-cell[data-tooltip]::after {
+    border: none;
+    transform: none;
 }
 
 .report-dict-list {
@@ -1240,6 +1251,7 @@ body {
     border-radius: 8px;
     font-size: 0.85rem;
     line-height: 1.4;
+    white-space: pre-line;
     pointer-events: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
@@ -1870,6 +1882,7 @@ body {
     max-width: 300px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     line-height: 1.4;
+    white-space: pre-line;
 }
 
 .qfd-tooltip strong {

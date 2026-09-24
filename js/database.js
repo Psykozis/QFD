@@ -102,14 +102,15 @@ class QFDDatabase {
      * Adiciona um novo requisito de cliente
      * 
      * @param {string} descricao - Descrição do requisito do cliente
+     * @param {string} [observacao=''] - Texto explicativo do requisito
      * @returns {Object} Objeto do requisito criado com ID, descrição, importância e peso
      */
-    addRequisitoCliente(descricao) {
+    addRequisitoCliente(descricao, observacao = '') {
         const data = this.loadData();
         const novoRequisito = {
             id: this.generateUUID(),
             descricao: descricao.trim(),
-            observacao: '',
+            observacao: (observacao || '').trim(),
             importancia: 0,
             peso: 0,
             created: new Date().toISOString()
@@ -184,14 +185,15 @@ class QFDDatabase {
      * @param {string} descricao - Descrição do requisito técnico
      * @param {string} sentidoMelhoria - Sentido da melhoria: 'up' (crescente), 'down' (decrescente) ou 'none' (nominal)
      * @param {number} dificuldadeTecnica - Nível de dificuldade técnica (1-5)
+     * @param {string} [observacao=''] - Texto explicativo do requisito
      * @returns {Object} Objeto do requisito criado
      */
-    addRequisitoProjeto(descricao, sentidoMelhoria = 'none', dificuldadeTecnica = 1) {
+    addRequisitoProjeto(descricao, sentidoMelhoria = 'none', dificuldadeTecnica = 1, observacao = '') {
         const data = this.loadData();
         const novoRequisito = {
             id: this.generateUUID(),
             descricao: descricao.trim(),
-            observacao: '',
+            observacao: (observacao || '').trim(),
             sentidoMelhoria: sentidoMelhoria, // 'up', 'down', 'none'
             dificuldadeTecnica: dificuldadeTecnica,
             importanciaAbsoluta: 0,
@@ -661,6 +663,7 @@ class QFDDatabase {
                 numeroOriginal: numOriginal,
                 unidadeMedida: esp.unidadeMedida || '',
                 valorUnitario: esp.valorUnitario || '',
+                observacao: esp.observacao || '',
                 aspectosIndesejaveis: esp.aspectosIndesejaveis || '',
                 aspectosAutoGerado: esp.aspectosAutoGerado !== false
             };
@@ -739,6 +742,7 @@ class QFDDatabase {
                     ...data.especificacoesProjeto[index],
                     unidadeMedida: item.unidadeMedida ?? data.especificacoesProjeto[index].unidadeMedida,
                     valorUnitario: item.valorUnitario ?? data.especificacoesProjeto[index].valorUnitario,
+                    observacao: item.observacao ?? data.especificacoesProjeto[index].observacao ?? '',
                     aspectosIndesejaveis: item.aspectosIndesejaveis ?? data.especificacoesProjeto[index].aspectosIndesejaveis,
                     aspectosAutoGerado: item.aspectosAutoGerado ?? false,
                     updated: new Date().toISOString()

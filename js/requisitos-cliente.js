@@ -105,6 +105,8 @@ function handleSubmitRequisito(event) {
     event.preventDefault();
     
     const descricao = document.getElementById('descricao-requisito').value.trim();
+    const observacaoEl = document.getElementById('observacao-requisito');
+    const observacao = observacaoEl ? observacaoEl.value.trim() : '';
     
     if (!descricao) {
         showAlert('Por favor, insira uma descrição para o requisito.', 'warning');
@@ -117,7 +119,7 @@ function handleSubmitRequisito(event) {
     }
     
     try {
-        const novoRequisito = qfdDB.addRequisitoCliente(descricao);
+        const novoRequisito = qfdDB.addRequisitoCliente(descricao, observacao);
         
         if (novoRequisito) {
             showAlert('Requisito adicionado com sucesso!', 'success');

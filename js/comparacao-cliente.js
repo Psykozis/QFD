@@ -116,7 +116,7 @@ function generateComparisonMatrix() {
     for (let i = 0; i < requisitos.length; i++) {
         const obsText = requisitos[i].observacao ? `<br><em class='tooltip-obs'>${escapeHtml(requisitos[i].observacao)}</em>` : '';
         const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}${obsText}`;
-        matrixHTML += `<div class="matrix-cell matrix-header-cell" data-tooltip="${tooltipText}">
+        matrixHTML += `<div class="matrix-cell matrix-header-cell" data-tooltip="${escapeAttr(tooltipText)}">
             <div class="header-content">
                 <span class="req-number">${i + 1}</span>
                 <div class="req-desc-mini">${truncateText(requisitos[i].descricao, 15)}</div>
@@ -134,7 +134,7 @@ function generateComparisonMatrix() {
         matrixHTML += '<div class="matrix-row">';
         const rowObsText = requisitos[i].observacao ? `<br><em class='tooltip-obs'>${escapeHtml(requisitos[i].observacao)}</em>` : '';
         const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}${rowObsText}`;
-        matrixHTML += `<div class="matrix-cell matrix-row-header" data-tooltip="${tooltipText}">
+        matrixHTML += `<div class="matrix-cell matrix-row-header" data-tooltip="${escapeAttr(tooltipText)}">
             <div class="row-header-content">
                 <span class="req-number">${i + 1}</span>
                 <span class="req-text">${truncateText(requisitos[i].descricao, 25)}</span>
@@ -149,7 +149,7 @@ function generateComparisonMatrix() {
             const cellTooltip = `Comparação entre:<br><strong>Req ${i + 1}:</strong> ${escapeHtml(truncateText(req1.descricao, 50))}${obs1}<br><strong>Req ${j + 1}:</strong> ${escapeHtml(truncateText(req2.descricao, 50))}${obs2}`;
 
             if (i === j) {
-                matrixHTML += `<div class="matrix-cell matrix-diagonal" data-tooltip="${cellTooltip}">-</div>`;
+                matrixHTML += `<div class="matrix-cell matrix-diagonal" data-tooltip="${escapeAttr(cellTooltip)}">-</div>`;
             } else if (i < j) {
                 const req1Id = requisitos[i].id;
                 const req2Id = requisitos[j].id;
@@ -161,11 +161,11 @@ function generateComparisonMatrix() {
                 
                 matrixHTML += `<div class="matrix-cell matrix-comparison ${isCompleted ? 'completed' : ''}" 
                     data-req1="${req1Id}" data-req2="${req2Id}" data-i="${i}" data-j="${j}"
-                    data-tooltip="${cellTooltip}<br><em>Clique para comparar</em>">
+                    data-tooltip="${escapeAttr(cellTooltip + '<br><em>Clique para comparar</em>')}">
                     ${isCompleted ? getComparisonDisplay(storedComparison, i, j) : '<span class="comparison-placeholder">?</span>'}
                 </div>`;
             } else {
-                matrixHTML += `<div class="matrix-cell matrix-mirror" data-tooltip="${cellTooltip}"></div>`;
+                matrixHTML += `<div class="matrix-cell matrix-mirror" data-tooltip="${escapeAttr(cellTooltip)}"></div>`;
             }
         }
         
@@ -534,6 +534,17 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/** Escapa texto para uso dentro de um atributo HTML (ex.: data-tooltip) */
+function escapeAttr(text) {
+    return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\r?\n/g, '&#10;');
 }
 
 function getTercioClass(rankIndex, total) {

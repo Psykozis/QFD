@@ -84,7 +84,7 @@ function generateQFDMatrix() {
     requisitosProjeto.forEach((rp, i) => {
         const rpObs = rp.observacao ? `\n${rp.observacao}` : '';
         const tip = `RP${i + 1}: ${rp.descricao}${rpObs}`;
-        html += `<th class="req-number-cell" data-tooltip="${escapeHtml(tip)}">
+        html += `<th class="req-number-cell" data-tooltip="${escapeAttr(tip)}">
             <span class="rp-id">RP${i + 1}</span>
             <span class="rp-sentido">${getSentidoSymbol(rp.sentidoMelhoria)}</span>
         </th>`;
@@ -95,7 +95,7 @@ function generateQFDMatrix() {
     requisitosCliente.forEach((rc, i) => {
         const rcObs = rc.observacao ? `\n${rc.observacao}` : '';
         const rcTip = `RC${i + 1}: ${rc.descricao}${rcObs}`;
-        html += `<tr><td class="row-header" data-tooltip="${escapeHtml(rcTip)}">${i + 1}. ${truncateText(rc.descricao, 30)}</td>`;
+        html += `<tr><td class="row-header" data-tooltip="${escapeAttr(rcTip)}">${i + 1}. ${truncateText(rc.descricao, 30)}</td>`;
         requisitosProjeto.forEach((rp, j) => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
             const cellTip = `RC${i + 1} × RP${j + 1}: influência ${val || 'não definida'}`;
@@ -245,6 +245,17 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/** Escapa texto para uso dentro de um atributo HTML (ex.: data-tooltip) */
+function escapeAttr(text) {
+    return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\r?\n/g, '&#10;');
 }
 
 function setupGlobalEvents() {

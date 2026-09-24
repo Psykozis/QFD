@@ -185,15 +185,19 @@ function generateSummary() {
 function generateClientReqs() {
     let html = '<div class="report-section"><h3>Requisitos do Cliente</h3><table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Peso</th></tr></thead><tbody>';
     requisitosCliente.forEach((r, i) => {
-        const obsTip = r.observacao ? ` | ${r.observacao}` : '';
-        const tip = `RC${i + 1}: ${r.descricao}${obsTip}`;
-        html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(tip)}">
+        html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RC${i + 1}`, r))}">
             <td>RC${i + 1}</td>
             <td>${escapeHtml(r.descricao)}</td>
             <td>${((r.peso || 0) * 100).toFixed(1)}%</td>
         </tr>`;
     });
     return html + '</tbody></table></div>';
+}
+
+/** Texto do balão de um requisito: "RC1: descrição" + texto explicativo na linha seguinte */
+function reqTip(label, req) {
+    const obs = req && req.observacao ? `\n${req.observacao}` : '';
+    return `${label}: ${req ? req.descricao : ''}${obs}`;
 }
 
 function getSentidoSymbol(sentido) {
@@ -229,8 +233,7 @@ function generateProjectReqs() {
         const rpNum = requisitosProjeto.findIndex(x => x.id === r.id) + 1;
         const impRel = r.pesoRelativo != null ? (r.pesoRelativo * 100).toFixed(1) + '%' : '-';
 
-        const rpObsTip = r.observacao ? ` | ${r.observacao}` : '';
-        html += `<tr class="${tercioClass} report-has-tip" data-report-tip="${escapeAttr(`RP${rpNum}: ${r.descricao}${rpObsTip}`)}">
+        html += `<tr class="${tercioClass} report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${rpNum}`, r))}">
             <td>RP${rpNum}</td>
             <td>${escapeHtml(r.descricao)}</td>
             <td>${getSentidoSymbol(r.sentidoMelhoria)}</td>
@@ -245,12 +248,12 @@ function generateRoof() {
     const correlacoes = qfdDB.getCorrelacoesProjeto();
     let html = '<div class="report-section"><h3>Telhado de Correlações</h3><table class="report-table roof-table"><thead><tr><th></th>';
     requisitosProjeto.forEach((rp, i) => {
-        html += `<th class="report-has-tip" data-report-tip="${escapeAttr(`RP${i + 1}: ${rp.descricao}`)}">RP${i + 1} ${getSentidoSymbol(rp.sentidoMelhoria)}</th>`;
+        html += `<th class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${i + 1}`, rp))}">RP${i + 1} ${getSentidoSymbol(rp.sentidoMelhoria)}</th>`;
     });
     html += '</tr></thead><tbody>';
 
     for (let i = 0; i < requisitosProjeto.length; i++) {
-        html += `<tr><th class="report-has-tip" data-report-tip="${escapeAttr(`RP${i + 1}: ${requisitosProjeto[i].descricao}`)}">${i + 1}</th>`;
+        html += `<tr><th class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${i + 1}`, requisitosProjeto[i]))}">${i + 1}</th>`;
         for (let j = 0; j < requisitosProjeto.length; j++) {
             if (i === j) {
                 html += '<td class="diagonal">—</td>';
@@ -296,12 +299,12 @@ function generateCorrelationsAnalysis() {
 function generateMatrix() {
     let html = '<div class="report-section"><h3>Matriz QFD</h3><div class="qfd-matrix-report-wrapper"><table class="report-table qfd-matrix-report"><thead><tr><th class="qfd-corner-cell">RC \\ RP</th>';
     requisitosProjeto.forEach((rp, i) => {
-        html += `<th class="qfd-rp-header report-has-tip" data-report-tip="${escapeAttr(`RP${i + 1}: ${rp.descricao}`)}"><span>RP${i + 1}</span></th>`;
+        html += `<th class="qfd-rp-header report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${i + 1}`, rp))}"><span>RP${i + 1}</span></th>`;
     });
     html += '<th>Peso</th></tr></thead><tbody>';
 
     requisitosCliente.forEach((rc, idx) => {
-        html += `<tr><td class="qfd-rc-label report-has-tip" data-report-tip="${escapeAttr(`RC${idx + 1}: ${rc.descricao}`)}">RC${idx + 1}</td>`;
+        html += `<tr><td class="qfd-rc-label report-has-tip" data-report-tip="${escapeAttr(reqTip(`RC${idx + 1}`, rc))}">RC${idx + 1}</td>`;
         requisitosProjeto.forEach((rp, j) => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
             html += `<td class="qfd-cell report-has-tip" data-report-tip="${escapeAttr(`RC${idx + 1} × RP${j + 1}: influência ${val || 'não definida'}`)}">${val || ''}</td>`;
@@ -338,10 +341,13 @@ function generateEspecificacoes() {
         else if (index < t2) tercioClass = 'tercio-medio';
 
         const aspectos = row.aspectosIndesejaveis || '—';
+        let tip = reqTip(`RP${row.numeroOriginal}`, row.requisito);
+        if (row.observacao) tip += `\nEspecificação: ${row.observacao}`;
+        const specObs = row.observacao ? `<br><em class="report-obs">${escapeHtml(row.observacao)}</em>` : '';
 
-        html += `<tr class="${tercioClass} report-has-tip" data-report-tip="${escapeAttr(`RP${row.numeroOriginal}: ${row.requisito.descricao}`)}">
+        html += `<tr class="${tercioClass} report-has-tip" data-report-tip="${escapeAttr(tip)}">
             <td>${row.rank}</td>
-            <td><strong>RP${row.numeroOriginal}</strong> — ${escapeHtml(row.requisito.descricao)}</td>
+            <td><strong>RP${row.numeroOriginal}</strong> — ${escapeHtml(row.requisito.descricao)}${specObs}</td>
             <td>${escapeHtml(row.unidadeMedida || '—')}</td>
             <td>${escapeHtml(row.valorUnitario || '—')}</td>
             <td class="spec-aspectos-cell">${escapeHtml(aspectos).replace(/\n/g, '<br>')}</td>
@@ -458,7 +464,7 @@ function escapeAttr(text) {
         .replace(/'/g, '&#39;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/\r?\n/g, ' ');
+        .replace(/\r?\n/g, '&#10;');
 }
 
 function printReport() {
