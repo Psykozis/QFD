@@ -257,6 +257,111 @@ function buildResultadoHtml(analise) {
 }
 
 // ============================================================================
+// ATENDIMENTO AOS REQUISITOS DE CLIENTE
+// ============================================================================
+
+/** Texto e classe CSS do estado da meta de um requisito de projeto */
+function getEstadoMeta(estado) {
+    const map = {
+        'atingida': { texto: 'Atingida', classe: 'sit-frente' },
+        'nao-atingida': { texto: 'Não atingida', classe: 'sit-atras' },
+        'sem-medicao': { texto: 'Sem medição', classe: 'sit-sem-dados' },
+        'sem-meta': { texto: 'Sem meta', classe: 'sit-sem-dados' }
+    };
+    return map[estado] || map['sem-meta'];
+}
+
+/** Texto e classe CSS da cobertura de um requisito de cliente na matriz QFD */
+function getCoberturaInfo(cobertura) {
+    const map = {
+        forte: { texto: 'Forte', classe: 'sit-frente' },
+        moderada: { texto: 'Moderada', classe: 'sit-empate' },
+        fraca: { texto: 'Fraca', classe: 'sit-fraca' },
+        nenhuma: { texto: 'Nenhuma', classe: 'sit-atras' }
+    };
+    return map[cobertura] || map.nenhuma;
+}
+
+function badgeHtml(info) {
+    return `<span class="sit-badge ${info.classe}">${info.texto}</span>`;
+}
+
+/** Barra de porcentagem (0 a 1), ou "—" se null */
+function barraAtendimentoHtml(valor) {
+    if (valor === null || valor === undefined) return '<span class="sit-sem-dados">—</span>';
+    const pct = Math.round(valor * 100);
+    const classe = pct >= 80 ? 'atend-alto' : pct >= 50 ? 'atend-medio' : 'atend-baixo';
+    return `<div class="atend-barra ${classe}"><span style="width:${pct}%"></span></div><strong>${pct}%</strong>`;
+}
+
+/**
+ * Tabela do atendimento por requisito de cliente (ordem de peso)
+ *
+ * @param {Object} analise - Resultado de qfdDB.getAnaliseAtendimento()
+ * @param {Function} [tipAttr] - Recebe o requisito e o rótulo e devolve atributos extras da linha (ex.: balão do relatório)
+ */
+function buildTabelaAtendimentoClientes(analise, tipAttr) {
+    const temNotas = analise.clientes.some(c => c.notaClientes);
+    let html = `<table class="report-table atendimento-table"><thead><tr><th>RC</th><th>Requisito de cliente</th><th>Peso</th>
+        <th>Requisitos de projeto relacionados (influência e meta)</th><th>Cobertura</th><th>Atendimento</th>${temNotas ? '<th>Nota dos clientes</th>' : ''}</tr></thead><tbody>`;
+
+    [...analise.clientes].sort((a, b) => (b.peso - a.peso) || (a.numero - b.numero)).forEach(c => {
+        const relacoes = c.relacoes.length
+            ? c.relacoes.map(r => {
+                const estado = getEstadoMeta(r.projeto.estado);
+                const icone = { atingida: '✓', 'nao-atingida': '✗' }[r.projeto.estado] || '?';
+                return `<span class="atend-rel ${estado.classe}" title="${escapeAttr(`RP${r.projeto.numero}: ${r.projeto.requisito.descricao} — influência ${r.influencia}, meta ${estado.texto.toLowerCase()}`)}">RP${r.projeto.numero} (${r.influencia}) ${icone}</span>`;
+            }).join(' ')
+            : '<span class="sit-sem-dados">nenhum</span>';
+        const extra = tipAttr ? tipAttr(c.requisito, `RC${c.numero}`) : '';
+        html += `<tr${extra}>
+            <td><strong>RC${c.numero}</strong></td>
+            <td class="competitiva-desc">${escapeHtml(c.requisito.descricao)}</td>
+            <td>${(c.peso * 100).toFixed(1)}%</td>
+            <td class="atend-rels">${relacoes}</td>
+            <td>${badgeHtml(getCoberturaInfo(c.cobertura))}</td>
+            <td class="atend-cell">${barraAtendimentoHtml(c.atendimento)}</td>
+            ${temNotas ? `<td>${c.notaClientes ? c.notaClientes + ' / 5' : '—'}</td>` : ''}
+        </tr>`;
+    });
+    return html + '</tbody></table>';
+}
+
+/** Diagnóstico do atendimento em blocos (mesmo visual do resultado competitivo) */
+function buildDiagnosticoAtendimentoHtml(analise) {
+    const d = analise.diagnostico;
+    const rc = c => `<strong>RC${c.numero}</strong> — ${escapeHtml(c.requisito.descricao)} <small>(peso ${(c.peso * 100).toFixed(1)}%)</small>`;
+    const rp = p => `<strong>RP${p.numero}</strong> — ${escapeHtml(p.requisito.descricao)}`;
+    const bloco = (classe, icone, titulo, itens, formatar, vazio, dica) => {
+        let html = `<div class="resultado-bloco ${classe}"><h4><i class="fas fa-${icone}"></i> ${titulo} (${itens.length})</h4>`;
+        html += itens.length ? `<ul>${itens.map(i => `<li>${formatar(i)}</li>`).join('')}</ul>${dica ? `<p class="competitiva-hint">${dica}</p>` : ''}` : `<p>${vazio}</p>`;
+        return html + '</div>';
+    };
+
+    let html = '<div class="resultado-grid">';
+    html += bloco('resultado-atras', 'unlink', 'Requisitos de cliente sem nenhum requisito de projeto', d.semRelacao, rc,
+        'Todos os requisitos de cliente têm ao menos uma relação na matriz.',
+        'O projeto não tem como atender a esses requisitos: acrescente requisitos de projeto ou relações na Matriz QFD.');
+    html += bloco('resultado-metas', 'link', 'Atendidos só por relações fracas (1)', d.soFracas, rc,
+        'Nenhum requisito depende só de relações fracas.',
+        'Considere um requisito de projeto que atue diretamente sobre eles.');
+    html += bloco('resultado-atras', 'chart-line', 'Atendimento abaixo de 50%', d.baixoAtendimento,
+        c => `${rc(c)} — ${Math.round(c.atendimento * 100)}%`,
+        'Nenhum requisito de cliente com atendimento abaixo de 50% (entre os que têm medição).');
+    html += bloco('resultado-metas', 'bullseye', 'Metas de projeto não atingidas', d.metasNaoAtingidas,
+        p => `${rp(p)} <small>(meta ${escapeHtml(p.meta)} × medido ${escapeHtml(p.medido)} ${escapeHtml(p.unidade)})</small>`,
+        'Nenhuma meta medida ficou sem ser atingida.');
+    html += bloco('resultado-inconsistencias', 'unlink', 'Requisitos de projeto sem relação com o cliente', d.rpSemRelacao, rp,
+        'Todos os requisitos de projeto atendem a pelo menos um requisito de cliente.',
+        'Não contribuem para nenhuma necessidade do cliente: reveja a matriz ou se são mesmo necessários (podem ser restrições, normas etc.).');
+    html += bloco('resultado-inconsistencias', 'exclamation-triangle', 'Divergência entre atendimento técnico e nota dos clientes', d.divergencias,
+        c => `${rc(c)} — atendimento ${Math.round(c.atendimento * 100)}%, nota dos clientes ${c.notaClientes}/5`,
+        'Nenhuma divergência (ou faltam notas dos clientes na Avaliação Competitiva).',
+        'Atendimento alto com nota baixa sugere que falta algum requisito de projeto; atendimento baixo com nota alta sugere metas mais exigentes que o necessário.');
+    return html + '</div>';
+}
+
+// ============================================================================
 // ALERTAS E ARQUIVOS
 // ============================================================================
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avaliação Competitiva - Sistema QFD</title>
+    <title>Atendimento aos Requisitos - Sistema QFD</title>
     <link rel="preload" href="../css/style.css" as="style">
     <link rel="stylesheet" href="../css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -11,8 +11,8 @@
 <body>
     <header class="header">
         <div class="container">
-            <h1><i class="fas fa-chart-line"></i> Avaliação Competitiva</h1>
-            <p>Compare o nosso produto com os concorrentes, na visão dos clientes e nos valores técnicos</p>
+            <h1><i class="fas fa-check-double"></i> Atendimento aos Requisitos</h1>
+            <p>Quanto os requisitos de projeto atendem aos requisitos de cliente</p>
         </div>
     </header>
 
@@ -40,16 +40,16 @@
                         <a href="#" onclick="exportProjectData()"><i class="fas fa-download"></i> Exportar Backup (JSON)</a>
                         <a href="#" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Importar Backup (JSON)</a>
                         <hr>
-                        <a href="#" onclick="exportAvaliacaoCSV()"><i class="fas fa-file-export"></i> Exportar Avaliação (CSV)</a>
+                        <a href="#" onclick="exportAtendimentoCSV()"><i class="fas fa-file-export"></i> Exportar Análise (CSV)</a>
                     </div>
                 </li>
                 <li class="nav-spacer"></li>
                 <li>
                     <div class="nav-page-actions">
-                        <a href="especificacoes.html" class="btn btn-secondary">
+                        <a href="avaliacao-competitiva.html" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Voltar
                         </a>
-                        <a href="atendimento-requisitos.html" class="btn btn-primary">
+                        <a href="relatorio.html" class="btn btn-primary">
                             Avançar <i class="fas fa-arrow-right"></i>
                         </a>
                     </div>
@@ -62,38 +62,38 @@
     <main class="main-content">
         <div class="container">
             <div class="page-header">
-                <h2>Comparação com clientes e concorrentes</h2>
-                <p>Depois do QFD, leve o produto aos clientes: peça que deem uma nota de <strong>1 (pior)</strong> a <strong>5 (melhor)</strong> para o nosso produto e para os concorrentes em cada requisito. Na avaliação técnica, registre os valores medidos de cada produto e compare com as metas das Especificações.</p>
+                <h2>Os requisitos de projeto atendem ao cliente?</h2>
+                <p>Duas perguntas: <strong>o projeto cobre cada necessidade do cliente?</strong> (relações na Matriz QFD) e <strong>as metas que atendem a ela foram atingidas?</strong> (valor medido do nosso produto × meta das Especificações). O atendimento de um requisito de cliente é a parcela da influência (9, 3, 1) dos seus requisitos de projeto cujas metas foram atingidas.</p>
             </div>
 
             <div class="card status-card">
                 <div class="status-info">
                     <div class="status-item">
-                        <div class="status-icon"><i class="fas fa-industry"></i></div>
+                        <div class="status-icon"><i class="fas fa-percentage"></i></div>
                         <div class="status-content">
-                            <h4 id="total-concorrentes">0</h4>
-                            <p>Concorrentes</p>
+                            <h4 id="atendimento-geral">—</h4>
+                            <p>Atendimento geral (ponderado pelo peso)</p>
                         </div>
                     </div>
                     <div class="status-item">
-                        <div class="status-icon"><i class="fas fa-star-half-alt"></i></div>
+                        <div class="status-icon"><i class="fas fa-link"></i></div>
                         <div class="status-content">
-                            <h4 id="notas-preenchidas">0%</h4>
-                            <p>Notas dos clientes</p>
+                            <h4 id="cobertura-forte">0 / 0</h4>
+                            <p>Req. de cliente com relação forte</p>
                         </div>
                     </div>
                     <div class="status-item">
-                        <div class="status-icon"><i class="fas fa-arrow-down"></i></div>
+                        <div class="status-icon"><i class="fas fa-bullseye"></i></div>
                         <div class="status-content">
-                            <h4 id="total-atras">0</h4>
-                            <p>Requisitos em que estamos atrás</p>
+                            <h4 id="metas-atingidas">0 / 0</h4>
+                            <p>Metas atingidas (das medidas)</p>
                         </div>
                     </div>
                     <div class="status-item">
-                        <div class="status-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="status-icon"><i class="fas fa-unlink"></i></div>
                         <div class="status-content">
-                            <h4 id="total-inconsistencias">0</h4>
-                            <p>Inconsistências</p>
+                            <h4 id="sem-relacao">0</h4>
+                            <p>Req. de cliente sem nenhuma relação</p>
                         </div>
                     </div>
                 </div>
@@ -106,68 +106,44 @@
                 <div class="alert-content">
                     <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
                     <div class="alert-text">
-                        <h3>Sem requisitos de cliente</h3>
-                        <p>Cadastre os requisitos de cliente (e, de preferência, complete a matriz QFD e as especificações) antes da avaliação competitiva.</p>
+                        <h3>Dados insuficientes</h3>
+                        <p>Cadastre requisitos de cliente e de projeto e preencha a Matriz QFD para analisar o atendimento.</p>
                         <div class="alert-actions">
-                            <a href="requisitos-cliente.html" class="btn btn-primary">Requisitos de Cliente</a>
+                            <a href="matriz-qfd.html" class="btn btn-primary">Matriz QFD</a>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="competitiva-content" style="display: none;">
-                <!-- Produtos avaliados -->
+            <div id="atendimento-content" style="display: none;">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-boxes"></i> Produtos avaliados</h3>
+                        <h3 class="card-title"><i class="fas fa-ruler-combined"></i> Metas de projeto × valor medido</h3>
                     </div>
-                    <div class="competitiva-produtos">
-                        <div id="produtos-lista" class="produtos-lista"></div>
-                        <form id="form-concorrente" class="form-concorrente" autocomplete="off">
-                            <input type="text" id="novo-concorrente" class="form-control" maxlength="60"
-                                   placeholder="Nome do concorrente ou do produto (ex.: Marca X modelo Y)">
-                            <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adicionar concorrente</button>
-                        </form>
-                        <p class="competitiva-hint">Até 6 concorrentes. Você pode renomear "Nosso produto" (ex.: "Protótipo v2"). Remover um concorrente apaga as notas e os valores dele.</p>
-                    </div>
-                </div>
-
-                <!-- Avaliação dos clientes -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-users"></i> Avaliação dos clientes</h3>
-                    </div>
-                    <p class="competitiva-hint competitiva-hint-top">Requisitos ordenados pelo peso (Diagrama de Mudge). <strong>Meta</strong>: a nota que queremos alcançar. <strong>Índice de melhoria</strong> = meta ÷ nossa nota. <strong>Prioridade</strong> = peso × índice de melhoria, normalizada: mostra onde o esforço de melhoria rende mais para o cliente.</p>
+                    <p class="competitiva-hint competitiva-hint-top">Informe o valor medido do nosso produto (protótipo ou produto atual). É o mesmo valor da coluna do nosso produto na Avaliação Competitiva. Meta atingida: ↑ medido ≥ meta; ↓ medido ≤ meta; * dentro de ±5% da meta. As metas vêm das <a href="especificacoes.html">Especificações</a>.</p>
                     <div class="especificacoes-table-wrapper">
-                        <table class="report-table competitiva-table">
-                            <thead id="clientes-thead"></thead>
-                            <tbody id="clientes-tbody"></tbody>
-                        </table>
-                    </div>
-                    <div id="grafico-clientes" class="competitiva-grafico"></div>
-                </div>
-
-                <!-- Avaliação técnica -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-ruler-combined"></i> Avaliação técnica</h3>
-                    </div>
-                    <p class="competitiva-hint competitiva-hint-top">Requisitos de projeto na ordem do QFD. Informe o valor medido de cada produto, na unidade da especificação. O melhor concorrente é escolhido pelo sentido de melhoria (↑ maior é melhor, ↓ menor é melhor; requisitos nominais * não são comparados).</p>
-                    <div id="tecnicos-vazio" class="competitiva-hint" style="display: none;">Nenhum requisito de projeto cadastrado.</div>
-                    <div class="especificacoes-table-wrapper">
-                        <table class="report-table competitiva-table">
-                            <thead id="tecnicos-thead"></thead>
-                            <tbody id="tecnicos-tbody"></tbody>
+                        <table class="report-table atendimento-table">
+                            <thead>
+                                <tr><th>#</th><th>Requisito de projeto</th><th>Sentido</th><th>Meta</th><th>Valor medido (nosso produto)</th><th>Meta</th><th>Relações</th></tr>
+                            </thead>
+                            <tbody id="projetos-tbody"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Resultado -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-clipboard-check"></i> Resultado da comparação</h3>
+                        <h3 class="card-title"><i class="fas fa-users"></i> Atendimento por requisito de cliente</h3>
                     </div>
-                    <div id="resultado-competitiva" class="competitiva-resultado"></div>
+                    <p class="competitiva-hint competitiva-hint-top">✓ meta atingida · ✗ não atingida · ? sem meta ou sem medição (não entra no cálculo). <strong>Cobertura</strong>: a relação mais forte na matriz (9 forte, 3 moderada, 1 fraca).</p>
+                    <div id="clientes-tabela" class="especificacoes-table-wrapper"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-stethoscope"></i> Diagnóstico</h3>
+                    </div>
+                    <div id="diagnostico" class="competitiva-resultado"></div>
                 </div>
             </div>
         </div>
@@ -181,6 +157,6 @@
 
     <script src="../js/database.js"></script>
     <script src="../js/utils.js"></script>
-    <script src="../js/avaliacao-competitiva.js"></script>
+    <script src="../js/atendimento-requisitos.js"></script>
 </body>
 </html>

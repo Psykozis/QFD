@@ -53,8 +53,15 @@ Depois do QFD, compare o produto com os concorrentes:
 - **Avaliação técnica:** registre o valor medido de cada produto nos requisitos de projeto (ex.: "1,5 kg"). O sistema aponta o melhor concorrente (maior valor para ↑, menor para ↓) e se a meta das Especificações fica acima ou abaixo dele.
 - **Resultado:** pontos fortes, pontos a melhorar, metas abaixo do concorrente e **inconsistências**: casos em que os clientes preferem um produto, mas os valores técnicos (dos requisitos com relação forte na matriz) favorecem o outro. Isso costuma indicar erro de medição ou um requisito de projeto que ficou de fora.
 
-### 8. Relatório PDF
-Preencha título, empresa, responsável e descrição, escolha as seções e gere a prévia e o PDF. Seções disponíveis: dicionário de requisitos, resumo, requisitos de cliente, requisitos de projeto, telhado, análise de correlações, matriz QFD, especificações, avaliação competitiva, comparações, ranking, análises e anexos. Na prévia, passe o mouse sobre RC, RP e células para ver as descrições e os textos explicativos.
+### 8. Atendimento aos Requisitos
+Mostra **quanto os requisitos de projeto atendem aos requisitos de cliente**:
+- **Metas × valor medido:** informe o valor medido do nosso produto (protótipo ou produto atual) em cada requisito de projeto. A meta é considerada atingida se o valor for maior ou igual à meta (↑), menor ou igual (↓) ou estiver a até 5% dela (\*).
+- **Por requisito de cliente:** quais requisitos de projeto o atendem (com a influência da matriz e ✓/✗ da meta), a **cobertura** (a relação mais forte) e o **atendimento**: a parcela da influência cujas metas foram atingidas. Ex.: RP1 (9) ✓ e RP2 (3) ✗ → 9 ÷ 12 = 75%.
+- **Atendimento geral:** média ponderada pelo peso dos requisitos de cliente.
+- **Diagnóstico:** requisitos de cliente sem nenhum requisito de projeto, atendidos só por relações fracas ou com atendimento abaixo de 50%; metas não atingidas; requisitos de projeto que não atendem a nenhum requisito de cliente; e divergências entre o atendimento técnico e a nota dos clientes.
+
+### 9. Relatório PDF
+Preencha título, empresa, responsável e descrição, escolha as seções e gere a prévia e o PDF. Seções disponíveis: dicionário de requisitos, resumo, requisitos de cliente, requisitos de projeto, telhado, análise de correlações, matriz QFD, especificações, avaliação competitiva, atendimento aos requisitos, comparações, ranking, análises e anexos. Na prévia, passe o mouse sobre RC, RP e células para ver as descrições e os textos explicativos.
 
 ## 💾 Salvando e levando o projeto
 
@@ -94,6 +101,7 @@ Ao final você terá:
 - ✅ Conflitos e sinergias técnicas identificados
 - ✅ Especificações com metas mensuráveis
 - ✅ Comparação com os concorrentes, na visão dos clientes e nos valores técnicos
+- ✅ Medida de quanto o projeto atende a cada necessidade do cliente
 - ✅ Relatório profissional para apresentação
 
 ## 🌐 Compatibilidade

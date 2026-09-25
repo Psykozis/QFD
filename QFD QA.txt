@@ -45,13 +45,19 @@ Dica: antes de começar, exporte um backup (Backup & Export -> Exportar Backup).
        Forçar uma inconsistência: relação 9 na matriz + notas e valores
        contraditórios -> deve aparecer em "Inconsistências". Exportar o CSV e
        abrir no Excel (acentos corretos). Remover um concorrente.
-[ ] 7. Relatório: gerar a prévia (com a seção Avaliação Competitiva: tabelas, gráfico e resultado),
+[ ] 6c. Atendimento aos Requisitos: informar valores medidos que atinjam e que
+       não atinjam a meta (↑, ↓ e *), conferir ✓/✗, a porcentagem de cada
+       requisito de cliente (ex.: RP (9) ✓ + RP (3) ✗ = 75%) e o atendimento
+       geral. Deixar um requisito de cliente sem relação na matriz e um de
+       projeto sem relação -> devem aparecer no diagnóstico. O valor medido
+       digitado aqui deve aparecer na Avaliação Competitiva (e vice-versa).
+[ ] 7. Relatório: gerar a prévia (seções Avaliação Competitiva e Atendimento aos Requisitos),
        passar o mouse nas linhas, GERAR O PDF e ver se o gráfico saiu no PDF.
 [ ] 8. Em todas as páginas: abrir e fechar os dois menus (Menu e Backup & Export).
 [ ] 9. Exportar CSV de requisitos e importar de volta -> deve ignorar os repetidos.
 [ ] 10. Exportar backup JSON, limpar os dados e importar -> projeto volta igual.
 
-Testes automáticos (46): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+Testes automáticos (52): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 
 ==========================================================================================
 PRÓXIMOS PASSOS

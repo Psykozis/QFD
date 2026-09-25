@@ -2829,3 +2829,81 @@ body {
 .report-competitiva .competitiva-resultado {
     padding: 0.5rem 0 0;
 }
+
+/* ========================================================================
+   ATENDIMENTO AOS REQUISITOS
+   ======================================================================== */
+
+.atendimento-table td,
+.atendimento-table th {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.atendimento-table .competitiva-desc {
+    text-align: left;
+    min-width: 200px;
+}
+
+.atendimento-table .valor-input {
+    min-width: 110px;
+    padding: 0.35rem 0.5rem;
+}
+
+.atendimento-table .spec-rank {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+}
+
+.atendimento-table .atend-rels {
+    text-align: left;
+    min-width: 180px;
+}
+
+.atend-rel {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    margin: 0.1rem 0;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.atend-rel.sit-sem-dados {
+    background: #f1f5f9;
+}
+
+.sit-fraca { background: #ffedd5; color: #9a3412; }
+
+.atend-cell {
+    min-width: 120px;
+}
+
+.atend-barra {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 0.2rem;
+}
+
+.atend-barra span {
+    display: block;
+    height: 100%;
+}
+
+.atend-alto span { background: #16a34a; }
+.atend-medio span { background: #ca8a04; }
+.atend-baixo span { background: #dc2626; }
+
+.report-atendimento h4 {
+    margin-top: 1.5rem;
+}
+
+.report-atendimento .competitiva-resultado {
+    padding: 0.5rem 0 0;
+}

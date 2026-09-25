@@ -29,7 +29,8 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
 | 5 | Matriz QFD | Relação cliente × projeto (0, 1, 3 ou 9); importância absoluta, relativa e peso |
 | 6 | Especificações | Requisitos de projeto na ordem do QFD, com unidade, valor, texto explicativo e aspectos indesejáveis (vindos das correlações `--`) |
 | 7 | Avaliação Competitiva | Depois do QFD: notas dos clientes (1 a 5) para o nosso produto e os concorrentes, meta, índice de melhoria e prioridade; valores técnicos medidos de cada produto comparados com as metas das especificações; gráfico, pontos fortes, pontos a melhorar e inconsistências |
-| 8 | Relatório PDF | Relatório configurável com as seções escolhidas, prévia e geração de PDF |
+| 8 | Atendimento aos Requisitos | Quanto os requisitos de projeto atendem a cada requisito de cliente: cobertura na matriz, metas atingidas (valor medido × meta) e diagnóstico |
+| 9 | Relatório PDF | Relatório configurável com as seções escolhidas, prévia e geração de PDF |
 
 **Textos explicativos:** o texto cadastrado em cada requisito aparece num balão ao passar o mouse sobre ele na comparação, na correlação, na matriz e no relatório. O texto das especificações aparece no relatório.
 
@@ -42,7 +43,13 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
   - *Situação* de cada requisito de cliente: nossa nota comparada com a maior nota entre os concorrentes (à frente, empatado ou atrás).
   - *Índice de melhoria* = meta ÷ nossa nota; *prioridade* = peso × índice de melhoria (1 se não houver meta), normalizada para somar 100%.
   - *Melhor concorrente técnico*: maior valor se o sentido é ↑, menor se é ↓; requisitos nominais (\*) não são comparados. A meta da especificação é comparada com esse valor.
-  - *Inconsistência*: os clientes dão nota maior a um produto, mas todos os requisitos de projeto com relação forte (9) com aquele requisito têm valores técnicos melhores no outro produto. Indica erro de medição, de nota ou um requisito de projeto faltando.
+  - *Inconsistência* (avaliação competitiva): os clientes dão nota maior a um produto, mas todos os requisitos de projeto com relação forte (9) com aquele requisito têm valores técnicos melhores no outro produto. Indica erro de medição, de nota ou um requisito de projeto faltando.
+
+- **Atendimento aos requisitos:**
+  - *Meta atingida*: valor medido do nosso produto ≥ meta (↑), ≤ meta (↓) ou dentro de ±5% (\*).
+  - *Cobertura* de um requisito de cliente: sua relação mais forte na matriz (9 forte, 3 moderada, 1 fraca, nenhuma).
+  - *Atendimento* de um requisito de cliente = Σ influência dos requisitos de projeto com meta atingida ÷ Σ influência dos que têm meta e medição.
+  - *Atendimento geral* = média dos atendimentos ponderada pelo peso dos requisitos de cliente.
 
 ## Backup, importação e exportação
 
@@ -70,6 +77,7 @@ QFD/
 │   ├── matriz-qfd.js
 │   ├── especificacoes.js
 │   ├── avaliacao-competitiva.js
+│   ├── atendimento-requisitos.js
 │   └── relatorio.js            # Relatório e PDF (jsPDF + html2canvas)
 ├── pages/                      # Uma página HTML por etapa
 └── tests/
@@ -139,6 +147,8 @@ Para acrescentar um teste: `test('nome', () => { ... })` dentro de uma `suite()`
 ## Histórico de mudanças
 
 ### Setembro/2026
+- **Página de Atendimento aos Requisitos**: cobertura de cada requisito de cliente na matriz, metas atingidas pelo nosso produto, atendimento por requisito e geral, diagnóstico (requisitos sem relação, só relações fracas, metas não atingidas, requisitos de projeto órfãos, divergências com as notas dos clientes) e seção no relatório.
+- **Relatório:** a seção de avaliação competitiva agora traz também descrições, melhor concorrente e o resultado completo.
 - **Página de Avaliação Competitiva** (depois das Especificações): nosso produto × concorrentes na visão dos clientes e nos valores técnicos, com gráfico, resultado e seção no relatório. Estrutura dos dados na versão 3.
 - **Cartão de status** das páginas agora aparece com os contadores lado a lado (estava sem estilo).
 - **Textos explicativos** em requisitos de cliente, de projeto e especificações, exibidos em balões nas demais páginas e no relatório.

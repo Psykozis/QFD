@@ -33,6 +33,9 @@ const PRODUTO_NOSSO_ID = 'nosso';
 /** Limite de concorrentes na avaliação competitiva (a tabela fica ilegível com mais) */
 const MAX_CONCORRENTES = 6;
 
+/** Tolerância para considerar atingida a meta de um requisito nominal (*): ±5% */
+const TOLERANCIA_NOMINAL = 0.05;
+
 /** Estrutura inicial da avaliação competitiva: só o nosso produto, sem notas */
 function criarAvaliacaoCompetitivaVazia() {
     return {
@@ -1236,6 +1239,141 @@ class QFDDatabase {
                 notasTotal: total,
                 notasPreenchidas: preenchidas,
                 percent: total > 0 ? Math.round((preenchidas / total) * 100) : 0
+            }
+        };
+    }
+
+    // ========================================================================
+    // SEÇÃO: ATENDIMENTO AOS REQUISITOS DE CLIENTE
+    // ========================================================================
+
+    /**
+     * O valor medido atinge a meta? ↑: medido ≥ meta; ↓: medido ≤ meta;
+     * nominal (*): dentro de ±TOLERANCIA_NOMINAL da meta.
+     */
+    metaAtingida(sentido, medido, meta) {
+        if (sentido === 'up') return medido >= meta;
+        if (sentido === 'down') return medido <= meta;
+        return meta === 0 ? medido === 0 : Math.abs(medido - meta) <= Math.abs(meta) * TOLERANCIA_NOMINAL;
+    }
+
+    /**
+     * Analisa quanto os requisitos de projeto atendem aos requisitos de cliente
+     *
+     * - Cada requisito de projeto tem um estado: meta 'atingida' ou
+     *   'nao-atingida' (valor medido do nosso produto, informado na avaliação
+     *   competitiva, comparado com a meta das especificações), 'sem-medicao'
+     *   ou 'sem-meta'.
+     * - Cada requisito de cliente tem:
+     *   - cobertura: a relação mais forte na matriz QFD ('forte' = 9,
+     *     'moderada' = 3 ou 5, 'fraca' = 1, 'nenhuma');
+     *   - atendimento: entre os requisitos de projeto relacionados que têm
+     *     meta e medição, a fração da influência cujas metas foram atingidas
+     *     (0 a 1; null se nenhum pode ser avaliado).
+     * - atendimentoGeral: média dos atendimentos ponderada pelo peso dos
+     *   requisitos de cliente (média simples se os pesos forem zero).
+     *
+     * @param {boolean} [recalcular=true] - Recalcula (e salva) a importância dos
+     *   requisitos de projeto antes; false só lê (o dashboard usa false para não
+     *   alterar a data de modificação a cada atualização)
+     * @returns {Object} { projetos, clientes, atendimentoGeral, diagnostico, stats }
+     */
+    getAnaliseAtendimento(recalcular = true) {
+        if (recalcular) this.calculateImportanciaProjeto();
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        const rcs = data.requisitosCliente || [];
+        const rps = data.requisitosProjeto || [];
+        const matriz = (data.matrizQFD || []).filter(m => m.influencia > 0);
+        const especificacoes = data.especificacoesProjeto || [];
+
+        const valorNosso = rpId => {
+            const v = av.valoresTecnicos.find(x => x.requisitoProjetoId === rpId && x.produtoId === PRODUTO_NOSSO_ID);
+            return v ? v.valor : '';
+        };
+
+        const projetos = [...rps]
+            .sort((a, b) => (b.importanciaAbsoluta || 0) - (a.importanciaAbsoluta || 0))
+            .map((req, rank) => {
+                const esp = especificacoes.find(e => e.requisitoProjetoId === req.id) || {};
+                const meta = parseNumero(esp.valorUnitario);
+                const medido = parseNumero(valorNosso(req.id));
+                let estado = 'sem-meta';
+                if (meta !== null) {
+                    estado = medido === null ? 'sem-medicao'
+                        : (this.metaAtingida(req.sentidoMelhoria, medido, meta) ? 'atingida' : 'nao-atingida');
+                }
+                return {
+                    requisito: req,
+                    numero: rps.findIndex(r => r.id === req.id) + 1,
+                    rank: rank + 1,
+                    unidade: esp.unidadeMedida || '',
+                    meta: esp.valorUnitario || '',
+                    medido: valorNosso(req.id),
+                    estado,
+                    relacoes: matriz.filter(m => m.requisitoProjeto === req.id).length
+                };
+            });
+
+        const avaliavel = p => p.estado === 'atingida' || p.estado === 'nao-atingida';
+
+        const clientes = rcs.map((req, i) => {
+            const relacoes = matriz
+                .filter(m => m.requisitoCliente === req.id)
+                .map(m => ({ influencia: m.influencia, projeto: projetos.find(p => p.requisito.id === m.requisitoProjeto) }))
+                .filter(r => r.projeto)
+                .sort((a, b) => (b.influencia - a.influencia) || (a.projeto.numero - b.projeto.numero));
+            const maxInf = relacoes.reduce((m, r) => Math.max(m, r.influencia), 0);
+            const avaliadas = relacoes.filter(r => avaliavel(r.projeto));
+            const somaAvaliadas = avaliadas.reduce((s, r) => s + r.influencia, 0);
+            const somaAtingidas = avaliadas.filter(r => r.projeto.estado === 'atingida').reduce((s, r) => s + r.influencia, 0);
+            const nota = av.notasCliente.find(n => n.requisitoClienteId === req.id && n.produtoId === PRODUTO_NOSSO_ID);
+            return {
+                requisito: req,
+                numero: i + 1,
+                peso: req.peso || 0,
+                relacoes,
+                cobertura: maxInf >= 9 ? 'forte' : maxInf >= 3 ? 'moderada' : maxInf > 0 ? 'fraca' : 'nenhuma',
+                atendimento: somaAvaliadas > 0 ? somaAtingidas / somaAvaliadas : null,
+                avaliadas: avaliadas.length,
+                notaClientes: nota ? nota.nota : null
+            };
+        });
+
+        const comDados = clientes.filter(c => c.atendimento !== null);
+        const pesoTotal = comDados.reduce((s, c) => s + c.peso, 0);
+        let atendimentoGeral = null;
+        if (comDados.length) {
+            atendimentoGeral = pesoTotal > 0
+                ? comDados.reduce((s, c) => s + c.peso * c.atendimento, 0) / pesoTotal
+                : comDados.reduce((s, c) => s + c.atendimento, 0) / comDados.length;
+        }
+
+        const porPeso = lista => [...lista].sort((a, b) => (b.peso - a.peso) || (a.numero - b.numero));
+        const diagnostico = {
+            semRelacao: porPeso(clientes.filter(c => c.cobertura === 'nenhuma')),
+            soFracas: porPeso(clientes.filter(c => c.cobertura === 'fraca')),
+            baixoAtendimento: porPeso(clientes.filter(c => c.atendimento !== null && c.atendimento < 0.5)),
+            rpSemRelacao: projetos.filter(p => p.relacoes === 0),
+            metasNaoAtingidas: projetos.filter(p => p.estado === 'nao-atingida'),
+            // Atende tecnicamente, mas os clientes dão nota baixa (ou o contrário)
+            divergencias: porPeso(clientes.filter(c => c.atendimento !== null && c.notaClientes &&
+                ((c.atendimento >= 0.8 && c.notaClientes <= 2) || (c.atendimento < 0.5 && c.notaClientes >= 4))))
+        };
+
+        return {
+            projetos,
+            clientes,
+            atendimentoGeral,
+            diagnostico,
+            stats: {
+                requisitosCliente: clientes.length,
+                coberturaForte: clientes.filter(c => c.cobertura === 'forte').length,
+                clientesAvaliados: comDados.length,
+                metasAtingidas: projetos.filter(p => p.estado === 'atingida').length,
+                metasAvaliadas: projetos.filter(avaliavel).length,
+                semMeta: projetos.filter(p => p.estado === 'sem-meta').length,
+                semMedicao: projetos.filter(p => p.estado === 'sem-medicao').length
             }
         };
     }

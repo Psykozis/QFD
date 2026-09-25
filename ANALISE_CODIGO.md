@@ -26,6 +26,7 @@ QFD/
 │   ├── matriz-qfd.js            # Matriz principal QFD
 │   ├── especificacoes.js        # Quadro de especificações
 │   ├── avaliacao-competitiva.js # Nosso produto x concorrentes
+│   ├── atendimento-requisitos.js # Quanto o projeto atende ao cliente
 │   └── relatorio.js             # Relatório e PDF
 ├── pages/                       # Uma página HTML por etapa
 ├── css/style.css                # Estilos
@@ -125,14 +126,19 @@ Toda página carrega `database.js` → `utils.js` → script da página. Cada sc
 - Detecção de inconsistências (notas dos clientes × valores técnicos dos requisitos com relação forte)
 - Gráfico SVG (`buildGraficoCompetitivo` em `utils.js`), usado também no relatório
 
-### 11. `relatorio.js` - Relatório
+### 11. `atendimento-requisitos.js` - Atendimento aos Requisitos
+
+- Cálculos em `qfdDB.getAnaliseAtendimento()`: estado de cada meta (valor medido do nosso produto × meta), cobertura e atendimento por requisito de cliente, atendimento geral ponderado e diagnóstico
+- Tabela e diagnóstico em `utils.js` (`buildTabelaAtendimentoClientes`, `buildDiagnosticoAtendimentoHtml`), usados também no relatório
+
+### 12. `relatorio.js` - Relatório
 
 - Seções configuráveis: dicionário, resumo, requisitos, telhado, correlações, matriz, especificações, comparações, ranking, análises, anexos
 - Prévia com balões (descrição e textos explicativos) e geração de PDF com jsPDF + html2canvas
 
 ## 🧪 Testes
 
-`tests/testes.js` tem 46 testes (utilitários, banco de dados, migrações, erros, CSV, avaliação competitiva e as 9 páginas). Rodar com `tests\rodar-testes.ps1` (Chrome/Edge headless). Ver o [README](README.md#testes).
+`tests/testes.js` tem 52 testes (utilitários, banco de dados, migrações, erros, CSV, avaliação competitiva, atendimento e as 10 páginas). Rodar com `tests\rodar-testes.ps1` (Chrome/Edge headless). Ver o [README](README.md#testes).
 
 ## 🔍 Pontos de Melhoria
 
@@ -178,7 +184,9 @@ Toda página carrega `database.js` → `utils.js` → script da página. Cada sc
    ↓
 7. Avaliação Competitiva (notas dos clientes e valores técnicos x concorrentes)
    ↓
-8. Relatório PDF
+8. Atendimento aos Requisitos (cobertura na matriz + metas atingidas)
+   ↓
+9. Relatório PDF
 ```
 
 ## 🎯 Próximas Recomendações

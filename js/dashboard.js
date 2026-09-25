@@ -72,6 +72,10 @@ function updateDashboard() {
 
     // Avaliação competitiva: só conta como iniciada com pelo menos um concorrente
     updateProgressCard('competitiva', stats.concorrentes > 0 ? stats.competitivaPercent : 0, '% completo');
+
+    // Atendimento: % ponderado dos requisitos de cliente com metas medidas
+    const atendimento = qfdDB.getAnaliseAtendimento(false).atendimentoGeral;
+    updateProgressCard('atendimento', atendimento === null ? 0 : Math.round(atendimento * 100), '% atendido');
     
     // Atualiza status do relatório
     const canGenerateReport = stats.requisitosCliente > 0 && stats.requisitosProjeto > 0 && 

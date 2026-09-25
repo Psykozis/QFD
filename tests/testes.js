@@ -422,6 +422,67 @@ suite('Avaliação competitiva', () => {
 });
 
 // ============================================================================
+// ATENDIMENTO AOS REQUISITOS DE CLIENTE
+// ============================================================================
+// No projeto de exemplo a matriz é RC(i) × RP(j) = [1, 3, 5][(i + j) % 3]:
+//   RC1: RP1 1, RP2 3, RP3 5 | RC2: RP1 3, RP2 5, RP3 1 | RC3: RP1 5, RP2 1, RP3 3
+// Pesos (Mudge): RC1 8/9, RC2 1/9, RC3 0. RP1 ↓ meta 1,2 kg; RP2 ↓ e RP3 * sem meta.
+
+suite('Atendimento aos requisitos', () => {
+    test('metaAtingida por sentido de melhoria (nominal com ±5%)', () => {
+        assertEqual([qfdDB.metaAtingida('up', 10, 10), qfdDB.metaAtingida('up', 9.9, 10),
+            qfdDB.metaAtingida('down', 1.1, 1.2), qfdDB.metaAtingida('down', 1.3, 1.2),
+            qfdDB.metaAtingida('none', 10.5, 10), qfdDB.metaAtingida('none', 10.6, 10),
+            qfdDB.metaAtingida('none', 0, 0)], [true, false, true, false, true, false, true]);
+    });
+    test('estados das metas: não atingida, sem medição e sem meta', () => {
+        const { rp } = criarAvaliacaoExemplo(); // nosso RP1 medido 1,4 > meta 1,2
+        const an = qfdDB.getAnaliseAtendimento();
+        const estado = id => an.projetos.find(p => p.requisito.id === id).estado;
+        assertEqual([estado(rp[0].id), estado(rp[1].id), estado(rp[2].id)], ['nao-atingida', 'sem-meta', 'sem-meta']);
+        qfdDB.updateEspecificacao(rp[1].id, { valorUnitario: '50' });
+        assertEqual(qfdDB.getAnaliseAtendimento().projetos.find(p => p.requisito.id === rp[1].id).estado, 'sem-medicao');
+    });
+    test('atendimento por requisito de cliente ponderado pela influência, e geral pelo peso', () => {
+        const { rc, rp } = criarAvaliacaoExemplo();
+        assertEqual(qfdDB.getAnaliseAtendimento().atendimentoGeral, 0);
+        qfdDB.setValorTecnico(rp[0].id, PRODUTO_NOSSO_ID, '1,1');           // RP1 atingida
+        assertEqual(qfdDB.getAnaliseAtendimento().atendimentoGeral, 1);
+        qfdDB.updateEspecificacao(rp[1].id, { valorUnitario: '50' });
+        qfdDB.setValorTecnico(rp[1].id, PRODUTO_NOSSO_ID, '60');            // RP2 não atingida
+        const an = qfdDB.getAnaliseAtendimento();
+        const at = id => an.clientes.find(c => c.requisito.id === id).atendimento;
+        assertEqual([at(rc[0].id), at(rc[1].id), at(rc[2].id)], [1 / 4, 3 / 8, 5 / 6]);
+        const esperado = (8 / 9) * (1 / 4) + (1 / 9) * (3 / 8);
+        assert(Math.abs(an.atendimentoGeral - esperado) < 1e-9, `geral ${an.atendimentoGeral} ≠ ${esperado}`);
+        // RC2: nota dos clientes 5, mas atendimento 37,5% → divergência
+        assert(an.diagnostico.divergencias.some(c => c.requisito.id === rc[1].id), 'divergência não detectada');
+    });
+    test('cobertura, requisitos sem relação e requisito de projeto órfão', () => {
+        const { rc, rp } = criarProjetoExemplo();
+        qfdDB.setMatrizQFD(rc[0].id, rp[0].id, 9);
+        rp.forEach(p => qfdDB.setMatrizQFD(rc[2].id, p.id, 0));
+        qfdDB.setMatrizQFD(rc[1].id, rp[1].id, 1);
+        qfdDB.setMatrizQFD(rc[1].id, rp[0].id, 1);
+        qfdDB.setMatrizQFD(rc[1].id, rp[2].id, 1);
+        const novo = qfdDB.addRequisitoProjeto('Cor da carcaça', 'none', 1);
+        const an = qfdDB.getAnaliseAtendimento();
+        assertEqual(an.clientes.map(c => c.cobertura), ['forte', 'fraca', 'nenhuma']);
+        assertEqual(an.diagnostico.semRelacao.map(c => c.numero), [3]);
+        assertEqual(an.diagnostico.soFracas.map(c => c.numero), [2]);
+        assertEqual(an.diagnostico.rpSemRelacao.map(p => p.requisito.id), [novo.id]);
+        assertEqual(an.atendimentoGeral, null, 'sem medições o atendimento geral é null');
+    });
+    test('tabela e diagnóstico escapam os textos', () => {
+        criarAvaliacaoExemplo();
+        const an = qfdDB.getAnaliseAtendimento();
+        const html = buildTabelaAtendimentoClientes(an) + buildDiagnosticoAtendimentoHtml(an);
+        assert(html.includes('Leve e "portátil"') || html.includes('Leve e &quot;portátil&quot;'), 'descrição ausente');
+        assert(!/<b>tag<\/b>/.test(html), 'HTML do usuário não escapado');
+    });
+});
+
+// ============================================================================
 // PÁGINAS (abertas em iframe; só no modo headless — ver rodar-testes.ps1)
 // ============================================================================
 
@@ -438,9 +499,14 @@ const PAGINAS = [
         texto: 'Marca "B" <x>', seletores: ['#grafico-clientes svg circle', '#clientes-tbody .sit-atras', '#tecnicos-tbody .valor-input']
     },
     {
+        arquivo: '../pages/atendimento-requisitos.html', funcao: 'updateComputed', preparar: criarAvaliacaoExemplo,
+        texto: 'Não atingida', seletores: ['#clientes-tabela .atend-rel', '#diagnostico .resultado-bloco', '#projetos-tbody .valor-input']
+    },
+    {
         arquivo: '../pages/relatorio.html', funcao: 'generatePreview', preparar: criarAvaliacaoExemplo,
         texto: 'Resultado da comparação',
-        seletores: ['#report-content .grafico-competitivo', '#report-content .resultado-atras li', '#report-content .resultado-metas li']
+        seletores: ['#report-content .grafico-competitivo', '#report-content .resultado-atras li', '#report-content .resultado-metas li',
+            '#report-content .report-atendimento .atend-rel']
     }
 ];
 

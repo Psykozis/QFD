@@ -63,6 +63,13 @@ Site: https://marlonsigales.github.io/QFD/index.html
 - [x] Gráfico de perfil, resultado (pontos fortes, a melhorar, metas abaixo do concorrente) e detecção de inconsistências
 - [x] Seção no relatório, card no dashboard, exportação CSV, estrutura dos dados v3 com migração, testes
 
+## Fase 9c: Atendimento aos requisitos (setembro/2026)
+- [x] Página "Atendimento aos Requisitos": metas × valor medido do nosso produto
+- [x] Cobertura e atendimento (%) por requisito de cliente, atendimento geral ponderado
+- [x] Diagnóstico: sem relação, só relações fracas, atendimento < 50%, metas não atingidas, requisitos de projeto órfãos, divergência com a nota dos clientes
+- [x] Seção no relatório, card no dashboard, exportação CSV, testes
+- [x] Relatório: seção de avaliação competitiva completa (descrições, melhor concorrente, resultado)
+
 ## Fase 10: Projeto informacional completo (planejada)
 Objetivo: cobrir toda a fase de *Planejamento e Esclarecimento da Tarefa* de Pahl & Beitz
 (Engineering Design, 3ª ed., Cap. 3.1 e 5), cujo resultado é a lista de requisitos.

@@ -141,6 +141,7 @@ function generatePreview() {
         if (isSectionChecked('section-qfd-matrix')) html += safeSection('Matriz QFD', generateMatrix);
         if (isSectionChecked('section-especificacoes')) html += safeSection('Especificações', generateEspecificacoes);
         if (isSectionChecked('section-competitiva')) html += safeSection('Avaliação Competitiva', generateAvaliacaoCompetitiva);
+        if (isSectionChecked('section-atendimento')) html += safeSection('Atendimento aos Requisitos', generateAtendimento);
         if (isSectionChecked('section-ranking')) html += safeSection('Ranking', generateRankingSection);
         if (isSectionChecked('section-analysis')) html += safeSection('Análises', generateAnalysisSection);
         if (isSectionChecked('section-comparisons')) html += safeSection('Comparações', generateComparisonsSection);
@@ -409,6 +410,45 @@ function generateAvaliacaoCompetitiva() {
 
     html += '<h4>Resultado da comparação</h4>';
     html += `<div class="competitiva-resultado">${buildResultadoHtml(analise)}</div>`;
+    return html + '</div>';
+}
+
+function generateAtendimento() {
+    const analise = qfdDB.getAnaliseAtendimento();
+    const s = analise.stats;
+    let html = '<div class="report-section report-atendimento"><h3>Atendimento aos Requisitos de Cliente</h3>';
+
+    const geral = analise.atendimentoGeral === null
+        ? 'não calculado (faltam metas nas Especificações ou valores medidos do nosso produto)'
+        : `<strong>${Math.round(analise.atendimentoGeral * 100)}%</strong> (ponderado pelo peso dos requisitos de cliente)`;
+    html += `<ul class="report-dict-list">
+        <li>Atendimento geral: ${geral}.</li>
+        <li>Requisitos de cliente com relação forte (9) na matriz: ${s.coberturaForte} de ${s.requisitosCliente}; sem nenhuma relação: ${analise.diagnostico.semRelacao.length}.</li>
+        <li>Metas de projeto atingidas: ${s.metasAtingidas} de ${s.metasAvaliadas} medidas (${s.semMedicao} sem medição, ${s.semMeta} sem meta).</li>
+    </ul>`;
+    html += '<p class="report-hint">Atendimento de um requisito de cliente = parcela da influência (9, 3, 1) dos requisitos de projeto relacionados cujas metas foram atingidas. Meta atingida: ↑ medido ≥ meta; ↓ medido ≤ meta; * dentro de ±5%.</p>';
+
+    html += '<h4>Metas de projeto × valor medido</h4>';
+    html += '<table class="report-table atendimento-table"><thead><tr><th>#</th><th>Requisito de projeto</th><th>Sentido</th><th>Meta</th><th>Medido</th><th>Meta</th><th>Relações</th></tr></thead><tbody>';
+    analise.projetos.forEach(p => {
+        html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${p.numero}`, p.requisito))}">
+            <td>${p.rank}</td>
+            <td class="competitiva-desc"><strong>RP${p.numero}</strong> — ${escapeHtml(p.requisito.descricao)}</td>
+            <td>${getSentidoSymbol(p.requisito.sentidoMelhoria)}</td>
+            <td>${escapeHtml(p.meta ? `${p.meta} ${p.unidade}`.trim() : '—')}</td>
+            <td>${escapeHtml(p.medido || '—')}</td>
+            <td>${badgeHtml(getEstadoMeta(p.estado))}</td>
+            <td>${p.relacoes}</td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+
+    html += '<h4>Atendimento por requisito de cliente</h4>';
+    html += buildTabelaAtendimentoClientes(analise,
+        (req, rotulo) => ` class="report-has-tip" data-report-tip="${escapeAttr(reqTip(rotulo, req))}"`);
+
+    html += '<h4>Diagnóstico</h4>';
+    html += `<div class="competitiva-resultado">${buildDiagnosticoAtendimentoHtml(analise)}</div>`;
     return html + '</div>';
 }
 
